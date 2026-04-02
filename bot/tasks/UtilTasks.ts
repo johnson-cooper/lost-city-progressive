@@ -1,0 +1,349 @@
+/**
+ * UtilTasks.ts — InitTask, WalkTask, BankTask, BuryBonesTask, IdleTask, SellTask
+ */
+
+import {
+    BotTask, Player, InvType,
+    walkTo, interactNpcOp, findNpcByPrefix, findNpcByName, isNear,
+    hasItem, addItem, removeItem,
+    Items, Locations, STARTING_COINS,
+    teleportToSafety, teleportNear, randInt, bankInvId, StuckDetector,
+    openNearbyGate,
+} from '#/engine/bot/tasks/BotTaskBase.js';
+
+// ── InitTask ──────────────────────────────────────────────────────────────────
+
+export class InitTask extends BotTask {
+    private done = false;
+    private readonly starterItems: number[];
+
+    constructor(starterItems: number[] = []) {
+        super('Init');
+        this.starterItems = starterItems;
+    }
+
+    shouldRun(_p: Player): boolean { return !this.done; }
+
+    tick(player: Player): void {
+        addItem(player, Items.COINS, STARTING_COINS);
+        for (const id of this.starterItems) {
+            if (!hasItem(player, id)) addItem(player, id, 1);
+        }
+        this.done = true;
+    }
+
+    isComplete(_p: Player): boolean { return this.done; }
+    override reset(): void { super.reset(); this.done = false; }
+}
+
+// ── WalkTask ──────────────────────────────────────────────────────────────────
+
+export class WalkTask extends BotTask {
+    private readonly destX: number;
+    private readonly destZ: number;
+    private readonly level: number;
+    private readonly arrivalDist: number;
+    private readonly stuck = new StuckDetector(30, 4, 2);
+
+    constructor(x: number, z: number, level = 0, arrivalDist = 3) {
+        super('Walk');
+        this.destX = x;
+        this.destZ = z;
+        this.level = level;
+        this.arrivalDist = arrivalDist;
+    }
+
+    shouldRun(player: Player): boolean {
+        return !isNear(player, this.destX, this.destZ, this.arrivalDist, this.level);
+    }
+
+    tick(player: Player): void {
+        if (this.interrupted) return;
+
+        if (this.stuck.check(player, this.destX, this.destZ)) {
+            if (this.stuck.desperatelyStuck) {
+                teleportNear(player, this.destX, this.destZ);
+                this.stuck.reset();
+                return;
+            }
+            if (openNearbyGate(player, 5)) return;
+            const dx = this.destX - player.x, dz = this.destZ - player.z;
+            walkTo(
+                player,
+                player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),
+                player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10)),
+            );
+            return;
+        }
+
+        walkTo(player, this.destX, this.destZ);
+    }
+
+    isComplete(player: Player): boolean {
+        return isNear(player, this.destX, this.destZ, this.arrivalDist, this.level);
+    }
+
+    override reset(): void { super.reset(); this.stuck.reset(); }
+}
+
+// ── BankTask ──────────────────────────────────────────────────────────────────
+
+export class BankTask extends BotTask {
+    private state: 'walk' | 'find' | 'interact' | 'deposit' | 'done' = 'walk';
+    private waitTicks = 0;
+    private findFailTicks = 0;
+    private readonly stuck = new StuckDetector(30, 4, 2);
+    private readonly bankCoord: [number, number, number];
+    private readonly keepItems: number[];
+
+    constructor(
+        bankCoord: [number, number, number] = Locations.DRAYNOR_BANK,
+        keepItems: number[] = []
+    ) {
+        super('Bank');
+        this.bankCoord = bankCoord;
+        this.keepItems = keepItems;
+    }
+
+    shouldRun(_p: Player): boolean { return this.state !== 'done'; }
+
+    tick(player: Player): void {
+        if (this.interrupted) return;
+        if (this.cooldown > 0) { this.cooldown--; return; }
+
+        const [bx, bz, bl] = this.bankCoord;
+
+        if (this.state === 'walk') {
+            if (!isNear(player, bx, bz, 8, bl)) {
+                if (this.stuck.check(player, bx, bz)) {
+                    if (this.stuck.desperatelyStuck) {
+                        teleportNear(player, bx, bz);
+                        this.stuck.reset();
+                        return;
+                    }
+                    if (openNearbyGate(player, 5)) return;
+                    const dx = bx - player.x, dz = bz - player.z;
+                    walkTo(
+                        player,
+                        player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),
+                        player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10)),
+                    );
+                    return;
+                }
+                walkTo(player, bx, bz);
+                return;
+            }
+            this.state = 'find';
+            return;
+        }
+
+        if (this.state === 'find') {
+            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 8)
+                        ?? findNpcByPrefix(player.x, player.z, player.level, 'kharidbanker', 8);
+            if (!banker) {
+                this.findFailTicks++;
+                if (this.findFailTicks > 6) {
+                    this.state = 'walk';
+                    this.findFailTicks = 0;
+                }
+                walkTo(player, bx + randInt(-4, 4), bz + randInt(-4, 4));
+                return;
+            }
+            this.findFailTicks = 0;
+            interactNpcOp(player, banker, 3);
+            this.state = 'interact';
+            this.waitTicks = 0;
+            return;
+        }
+
+        if (this.state === 'interact') {
+            this.waitTicks++;
+            if (this.waitTicks >= 3) this.state = 'deposit';
+            return;
+        }
+
+        if (this.state === 'deposit') {
+            this._deposit(player);
+            this.state = 'done';
+            this.cooldown = 2;
+        }
+    }
+
+    isComplete(_p: Player): boolean { return this.state === 'done'; }
+
+    override reset(): void {
+        super.reset();
+        this.state = 'walk';
+        this.waitTicks = 0;
+        this.findFailTicks = 0;
+        this.stuck.reset();
+    }
+
+    private _deposit(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+        for (let slot = 0; slot < inv.capacity; slot++) {
+            const item = inv.get(slot);
+            if (!item) continue;
+            if (this.keepItems.includes(item.id)) continue;
+            const moved = inv.remove(item.id, item.count);
+            if (moved.completed > 0) bank.add(item.id, moved.completed);
+        }
+    }
+}
+
+// ── BuryBonesTask ─────────────────────────────────────────────────────────────
+
+export class BuryBonesTask extends BotTask {
+    private done = false;
+    constructor() { super('Prayer'); }
+
+    shouldRun(player: Player): boolean {
+        return !this.done && (hasItem(player, Items.BONES) || hasItem(player, Items.BIG_BONES));
+    }
+
+    tick(player: Player): void {
+        if (hasItem(player, Items.BIG_BONES)) {
+            removeItem(player, Items.BIG_BONES, 1);
+            player.addXp(6, 150);
+        } else if (hasItem(player, Items.BONES)) {
+            removeItem(player, Items.BONES, 1);
+            player.addXp(6, 45);
+        }
+        this.done = true;
+    }
+
+    isComplete(_p: Player): boolean { return this.done; }
+    override reset(): void { super.reset(); this.done = false; }
+}
+
+// ── IdleTask ──────────────────────────────────────────────────────────────────
+
+export class IdleTask extends BotTask {
+    private readonly ticks: number;
+    private elapsed = 0;
+
+    constructor(ticks = 10) {
+        super('Idle');
+        this.ticks = ticks;
+    }
+
+    shouldRun(_p: Player): boolean { return this.elapsed < this.ticks; }
+    tick(_p: Player): void { this.elapsed++; }
+    isComplete(_p: Player): boolean { return this.elapsed >= this.ticks; }
+    override reset(): void { super.reset(); this.elapsed = 0; }
+}
+
+// ── SellTask — sell resources at Lumbridge General Store ──────────────────────
+
+const SELL_PRICES: Record<number, number> = {
+    [Items.LOGS]:        3,
+    [Items.OAK_LOGS]:    6,
+    [Items.WILLOW_LOGS]: 14,
+    [Items.COPPER_ORE]:  4,
+    [Items.TIN_ORE]:     4,
+    [Items.IRON_ORE]:    9,
+    [Items.COAL]:        22,
+    [Items.RAW_SHRIMP]:  3,
+    [Items.RAW_SARDINE]: 4,
+    [Items.RAW_TROUT]:   9,
+    [Items.RAW_SALMON]:  14,
+    [Items.BONES]:       2,
+    [Items.BIG_BONES]:   5,
+};
+
+export class SellTask extends BotTask {
+    private state: 'walk' | 'find' | 'sell' | 'done' = 'walk';
+    private findFailTicks = 0;
+    private readonly keepItems: number[];
+    private readonly stuck = new StuckDetector(30, 4, 2);
+
+    constructor(keepItems: number[] = []) {
+        super('Sell');
+        this.keepItems = keepItems;
+    }
+
+    shouldRun(_p: Player): boolean { return this.state !== 'done'; }
+
+    tick(player: Player): void {
+        if (this.interrupted) return;
+        if (this.cooldown > 0) { this.cooldown--; return; }
+
+        const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
+
+        if (this.state === 'walk') {
+            if (!isNear(player, sx, sz, 8, sl)) {
+                if (this.stuck.check(player, sx, sz)) {
+                    if (this.stuck.desperatelyStuck) {
+                        teleportNear(player, sx, sz);
+                        this.stuck.reset();
+                        return;
+                    }
+                    if (openNearbyGate(player, 5)) return;
+                    const dx = sx - player.x, dz = sz - player.z;
+                    walkTo(
+                        player,
+                        player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),
+                        player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10)),
+                    );
+                    return;
+                }
+                walkTo(player, sx, sz);
+                return;
+            }
+            this.state = 'find';
+            return;
+        }
+
+        if (this.state === 'find') {
+            const npc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
+            if (!npc) {
+                this.findFailTicks++;
+                if (this.findFailTicks > 6) {
+                    this.state = 'walk';
+                    this.findFailTicks = 0;
+                }
+                walkTo(player, sx + randInt(-4, 4), sz + randInt(-4, 4));
+                return;
+            }
+            this.findFailTicks = 0;
+            interactNpcOp(player, npc, 3);
+            this.cooldown = 3;
+            this.state = 'sell';
+            return;
+        }
+
+        if (this.state === 'sell') {
+            this._sell(player);
+            this.state = 'done';
+            this.cooldown = 2;
+        }
+    }
+
+    isComplete(_p: Player): boolean { return this.state === 'done'; }
+
+    override reset(): void {
+        super.reset();
+        this.state = 'walk';
+        this.findFailTicks = 0;
+        this.stuck.reset();
+    }
+
+    private _sell(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        if (!inv) return;
+        let coins = 0;
+        for (let slot = 0; slot < inv.capacity; slot++) {
+            const item = inv.get(slot);
+            if (!item) continue;
+            if (this.keepItems.includes(item.id)) continue;
+            if (item.id === Items.COINS) continue;
+            coins += item.count * (SELL_PRICES[item.id] ?? 1);
+            inv.remove(item.id, item.count);
+        }
+        if (coins > 0) addItem(player, Items.COINS, coins);
+    }
+}

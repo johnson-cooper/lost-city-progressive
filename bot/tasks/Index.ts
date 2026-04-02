@@ -1,0 +1,14 @@
+/**
+ * tasks/index.ts — barrel export for all bot task classes.
+ *
+ * Import from here instead of individual files:
+ *   import { WoodcuttingTask, CombatTask, ShopTripTask } from '#/engine/bot/tasks/index.js';
+ */
+
+export { BotTask, teleportToSafety, randInt, isNear, bankInvId, INTERACT_TIMEOUT } from '#/engine/bot/tasks/BotTaskBase.js';
+export { InitTask, WalkTask, BankTask, BuryBonesTask, IdleTask, SellTask } from '#/engine/bot/tasks/UtilTasks.js';
+export { ShopTripTask }   from '#/engine/bot/tasks/ShopTripTask.js';
+export { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
+export { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
+export { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
+export { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
