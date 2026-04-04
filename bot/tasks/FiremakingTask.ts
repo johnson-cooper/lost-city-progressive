@@ -2,7 +2,6 @@ import {
     BotTask,
     Player,
     walkTo,
-    hasItem,
     removeItem,
     isNear,
     getBaseLevel,
@@ -11,7 +10,6 @@ import {
     Items,
     Locations,
     randInt,
-    INTERACT_TIMEOUT,
     StuckDetector,
     ProgressWatchdog,
     InvType,
@@ -21,17 +19,18 @@ import {
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import Loc from '#/engine/entity/Loc.js';
+import World from '#/engine/World.js';
+import { EntityLifeCycle } from '#/engine/entity/EntityLifeCycle.js';
+
 
 export class FiremakingTask extends BotTask {
     private step: SkillStep;
 
-    private state: 'walk' | 'burn' | 'move' | 'bank_walk' | 'bank_done' = 'walk';
+    private state: 'walk' | 'burn' | 'move' | 'bank_walk' | 'bank' = 'walk';
 
-    private interactTicks = 0;
     private lastXp = 0;
-
-    // 🔥 FIX: prevents bank re-trigger loop
-    private justBanked = false;
+    private bankLocked = false;
 
     private readonly stuck = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog();
@@ -45,15 +44,15 @@ export class FiremakingTask extends BotTask {
         return true;
     }
 
-    // ───────────────── HELPERS ─────────────────
+    // ───────────────── LOG HELPERS ─────────────────
 
-    private isLog(itemId: number): boolean {
+    private isLog(id: number): boolean {
         return (
-            itemId === Items.LOGS ||
-            itemId === Items.OAK_LOGS ||
-            itemId === Items.WILLOW_LOGS ||
-            itemId === Items.MAPLE_LOGS ||
-            itemId === Items.YEW_LOGS
+            id === Items.LOGS ||
+            id === Items.OAK_LOGS ||
+            id === Items.WILLOW_LOGS ||
+            id === Items.MAPLE_LOGS ||
+            id === Items.YEW_LOGS
         );
     }
 
@@ -65,21 +64,48 @@ export class FiremakingTask extends BotTask {
             const item = inv.get(i);
             if (item && this.isLog(item.id)) return item.id;
         }
+
         return null;
     }
 
-    private hasAnyLogs(player: Player): boolean {
+    private hasLogs(player: Player): boolean {
         return this.getFirstLog(player) !== null;
     }
+
+    private static FIRE_ID = 2732;
+    private static FIRE_DURATION = 100; // ticks
+
+private spawnFire(player: Player): void {
+    try {
+        const fire = new Loc(
+            player.level,                      // level
+            player.x,                          // x
+            player.z,                          // z
+            1,                                 // width
+            1,                                 // length
+            EntityLifeCycle.DESPAWN,           // lifecycle
+            FiremakingTask.FIRE_ID,            // type (2732)
+            10,                                // shape
+            0                                  // angle
+        );
+
+        World.addLoc(fire, FiremakingTask.FIRE_DURATION);
+
+        console.log(`[Firemaking] 🔥 spawned REAL fire at ${player.x},${player.z}`);
+    } catch (err) {
+        console.log('[Firemaking] ❌ failed to spawn fire', err);
+    }
+}
 
     // ───────────────── MAIN LOOP ─────────────────
 
     tick(player: Player): void {
         if (this.interrupted) return;
 
-        const banking = this.state === 'bank_walk' || this.state === 'bank_done';
+        const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
+            console.log(`[Firemaking] ⚠ WATCHDOG TRIGGERED`);
             this.interrupt();
             return;
         }
@@ -89,35 +115,25 @@ export class FiremakingTask extends BotTask {
             return;
         }
 
-        // ── LEVEL PROGRESSION
         const level = getBaseLevel(player, PlayerStat.FIREMAKING);
         const newStep = getProgressionStep('FIREMAKING', level);
 
         if (newStep && newStep.minLevel > this.step.minLevel) {
+            console.log(`[Firemaking] 📈 Step upgrade`);
             this.step = newStep;
-
-            this.state = 'walk';
-            this.interactTicks = 0;
-
-            this.stuck.reset();
-            this.watchdog.reset();
+            this.resetLoop();
         }
 
-        // ─────────────────────────────
-        // BANK IF OUT OF LOGS (FIXED LOCKED VERSION)
-        // ─────────────────────────────
-        if (!this.hasAnyLogs(player) && !this.justBanked) {
-            this.state = 'bank_walk';
+        // ───────────────── FORCE BANK FIX ─────────────────
+        if (!this.hasLogs(player)) {
+            if (!banking) {
+                console.log(`[Firemaking] 📦 No logs → bank`);
+                this.state = 'bank_walk';
+            }
         }
 
-        // reset bank lock once we have logs again
-        if (this.hasAnyLogs(player)) {
-            this.justBanked = false;
-        }
+        // ───────────────── BANK WALK ─────────────────
 
-        // ─────────────────────────────
-        // BANK WALK
-        // ─────────────────────────────
         if (this.state === 'bank_walk') {
             const [bx, bz] = Locations.DRAYNOR_BANK;
 
@@ -126,47 +142,48 @@ export class FiremakingTask extends BotTask {
                 return;
             }
 
-            this.state = 'bank_done';
+            console.log(`[Firemaking] 🏦 Arrived bank`);
+            this.state = 'bank';
             return;
         }
 
-        // ─────────────────────────────
-        // BANK WITHDRAW
-        // ─────────────────────────────
-        if (this.state === 'bank_done') {
+        // ───────────────── BANK ─────────────────
+
+        if (this.state === 'bank') {
             const bank = player.getInventory(bankInvId());
             const inv = player.getInventory(InvType.INV);
 
             if (!bank || !inv) return;
 
-            let free = 0;
-            for (let i = 0; i < inv.capacity; i++) {
-                if (!inv.get(i)) free++;
-            }
+            let withdrew = false;
 
             for (let i = 0; i < bank.capacity; i++) {
                 const item = bank.get(i);
-                if (!item) continue;
 
-                if (this.isLog(item.id)) {
-                    const amount = Math.min(item.count, free);
-
-                    bank.remove(item.id, amount);
-                    inv.add(item.id, amount);
-
-                    this.state = 'walk';
-                    this.justBanked = true; // 🔥 IMPORTANT FIX
-                    return;
+                if (item && this.isLog(item.id)) {
+                    console.log(`[Firemaking] 📤 Withdrawing logs`);
+                    bank.remove(item.id, item.count);
+                    inv.add(item.id, item.count);
+                    withdrew = true;
+                    break;
                 }
             }
 
-            this.interrupt();
+            if (!withdrew) {
+                console.log(`[Firemaking] ❌ NO LOGS IN BANK → STOP`);
+                this.interrupt();
+                return;
+            }
+
+            // 🔥 FIX: DO NOT LOCK FOREVER
+            this.bankLocked = false;
+
+            this.state = 'walk';
             return;
         }
 
-        // ─────────────────────────────
-        // WALK TO FIRE SPOT
-        // ─────────────────────────────
+        // ───────────────── WALK TO FIRE AREA ─────────────────
+
         if (this.state === 'walk') {
             const [lx, lz] = Locations.FIRE_LUMBRIDGE_ROAD;
 
@@ -175,44 +192,57 @@ export class FiremakingTask extends BotTask {
                 return;
             }
 
+            console.log(`[Firemaking] 🔥 Arrived fire area`);
             this.state = 'burn';
             return;
         }
 
-        // ─────────────────────────────
-        // BURN LOGS (CORE LOOP)
-        // ─────────────────────────────
+        // ───────────────── BURN ─────────────────
+
         if (this.state === 'burn') {
             const logId = this.getFirstLog(player);
 
             if (!logId) {
+                console.log(`[Firemaking] 📦 out of logs`);
                 this.state = 'bank_walk';
                 return;
             }
 
+            const x = player.x;
+            const z = player.z;
+
             const before = player.stats[PlayerStat.FIREMAKING];
 
-            removeItem(player, logId, 1);
+            const removed = removeItem(player, logId, 1);
+            if (!removed) {
+                console.log(`[Firemaking] ❌ failed to remove log`);
+                return;
+            }
 
             const xp = this.getXp(logId);
-
+            this.spawnFire(player);
             player.stats[PlayerStat.FIREMAKING] = before + xp;
+
+
 
             this.lastXp = player.stats[PlayerStat.FIREMAKING];
 
             this.watchdog.notifyActivity();
 
+            console.log(
+                `[Firemaking] 🔥 burned log +${xp} XP (total=${this.lastXp})`
+            );
+
             this.cooldown = randInt(2, 4);
             this.state = 'move';
-
             return;
         }
 
-        // ─────────────────────────────
-        // MOVE
-        // ─────────────────────────────
+        // ───────────────── MOVE ─────────────────
+
         if (this.state === 'move') {
-            walkTo(player,
+            walkTo(
+                player,
                 player.x + randInt(-1, 1),
                 player.z + randInt(-1, 1)
             );
@@ -222,33 +252,21 @@ export class FiremakingTask extends BotTask {
         }
     }
 
+    // ───────────────── RESET ─────────────────
 
+    private resetLoop(): void {
+        this.state = 'walk';
+        this.cooldown = 0;
+        this.lastXp = 0;
+        this.bankLocked = false;
 
-
-    
-    // ───────────────── XP TABLE ─────────────────
-
-    private getXp(log: number): number {
-        switch (log) {
-            case Items.LOGS: return 40;
-            case Items.OAK_LOGS: return 60;
-            case Items.WILLOW_LOGS: return 90;
-            case Items.MAPLE_LOGS: return 135;
-            case Items.YEW_LOGS: return 202;
-            default: return 40;
-        }
+        this.stuck.reset();
+        this.watchdog.reset();
     }
 
     override reset(): void {
         super.reset();
-
-        this.state = 'walk';
-        this.interactTicks = 0;
-        this.lastXp = 0;
-        this.justBanked = false;
-
-        this.stuck.reset();
-        this.watchdog.reset();
+        this.resetLoop();
     }
 
     // ───────────────── STUCK HANDLER ─────────────────
@@ -260,6 +278,7 @@ export class FiremakingTask extends BotTask {
         }
 
         if (this.stuck.desperatelyStuck) {
+            console.log(`[Firemaking] 🌀 teleport escape`);
             teleportNear(player, x, z);
             this.stuck.reset();
             return;
@@ -267,16 +286,27 @@ export class FiremakingTask extends BotTask {
 
         if (openNearbyGate(player, 5)) return;
 
-        const dx = x - player.x;
-        const dz = z - player.z;
-
-        const escX = player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dx > 0 ? 10 : -10));
-        const escZ = player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dz > 0 ? 10 : -10));
-
-        walkTo(player, escX, escZ);
+        walkTo(
+            player,
+            player.x + randInt(-10, 10),
+            player.z + randInt(-10, 10)
+        );
     }
 
     isComplete(): boolean {
         return false;
+    }
+
+    // ───────────────── XP TABLE ─────────────────
+
+    private getXp(log: number): number {
+        switch (log) {
+            case Items.LOGS: return 40;
+            case Items.OAK_LOGS: return 60;
+            case Items.WILLOW_LOGS: return 90;
+            case Items.MAPLE_LOGS: return 135;
+            case Items.YEW_LOGS: return 202;
+            default: return 40;
+        }
     }
 }

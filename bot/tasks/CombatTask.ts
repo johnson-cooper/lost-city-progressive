@@ -23,7 +23,16 @@ export class CombatTask extends BotTask {
     private step: SkillStep;
     private readonly stat: PlayerStat;
 
-    private state: 'walk' | 'scan' | 'interact' | 'bank_walk' | 'bank_done' = 'walk';
+private state:
+    | 'walk'
+    | 'scan'
+    | 'interact'
+    | 'shop_walk'
+    | 'shop_open'
+    | 'shop_sell'
+    | 'bank_walk'
+    | 'bank_deposit'
+    = 'walk';
 
     private interactTicks = 0;
     private approachTicks = 0;
@@ -69,7 +78,12 @@ export class CombatTask extends BotTask {
     tick(player: Player): void {
         if (this.interrupted) return;
 
-        const banking = this.state === 'bank_walk' || this.state === 'bank_done';
+        const banking =
+    this.state === 'shop_walk' ||
+    this.state === 'shop_open' ||
+    this.state === 'shop_sell' ||
+    this.state === 'bank_walk' ||
+    this.state === 'bank_deposit';
         if (this.watchdog.check(player, banking)) {
             this._log(player, 'WATCHDOG TRIGGERED → interrupt + teleport', 'watchdog');
             this.interrupt();
@@ -100,54 +114,73 @@ export class CombatTask extends BotTask {
         // ── INVENTORY FULL ───────────────────────────
         if (isInventoryFull(player) && this.state !== 'bank_walk') {
             this._log(player, 'INVENTORY FULL → bank_walk', 'inv_full');
-            this.state = 'bank_walk';
+            this.state = 'shop_walk';
         }
 
-        // ── SHOP SELL ────────────────────────────────
-        if (this.state === 'bank_walk') {
-            const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
+       if (this.state === 'shop_walk') {
+    const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
 
-            if (!isNear(player, sx, sz, 8, sl)) {
-                this._stuckWalk(player, sx, sz);
-                return;
-            }
+    if (!isNear(player, sx, sz, 8, sl)) {
+        this._stuckWalk(player, sx, sz);
+        return;
+    }
 
-            const shopNpc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
-            if (!shopNpc) {
-                return;
-            }
+    const shopNpc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
+    if (!shopNpc) return;
 
-            this._log(player, 'selling junk', 'sell');
-            interactNpcOp(player, shopNpc, 3);
-            this._sellJunk(player);
+    interactNpcOp(player, shopNpc, 3);
 
-            this.cooldown = 3;
-            this.state = 'bank_done';
-            return;
-        }
+    this.currentNpc = shopNpc;
+    this.state = 'shop_open';
+    return;
+}
 
-        // ── BANK ──────────────────────────────────────
-        if (this.state === 'bank_done') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+if (this.state === 'shop_open') {
+    this.state = 'shop_sell';
+    return;
+}
 
-            if (!isNear(player, bx, bz, 8)) {
-                this._stuckWalk(player, bx, bz);
-                return;
-            }
+if (this.state === 'shop_sell') {
+    if (!this.currentNpc) {
+        this.state = 'bank_walk';
+        return;
+    }
 
-            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
-            if (!banker) return;
+    this._sellJunk(player, this.currentNpc);
 
-            this._log(player, 'banking items', 'banking');
-            interactNpcOp(player, banker, 3);
+    if (!isInventoryFull(player)) {
+        this.state = 'bank_walk';
+        this.currentNpc = null;
+    }
 
-            this._depositGold(player);
-            this._depositLoot(player);
+    return;
+}
 
-            this.state = 'walk';
-            this.cooldown = 3;
-            return;
-        }
+      if (this.state === 'bank_walk') {
+    const [bx, bz] = Locations.DRAYNOR_BANK;
+
+    if (!isNear(player, bx, bz, 8)) {
+        this._stuckWalk(player, bx, bz);
+        return;
+    }
+
+    const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
+    if (!banker) return;
+
+    interactNpcOp(player, banker, 3);
+
+    this.state = 'bank_deposit';
+    return;
+}
+
+if (this.state === 'bank_deposit') {
+    this._depositGold(player);
+    this._depositLoot(player);
+
+    this.state = 'walk';
+    this.cooldown = 3;
+    return;
+}
 
         // ── WALK ──────────────────────────────────────
         if (this.state === 'walk') {
@@ -163,39 +196,69 @@ export class CombatTask extends BotTask {
             return;
         }
 
-        // ── SCAN ──────────────────────────────────────
-        if (this.state === 'scan') {
-            const npc = this._findTargetNpc(player);
+if (this.state === 'scan') {
+    let npc = this._findTargetNpc(player);
 
-            if (!npc) {
-                this.scanFail++;
+    // ─────────────────────────────────────────
+    // NO NPC FOUND
+    // ─────────────────────────────────────────
+    if (!npc) {
+        this.scanFail++;
 
-                if (this.scanFail === 1 || this.scanFail % 3 === 0) {
-                    this._log(player, `scan failed (${this.scanFail})`, 'scan_fail');
-                }
+        if (this.scanFail === 1 || this.scanFail === 2) {
+            this._log(player, `scan failed (${this.scanFail})`, 'scan_fail');
+        }
 
-                if (this.scanFail % 3 === 0) {
-                    openNearbyGate(player, 6);
-                }
-
-                if (this.scanFail > 5) {
-                    this.state = 'walk';
-                    this.scanFail = 0;
-                }
+        // 🚨 EARLY GATE ATTEMPT (faster than before)
+        if (this.scanFail === 1 || this.scanFail === 2) {
+            if (openNearbyGate(player, 6)) {
                 return;
             }
-
-            this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
-
-            this.currentNpc = npc;
-            interactNpcOp(player, npc, 2);
-
-            this.state = 'interact';
-            this.interactTicks = 0;
-            this.approachTicks = 0;
-            this.lastXp = player.stats[this.stat];
-            return;
         }
+
+        // 🔄 TRY EXPANDING SEARCH EARLY (important)
+        if (this.scanFail === 2 || this.scanFail === 3) {
+            const widerNpc = this._findTargetNpcWider?.(player) ?? null;
+            if (widerNpc) {
+                npc = widerNpc;
+            }
+        }
+
+        // 🧠 ESCAPE STUCK ZONES QUICKER
+        if (this.scanFail === 3) {
+            this._stuckWalk(player,
+                player.x + randInt(-5, 5),
+                player.z + randInt(-5, 5)
+            );
+        }
+
+        // 🚪 FINAL ESCAPE
+        if (this.scanFail > 4) {
+            this.state = 'walk';
+            this.scanFail = 0;
+        }
+
+        return;
+    }
+
+    // ─────────────────────────────────────────
+    // NPC FOUND
+    // ─────────────────────────────────────────
+    this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
+
+    this.currentNpc = npc;
+    interactNpcOp(player, npc, 2);
+
+    this.state = 'interact';
+    this.interactTicks = 0;
+    this.approachTicks = 0;
+    this.lastXp = player.stats[this.stat];
+
+    // reset scan fail immediately on success
+    this.scanFail = 0;
+
+    return;
+}
 
         // ── COMBAT ───────────────────────────────────
         if (this.state === 'interact') {
@@ -259,7 +322,21 @@ export class CombatTask extends BotTask {
         const anyNpc = npc as any;
         return anyNpc.type ?? anyNpc.name ?? anyNpc.index ?? 'unknown';
     }
+private _findTargetNpcWider(player: Player): Npc | null {
+    const extra = this.step.extra as CombatExtra | undefined;
 
+    const radius = 25; // wider than normal
+
+    for (const name of [extra?.npcType, extra?.npcName].filter(Boolean) as string[]) {
+        const npc =
+            findNpcByName(player.x, player.z, player.level, name, radius) ??
+            findNpcByPrefix(player.x, player.z, player.level, name, radius);
+
+        if (npc) return npc;
+    }
+
+    return null;
+}
     // ─────────────────────────────────────────────
     // SELL VALUES
     // ─────────────────────────────────────────────
@@ -286,29 +363,25 @@ export class CombatTask extends BotTask {
         [Items.BRONZE_2H_SWORD]: 16,
     };
 
-    private _sellJunk(player: Player): void {
-        const inv = player.getInventory(InvType.INV);
-        if (!inv) return;
+  private _sellJunk(player: Player, shopNpc: Npc): void {
+    const inv = player.getInventory(InvType.INV);
+    if (!inv) return;
 
-        let coins = 0;
+    const protectedItems = new Set(this.step.toolItemIds);
 
-        for (let slot = 0; slot < inv.capacity; slot++) {
-            const item = inv.get(slot);
-            if (!item) continue;
+    for (let slot = 0; slot < inv.capacity; slot++) {
+        const item = inv.get(slot);
+        if (!item) continue;
 
-            if (this.step.toolItemIds.includes(item.id)) continue;
-            if (item.id === Items.COINS) continue;
-            if (!(item.id in CombatTask.SELL_PRICES)) continue;
+        // keep tools + coins
+        if (protectedItems.has(item.id)) continue;
+        if (item.id === Items.COINS) continue;
 
-            coins += item.count * CombatTask.SELL_PRICES[item.id];
-            inv.remove(item.id, item.count);
-        }
-
-        if (coins > 0) {
-            this._log(player, `sold items → ${coins} coins`, 'sell_done');
-            addItem(player, Items.COINS, coins);
-        }
+        // sell via NPC interaction (REAL SELL, not simulated)
+        interactNpcOp(player, shopNpc, 3);
+        return; // IMPORTANT: one action per tick
     }
+}
 
     private _depositGold(player: Player): void {
         const inv = player.getInventory(InvType.INV);

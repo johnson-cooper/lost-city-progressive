@@ -136,6 +136,10 @@ export const Items = {
     BODY_RUNE:          559,
 } as const;
 
+
+export const Objects = {
+  FIRE:             2732, 
+} as const;
 // ─────────────────────────────────────────────────────────────────────────────
 // World Locations  [x, z, level]
 // Coordinates sourced from RS2 wiki / cross-referenced with content scripts
@@ -192,7 +196,7 @@ export const Locations = {
     TREES_LUMBRIDGE:         [3194, 3226, 0] as [number, number, number],  // behind Lumbridge castle, next to Bob's Axes - normal trees only
     TREES_DRAYNOR:           [3091, 3271, 0] as [number, number, number],
     OAKS_DRAYNOR:            [3088, 3236, 0] as [number, number, number],
-    WILLOWS_DRAYNOR:         [3088, 3227, 0] as [number, number, number],
+    WILLOWS_DRAYNOR:         [3180, 3270, 0] as [number, number, number],
     WILLOWS_BARBARIAN:       [3048, 3422, 0] as [number, number, number],
     YEWS_VARROCK:            [3204, 3499, 0] as [number, number, number],
     YEWS_FALADOR:            [2987, 3340, 0] as [number, number, number],
