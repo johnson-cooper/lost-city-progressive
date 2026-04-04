@@ -21,13 +21,14 @@ import {
     getMissingPurchases, canAffordStep, totalCostOfMissing,
 } from '#/engine/bot/BotNeeds.js';
 import type { Purchase } from '#/engine/bot/BotNeeds.js';
-import { BotTask }        from '#/engine/bot/tasks/BotTaskBase.js';
+import { bankInvId, BotTask }        from '#/engine/bot/tasks/BotTaskBase.js';
 import { InitTask, BuryBonesTask, IdleTask } from '#/engine/bot/tasks/UtilTasks.js';
 import { ShopTripTask }   from '#/engine/bot/tasks/ShopTripTask.js';
 import { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
 import { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
 import { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
 import { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
+import { FiremakingTask } from '#/engine/bot/tasks/FiremakingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -41,7 +42,7 @@ export const Personalities: Record<string, BotPersonality> = {
         name: 'Skiller',
         weights: {
             WOODCUTTING: 25, FISHING: 25, MINING: 20,
-            COOKING: 15, SMITHING: 10, PRAYER: 5,
+            COOKING: 15, SMITHING: 10, PRAYER: 5, FIREMAKING: 25,
         },
     },
     FIGHTER: {
@@ -57,7 +58,7 @@ export const Personalities: Record<string, BotPersonality> = {
             ATTACK: 10, STRENGTH: 10, DEFENCE: 8,
             WOODCUTTING: 12, FISHING: 10, MINING: 8,
             COOKING: 8, SMITHING: 5, PRAYER: 5,
-            RANGED: 4, MAGIC: 4,
+            RANGED: 4, MAGIC: 4, FIREMAKING: 25,
         },
     },
 };
@@ -144,47 +145,79 @@ export class BotGoalPlanner {
                 // Check consumable availability (bait, feathers, raw fish for cooking, logs for FM)
                 // If the step consumes an item that isn't purchasable (e.g. raw fish, logs),
                 // the bot must first produce it via a different skill step.
-                if (step.itemConsumed && step.itemConsumed !== -1) {
-                    const hasConsumable = hasItem(player, step.itemConsumed, 1);
-                    if (!hasConsumable) {
-                        // Can't do this step right now — try next candidate
-                        continue;
-                    }
-                    // Also check secondary consumed item (e.g. tin_ore for bronze smelting)
-                    const alsoConsumes = step.extra?.alsoConsumes as number | undefined;
-                    if (alsoConsumes && !hasItem(player, alsoConsumes, 1)) {
-                        continue;
+            if (step.itemConsumed && step.itemConsumed !== -1) {
+
+                const hasInv = hasItem(player, step.itemConsumed, 1);
+
+                // 🔥 NEW: check bank too
+                const bid = bankInvId();
+                let hasBank = false;
+
+                if (bid !== -1) {
+                    const bank = player.getInventory(bid);
+                    if (bank) {
+                        for (let i = 0; i < bank.capacity; i++) {
+                            const item = bank.get(i);
+                            if (!item) continue;
+                            if (item.id === step.itemConsumed) {
+                                hasBank = true;
+                                break;
+                            }
+                        }
                     }
                 }
-                // Has everything — go do the skill
-                if (step.action === 'combat') return new CombatTask(step, stat);
-                if (step.action === 'woodcut') return new WoodcuttingTask(step);
-                if (step.action === 'mine')    return new MiningTask(step);
-                if (step.action === 'fish')    return new FishingTask(step);
-                // Other skills (cook, smith, etc.) not yet implemented
-                continue;
-            }
 
-            if (canAffordStep(player, step)) {
-                // Only go to nearby shops — distant shops cause bots to get stuck.
-                // Starter gear is provided by InitTask so basics are always available.
-                const first = missing[0];
-                if (NEARBY_SHOPS.has(first.shopKey)) {
-                    return new ShopTripTask(first.shopKey, first.itemId, first.quantity, first.cost);
+                if (!hasInv && !hasBank) {
+                    // 🔥 fallback to woodcutting ONLY if no logs anywhere
+                    if (skillName === 'FIREMAKING') {
+                        const wcLevel = getBaseLevel(player, PlayerStat.WOODCUTTING);
+                        const wcStep = getProgressionStep('WOODCUTTING', wcLevel);
+
+                        if (wcStep) {
+                            return new WoodcuttingTask(wcStep);
+                        }
+                    }
+
+                    continue;
                 }
-                // Distant shop needed — skip this skill for now
-            }
 
-            // Can't afford this skill's tools — try the next candidate
-            // (lower-weight skills may be cheaper or tool-free)
-        }
 
-        // All skills need tools the bot can't afford.
-        // Fall back to combat to earn coins — chickens/goblins need only a sword (32gp)
-        // If even that's too expensive, idle briefly and hope for drops
-        const combatFallback = this._cheapestCombatTask(player);
-        return combatFallback ?? new IdleTask(30);
-    }
+                                const alsoConsumes = step.extra?.alsoConsumes as number | undefined;
+                                if (alsoConsumes && !hasItem(player, alsoConsumes, 1)) {
+                                    continue;
+                                }
+                            }
+                            // Has everything — go do the skill
+                            if (step.action === 'combat') return new CombatTask(step, stat);
+                            if (step.action === 'woodcut') return new WoodcuttingTask(step);
+                            if (step.action === 'mine')    return new MiningTask(step);
+                            if (step.action === 'fish')    return new FishingTask(step);
+                            if (step.action === 'firemaking')    return new FiremakingTask(step);
+                            
+                            // Other skills (cook, smith, etc.) not yet implemented
+                            continue;
+                        }
+
+                        if (canAffordStep(player, step)) {
+                            // Only go to nearby shops — distant shops cause bots to get stuck.
+                            // Starter gear is provided by InitTask so basics are always available.
+                            const first = missing[0];
+                            if (NEARBY_SHOPS.has(first.shopKey)) {
+                                return new ShopTripTask(first.shopKey, first.itemId, first.quantity, first.cost);
+                            }
+                            // Distant shop needed — skip this skill for now
+                        }
+
+                        // Can't afford this skill's tools — try the next candidate
+                        // (lower-weight skills may be cheaper or tool-free)
+                    }
+
+                    // All skills need tools the bot can't afford.
+                    // Fall back to combat to earn coins — chickens/goblins need only a sword (32gp)
+                    // If even that's too expensive, idle briefly and hope for drops
+                    const combatFallback = this._cheapestCombatTask(player);
+                    return combatFallback ?? new IdleTask(30);
+                }
 
     /**
      * Returns skill names in weighted-random order.
@@ -280,6 +313,7 @@ export class BotGoalPlanner {
             Items.BRONZE_SWORD,
             Items.BRONZE_PICKAXE,
             Items.SMALL_FISHING_NET,
+            Items.TINDERBOX,
         ];
     }
 }

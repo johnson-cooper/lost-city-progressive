@@ -12,3 +12,4 @@ export { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
 export { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
 export { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
 export { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
+export { FiremakingTask }     from '#/engine/bot/tasks/FiremakingTask.js';

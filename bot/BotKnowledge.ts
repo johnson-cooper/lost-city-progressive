@@ -73,6 +73,28 @@ export const Items = {
     BONES:              526,
     BIG_BONES:          532,
     COW_HIDE:           1739,  // internal name: cow_hide
+    // ── Goblin / early combat drops ─────────────────────────────
+
+    GOBLIN_MAIL:        288,
+    BRONZE_MED_HELM:    1139,
+    BRONZE_FULL_HELM:   1155,
+    BRONZE_SQ_SHIELD:   1173,
+    BRONZE_KITESHIELD:  1189,
+
+    BRONZE_DAGGER:      1205,
+    BRONZE_LONGSWORD:   1291,
+    BRONZE_2H_SWORD:    1307,
+
+    // ── Iron drops (early upgrade tier) ─────────────────────────
+
+    IRON_MED_HELM:      1141,
+    IRON_FULL_HELM:     1153,
+    IRON_SQ_SHIELD:     1175,
+    IRON_KITESHIELD:    1191,
+
+    IRON_DAGGER:        1203,
+    IRON_LONGSWORD:     1293,
+    IRON_2H_SWORD:      1309,
 
     // Food
     BREAD:              2309,
@@ -196,7 +218,7 @@ export const Locations = {
 
     // ── Skilling stations ─────────────────────────────────────────────────────
     LUMBRIDGE_RANGE:         [3209, 3216, 0] as [number, number, number],  // Lumbridge castle kitchen range (lower burn chance)
-    FIRE_LUMBRIDGE_ROAD:     [3243, 3218, 0] as [number, number, number],  // firemaking spot
+    FIRE_LUMBRIDGE_ROAD:     [3218, 3253, 0] as [number, number, number],  // firemaking spot
     AL_KHARID_FURNACE:       [3192, 3162, 0] as [number, number, number],
     VARROCK_ANVIL:           [3188, 3422, 0] as [number, number, number],
     LUMBRIDGE_ALTAR:         [3243, 3210, 0] as [number, number, number],

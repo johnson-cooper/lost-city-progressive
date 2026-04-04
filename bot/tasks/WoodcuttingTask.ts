@@ -27,6 +27,7 @@ import {
     isAdjacentToLoc, openNearbyGate,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import { findNpcByPrefix } from './BotTaskBase.js';
 
 export class WoodcuttingTask extends BotTask {
     private step: SkillStep;
@@ -73,38 +74,27 @@ export class WoodcuttingTask extends BotTask {
         }
 
         // ── Sell logs at general store ────────────────────────────────────────
-        if (this.state === 'bank_walk') {
-            const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
-            if (!isNear(player, sx, sz, 8, sl)) {
-                this._stuckWalk(player, sx, sz, sl);
-                return;
-            }
-            const shopNpc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
-            if (!shopNpc) { walkTo(player, sx, sz); return; }
-            interactNpcOp(player, shopNpc, 3);
-            this.cooldown = 3;
-            this.state    = 'bank_done';
-            return;
+  if (this.state === 'bank_walk') {
+            const [bx, bz] = Locations.DRAYNOR_BANK;
+            if (!isNear(player, bx, bz, 8)) { this._stuckWalk(player, bx, bz); return; }
+            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
+            if (!banker) { walkTo(player, bx, bz); return; }
+            interactNpcOp(player, banker, 3);
+            this.cooldown = 4; this.state = 'bank_done'; return;
         }
 
         if (this.state === 'bank_done') {
-            this._sellLogs(player);
-            this.state    = 'walk';
-            this.cooldown = 2;
-            return;
+            this._depositLoot(player);
+            this.state = 'walk'; this.cooldown = 3; return;
         }
 
-        // ── Sell when inventory full ──────────────────────────────────────────
-        if (isInventoryFull(player)) {
-            this.state = 'bank_walk';
-            return;
-        }
+        if (isInventoryFull(player)) { this.state = 'bank_walk'; return; }
 
         // ── Walk to tree area ─────────────────────────────────────────────────
         if (this.state === 'walk') {
             const [lx, lz, ll] = this.step.location;
             if (!isNear(player, lx, lz, 15, ll)) {
-                this._stuckWalk(player, lx, lz, ll);
+                this._stuckWalk(player, lx, lz,);
                 return;
             }
             this.state = 'approach'; // arrived — now find and approach a tree
@@ -255,34 +245,28 @@ export class WoodcuttingTask extends BotTask {
         }
     }
 
-    // ── Sell logs ─────────────────────────────────────────────────────────────
 
-    private static readonly SELL_PRICES: Record<number, number> = {
-        [Items.LOGS]:        3,
-        [Items.OAK_LOGS]:    6,
-        [Items.WILLOW_LOGS]: 14,
-        [Items.MAPLE_LOGS]:  25,
-        [Items.YEW_LOGS]:    50,
-    };
-
-    private _sellLogs(player: Player): void {
+        private _depositLoot(player: Player): void {
         const inv = player.getInventory(InvType.INV);
-        if (!inv) return;
-        let coins = 0;
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+        const bank = player.getInventory(bid);
+        if (!bank) return;
         for (let slot = 0; slot < inv.capacity; slot++) {
             const item = inv.get(slot);
             if (!item) continue;
             if (this.step.toolItemIds.includes(item.id)) continue;
             if (item.id === Items.COINS) continue;
-            coins += item.count * (WoodcuttingTask.SELL_PRICES[item.id] ?? 1);
-            inv.remove(item.id, item.count);
+            const moved = inv.remove(item.id, item.count);
+            if (moved.completed > 0) bank.add(item.id, moved.completed);
         }
-        if (coins > 0) addItem(player, Items.COINS, coins);
+            console.log(`[WC:${player.username}] Deposited logs into the bank.`);
     }
+
 
     // ── Stuck walk with gate opener ───────────────────────────────────────────
 
-    private _stuckWalk(player: Player, lx: number, lz: number, ll: number): void {
+    private _stuckWalk(player: Player, lx: number, lz: number): void {
         if (!this.stuck.check(player, lx, lz)) {
             walkTo(player, lx, lz);
             return;
@@ -292,7 +276,6 @@ export class WoodcuttingTask extends BotTask {
             this.stuck.reset();
             return;
         }
-        // Try opening a nearby gate before doing a perpendicular escape
         if (openNearbyGate(player, 5)) return;
 
         const dx   = lx - player.x;

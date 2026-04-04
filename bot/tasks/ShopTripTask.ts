@@ -15,6 +15,7 @@ import {
     hasItem, countItem, addItem, removeItem, isNear,
     Items, Shops,
     teleportToSafety, teleportNear, randInt, StuckDetector,
+    openNearbyGate,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
 export class ShopTripTask extends BotTask {
@@ -66,7 +67,7 @@ export class ShopTripTask extends BotTask {
         // ── Walk to shop ──────────────────────────────────────────────────────
         if (this.state === 'walk') {
             if (!isNear(player, sx, sz, 8, sl)) {
-                this._stuckCheck(player, sx, sz);
+                this._stuckWalk(player, sx, sz);
                 walkTo(player, sx, sz);
                 return;
             }
@@ -133,18 +134,22 @@ export class ShopTripTask extends BotTask {
         return canBuy;
     }
 
-    private _stuckCheck(player: Player, destX: number, destZ: number): void {
-        if (!this.stuck.check(player, destX, destZ)) return;
-        if (this.stuck.desperatelyStuck) {
-            teleportNear(player, destX, destZ);
-            this.stuck.reset();
-            return;
-        }
-        // Perpendicular escape to break oscillation
-        const dx   = destX - player.x;
-        const dz   = destZ - player.z;
-        const escX = player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10));
-        const escZ = player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10));
-        walkTo(player, escX, escZ);
-    }
+    private _stuckWalk(player: Player, lx: number, lz: number): void {
+           if (!this.stuck.check(player, lx, lz)) {
+               walkTo(player, lx, lz);
+               return;
+           }
+           if (this.stuck.desperatelyStuck) {
+               teleportNear(player, lx, lz);
+               this.stuck.reset();
+               return;
+           }
+           if (openNearbyGate(player, 5)) return;
+   
+           const dx   = lx - player.x;
+           const dz   = lz - player.z;
+           const escX = player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10));
+           const escZ = player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10));
+           walkTo(player, escX, escZ);
+}
 }

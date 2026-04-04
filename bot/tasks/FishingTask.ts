@@ -245,7 +245,9 @@ export class FishingTask extends BotTask {
             if (moved.completed > 0) {
                 bank.add(item.id, moved.completed);
             }
+             console.log(`[FSH:${player.username}] Deposited fish into the bank.`);
         }
+
     }
 
     // ── Stuck handling (WC-style upgrade) ────────────────────────────────────

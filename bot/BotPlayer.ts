@@ -16,7 +16,7 @@
 
 import Player from '#/engine/entity/Player.js';
 import InvType from '#/cache/config/InvType.js';
-import { BotTask, IdleTask } from '#/engine/bot/tasks/index.js';
+import { BotTask, IdleTask } from '#/engine/bot/tasks/Index.js';
 import { BotGoalPlanner } from '#/engine/bot/BotGoalPlanner.js';
 import { getBaseLevel, PlayerStat } from '#/engine/bot/BotAction.js';
 
@@ -55,10 +55,12 @@ export class BotPlayer {
 
     tick(): void {
         this.ticksAlive++;
+        this.player.afkEventReady = false
 
         // Force appearance mask every tick so nearby clients always see the bot.
         // buildAppearance() sets PlayerInfoProt.APPEARANCE in player.masks.
         this.player.buildAppearance(InvType.WORN);
+        
 
         if (this.ticksAlive === 1) {
             this.log(`Online at (${this.player.x}, ${this.player.z}, ${this.player.level}) slot=${this.player.slot}`);

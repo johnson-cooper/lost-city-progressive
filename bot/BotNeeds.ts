@@ -83,7 +83,8 @@ export function getMissingPurchases(player: Player, step: SkillStep): Purchase[]
 
         // Find which shop sells this tool
         let found = false;
-        for (const [shopKey, shop] of Object.entries(Shops)) {
+            for (const shopKey in Shops) {
+            const shop = Shops[shopKey];
             const shopItem = shop.stock.find(s => s.itemId === toolId);
             if (!shopItem) continue;
 
@@ -135,7 +136,8 @@ export function totalCostOfMissing(player: Player, step: SkillStep): number {
     let total = 0;
     for (const toolId of step.toolItemIds) {
         if (hasTool(player, toolId)) continue;
-        for (const shop of Object.values(Shops)) {
+        for (const shopKey in Shops) {
+            const shop = Shops[shopKey];
             const item = shop.stock.find(s => s.itemId === toolId);
             if (!item) continue;
             const isBulk = toolId === Items.FISHING_BAIT || toolId === Items.FEATHER || toolId === Items.BRONZE_ARROW;

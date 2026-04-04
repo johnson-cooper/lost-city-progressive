@@ -9,7 +9,6 @@ import kleur from 'kleur';
 import forge from 'node-forge';
 import { TTLCache } from '@isaacs/ttlcache';
 
-
 // lostcity
 import CategoryType from '#/cache/config/CategoryType.js';
 import Component from '#/cache/config/Component.js';
@@ -94,15 +93,15 @@ import Environment from '#/util/Environment.js';
 import { fromBase37, toBase37, toSafeName } from '#/util/JString.js';
 import LinkList from '#/datastruct/LinkList.js';
 import { printDebug, printError, printInfo } from '#/util/Logger.js';
-import { WalkTriggerSetting } from '#/engine/entity/WalkTriggerSetting.js';
-
 import OnDemand from './OnDemand.js';
 import { ObjDelayedRequest } from './entity/ObjDelayedRequest.js';
 import DbTableIndex from '#/cache/config/DbTableIndex.js';
 import VarBitType from '#/cache/config/VarBitType.js';
 import FriendlistLoaded from '#/network/game/server/model/FriendlistLoaded.js';
 import HashTable from '#/datastruct/HashTable.js';
+import Midi from '#/cache/midi/Midi.js';
 import { BotManager } from '#/engine/bot/BotManager.js';
+
 const priv = forge.pki.privateKeyFromPem(fs.readFileSync('data/config/private.pem', 'ascii'));
 
 type LogoutRequest = {
@@ -295,6 +294,7 @@ class World {
 
         FontType.load('data/pack');
         WordEnc.load('data/pack');
+        Midi.load();
 
         this.reload();
 
@@ -328,10 +328,7 @@ class World {
 
         if (startCycle) {
             OnDemand.cycle();
-
-            // Spawn all bots into the world's login queue
             BotManager.init(this);
-
             this.nextTick = Date.now() + World.TICKRATE;
             this.cycle();
         }
@@ -378,8 +375,8 @@ class World {
             // - movement
             // - close interface if attempting to logout
             this.processPlayers();
-
             BotManager.tick();
+
             // player logout
             this.processLogouts();
 
@@ -617,35 +614,16 @@ class World {
                 player.processInputTracking();
 
                 if (isClientConnected(player) && player.decodeIn()) {
-                    const followingPlayer = player.targetOp === ServerTriggerType.APPLAYER3 || player.targetOp === ServerTriggerType.OPPLAYER3;
                     if (player.userPath.length > 0 || player.opcalled) {
                         if (player.delayed) {
                             player.unsetMapFlag();
                             continue;
                         }
 
-                        if ((!player.target || player.target instanceof Loc || player.target instanceof Obj) && player.faceEntity !== -1) {
-                            player.faceEntity = -1;
-                            player.masks |= player.entitymask;
-                        }
-
                         if (!player.busy() && player.opcalled) {
                             player.moveClickRequest = false;
                         } else {
                             player.moveClickRequest = true;
-                        }
-
-                        if (!followingPlayer && player.opcalled && (player.userPath.length === 0 || !Environment.NODE_CLIENT_ROUTEFINDER)) {
-                            player.pathToTarget();
-                            continue;
-                        }
-
-                        if (Environment.NODE_WALKTRIGGER_SETTING !== WalkTriggerSetting.PLAYERPACKET) {
-                            player.pathToMoveClick(player.userPath, !Environment.NODE_CLIENT_ROUTEFINDER);
-
-                            if (Environment.NODE_WALKTRIGGER_SETTING === WalkTriggerSetting.PLAYERSETUP && !player.opcalled && player.hasWaypoints()) {
-                                player.processWalktrigger();
-                            }
                         }
                     }
                 }
@@ -728,6 +706,8 @@ class World {
                 }
                 // - engine queue
                 player.processEngineQueue();
+                // Update target facing
+                player.setFaceEntity();
                 // - interactions
                 // - movement
                 player.processInteraction();
@@ -750,69 +730,94 @@ class World {
         this.cycleStats[WorldStat.PLAYER] = Date.now() - start;
     }
 
-    private processLogouts(): void {
-        const start: number = Date.now();
+   private processLogouts(): void {
+    const start: number = Date.now();
 
-        for (const player of this.playerLoop.all()) {
-            let force = false;
-            if (this.shutdown || this.currentTick - player.lastResponse >= World.TIMEOUT_NO_RESPONSE) {
-                if (isClientConnected(player)) {
-                    // world shutdown or x-logged / timed out for 60s: force logout
-                    player.loggingOut = true;
-                    force = true;
-                } else {
-                    // Headless bot — keep alive by refreshing timestamps each tick
-                    player.lastResponse  = this.currentTick;
-                    player.lastConnected = this.currentTick;
-                }
-            } else if (this.currentTick - player.lastConnected >= World.TIMEOUT_NO_CONNECTION) {
-                if (isClientConnected(player)) {
-                    // connection lost for 30s: request idle logout
-                    player.requestIdleLogout = true;
-                }
-            }
+    for (const player of this.playerLoop.all()) {
+        let force = false;
 
-            if (player.requestLogout || player.requestIdleLogout) {
-                if (this.currentTick >= player.preventLogoutUntil) {
-                    player.loggingOut = true;
-                } else if (player.requestLogout && player.preventLogoutMessage !== null) {
-                    player.messageGame(player.preventLogoutMessage); // engine message type in osrs
-                    player.preventLogoutMessage = null;
-                }
-                player.requestLogout = false;
-                player.requestIdleLogout = false;
-            }
+        // ── Force logout conditions ──────────────────────────────────────
+        if (
+            this.shutdown ||
+            this.currentTick - player.lastResponse >= World.TIMEOUT_NO_RESPONSE
+        ) {
+            // world shutdown or x-logged / timed out for 60s: force logout
+            player.loggingOut = true;
+            force = true;
 
-            if (player.loggingOut && (force || this.currentTick >= player.preventLogoutUntil)) {
-                player.closeModal();
+        // ── Keep-alive (headless bot / active player) ────────────────────
+        } else {
+            player.lastResponse = this.currentTick;
+            player.lastConnected = this.currentTick;
+        }
 
-                let queueDiscardable = true;
-                for (const request of player.queue.all()) {
-                    if (request.type === PlayerQueueType.LONG) {
-                        const logoutAction = request.args[0];
-                        if (logoutAction === 1) {
-                            // ^discard
-                            continue;
-                        }
-                    }
-                    queueDiscardable = false;
-                    break;
-                }
-                if (player.canAccess() && player.engineQueue.head() === null && queueDiscardable) {
-                    const script = ScriptProvider.getByTriggerSpecific(ServerTriggerType.LOGOUT, -1, -1);
-                    if (!script) {
-                        printError('LOGOUT TRIGGER IS BROKEN!');
-                        continue;
-                    }
-
-                    const state = ScriptRunner.init(script, player);
-                    state.pointerAdd(ScriptPointer.ProtectedActivePlayer);
-                    ScriptRunner.execute(state);
-
-                    this.removePlayer(player);
-                }
+        // ── Connection timeout (30s) ─────────────────────────────────────
+        if (
+            !force &&
+            this.currentTick - player.lastConnected >= World.TIMEOUT_NO_CONNECTION
+        ) {
+            if (isClientConnected(player)) {
+                // connection lost for 30s: request idle logout
+                player.requestIdleLogout = true;
             }
         }
+
+        // ── Logout handling ───────────────────────────────────────────────
+        if (player.requestLogout || player.requestIdleLogout) {
+            if (this.currentTick >= player.preventLogoutUntil) {
+                player.loggingOut = true;
+            } else if (player.requestLogout && player.preventLogoutMessage !== null) {
+                player.messageGame(player.preventLogoutMessage);
+                player.preventLogoutMessage = null;
+            }
+
+            player.requestLogout = false;
+            player.requestIdleLogout = false;
+        }
+
+        // ── Final logout execution ────────────────────────────────────────
+        if (player.loggingOut && (force || this.currentTick >= player.preventLogoutUntil)) {
+            player.closeModal();
+
+            let queueDiscardable = true;
+
+            for (const request of player.queue.all()) {
+                if (request.type === PlayerQueueType.LONG) {
+                    const logoutAction = request.args[0];
+                    if (logoutAction === 1) {
+                        continue; // discard
+                    }
+                }
+
+                queueDiscardable = false;
+                break;
+            }
+
+            if (
+                player.canAccess() &&
+                player.engineQueue.head() === null &&
+                queueDiscardable
+            ) {
+                const script = ScriptProvider.getByTriggerSpecific(
+                    ServerTriggerType.LOGOUT,
+                    -1,
+                    -1
+                );
+
+                if (!script) {
+                    printError('LOGOUT TRIGGER IS BROKEN!');
+                    continue;
+                }
+
+                const state = ScriptRunner.init(script, player);
+                state.pointerAdd(ScriptPointer.ProtectedActivePlayer);
+                ScriptRunner.execute(state);
+
+                this.removePlayer(player);
+            }
+        }
+    }
+
 
         for (const [username, request] of this.logoutRequests) {
             if (request.lastAttempt < Date.now() - 15000) {
@@ -921,11 +926,13 @@ class World {
 
                 player.client.state = 1;
 
-                player.client.send(Uint8Array.from([
-                    2,
-                    Math.min(player.staffModLevel, 2),
-                    1 // mouse tracking can only be enabled on login
-                ]));
+                player.client.send(
+                    Uint8Array.from([
+                        2,
+                        Math.min(player.staffModLevel, 2),
+                        1 // mouse tracking can only be enabled on login
+                    ])
+                );
 
                 const remote = player.client.remoteAddress;
                 if (remote.indexOf('.') !== -1) {
@@ -1820,7 +1827,7 @@ class World {
     broadcastMes(message: string): void {
         for (const player of this.playerLoop.all()) {
             if (message.includes('\n')) {
-                message.split('\n').forEach(wrap => player!.wrappedMessageGame(wrap));
+                message.split('\n').forEach(wrap => player.wrappedMessageGame(wrap));
             } else {
                 player.wrappedMessageGame(message);
             }
@@ -1889,10 +1896,7 @@ class World {
             } else if (reply === 10) {
                 // hop timer
                 const { remaining } = msg;
-                client.send(Uint8Array.from([
-                    21,
-                    Math.min(255, remaining! / 1000)
-                ]));
+                client.send(Uint8Array.from([21, Math.min(255, remaining! / 1000)]));
                 client.close();
                 return;
             }
