@@ -1,0 +1,52 @@
+[
+  { "username": "araxxor_prime", "planner": "skiller", "description": "Skiller" },
+  { "username": "zulrah_walker", "planner": "fighter", "description": "Fighter" },
+  { "username": "vorkathslayer", "planner": "balanced", "description": "Balanced" },
+  { "username": "bandos_warborn", "planner": "fighter", "description": "Random" },
+  { "username": "armadyl_zephyr", "planner": "skiller", "description": "Skiller 2" },
+  { "username": "saradominwrath", "planner": "fighter", "description": "Fighter 2" },
+  { "username": "zamorak_furyx", "planner": "random", "description": "Random" },
+
+  { "username": "soulja_grinder", "planner": "skiller", "description": "Skiller" },
+  { "username": "lil_xp_dropz", "planner": "balanced", "description": "Balanced" },
+  { "username": "rickross_maxcash", "planner": "fighter", "description": "Fighter" },
+  { "username": "drake_bankloot", "planner": "random", "description": "Random" },
+  { "username": "future_skiller", "planner": "skiller", "description": "Skiller 2" },
+  { "username": "liluzivault", "planner": "fighter", "description": "Fighter 2" },
+  { "username": "travis_scotted", "planner": "balanced", "description": "Balanced" },
+  { "username": "metroboominxp", "planner": "random", "description": "Random" },
+
+  { "username": "xX_DragonScape_Xx", "planner": "skiller", "description": "Skiller" },
+  { "username": "NoScopeRunePure", "planner": "fighter", "description": "Fighter" },
+  { "username": "ii_AncientMage_ii", "planner": "balanced", "description": "Balanced" },
+  { "username": "PkR_4_Lyfe", "planner": "random", "description": "Random" },
+  { "username": "o0_SlayerGod_0o", "planner": "fighter", "description": "Fighter 2" },
+  { "username": "DarkPkzZ", "planner": "skiller", "description": "Skiller 2" },
+  { "username": "Pure_OwnzU", "planner": "fighter", "description": "Fighter 2" },
+
+  { "username": "xXxSouljaXPxXx", "planner": "skiller", "description": "Skiller" },
+  { "username": "LilGrindz", "planner": "balanced", "description": "Balanced" },
+  { "username": "xxDripLootxx", "planner": "fighter", "description": "Fighter" },
+  { "username": "NoCapMercher", "planner": "random", "description": "Random" },
+  { "username": "CashStackzHD", "planner": "skiller", "description": "Skiller 2" },
+  { "username": "TrapLordScape", "planner": "fighter", "description": "Fighter 2" },
+
+  { "username": "BarrowsGhostX", "planner": "balanced", "description": "Balanced" },
+  { "username": "AbyssRuneX", "planner": "skiller", "description": "Skiller" },
+  { "username": "WhipSpecDemon", "planner": "fighter", "description": "Fighter" },
+  { "username": "MaxCapeDreamz", "planner": "random", "description": "Random" },
+  { "username": "Ironman420v2", "planner": "balanced", "description": "Balanced" },
+
+  { "username": "xbox360_legend", "planner": "skiller", "description": "Skiller" },
+  { "username": "xXxNoScope420xXx", "planner": "fighter", "description": "Fighter" },
+  { "username": "iiToxicSlayerii", "planner": "balanced", "description": "Balanced" },
+  { "username": "xProGamerTagx", "planner": "random", "description": "Random" },
+  { "username": "iiDarkSn1perii", "planner": "fighter", "description": "Fighter 2" },
+  { "username": "xxEliteLootxx", "planner": "skiller", "description": "Skiller 2" },
+
+  { "username": "GodswordPker", "planner": "fighter", "description": "Fighter" },
+  { "username": "RuneDefPure", "planner": "balanced", "description": "Balanced" },
+  { "username": "MysticStaffMain", "planner": "skiller", "description": "Skiller" },
+  { "username": "F2PWarriorX", "planner": "random", "description": "Random" },
+  { "username": "PKHonorBound", "planner": "fighter", "description": "Fighter 2" }
+]

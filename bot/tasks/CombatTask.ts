@@ -9,30 +9,37 @@ import {
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
     openNearbyGate,
 } from '#/engine/bot/tasks/BotTaskBase.js';
+
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
-import { addItem } from '#/engine/bot/BotAction.js';
 
 type CombatExtra = {
     npcName?: string;
     npcType?: string;
+
+    // ✅ NEW (multi-target support)
+    npcTypes?: string[];
+
     npcPrefix?: string;
     npcSuffix?: string;
+
+    hitsToKill?: number; // (you’re already using this too)
 };
 
 export class CombatTask extends BotTask {
     private step: SkillStep;
     private readonly stat: PlayerStat;
 
-private state:
-    | 'walk'
-    | 'scan'
-    | 'interact'
-    | 'shop_walk'
-    | 'shop_open'
-    | 'shop_sell'
-    | 'bank_walk'
-    | 'bank_deposit'
-    = 'walk';
+    private state:
+        | 'walk'
+        | 'patrol'
+        | 'scan'
+        | 'interact'
+        | 'shop_walk'
+        | 'shop_open'
+        | 'shop_sell'
+        | 'bank_walk'
+        | 'bank_deposit'
+        = 'walk';
 
     private interactTicks = 0;
     private approachTicks = 0;
@@ -44,6 +51,13 @@ private state:
     private readonly stuck = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog(150);
 
+    // prevents gate spam + repeated interactions
+    private intentCooldown = 0;
+
+    // patrol roaming
+    private patrolTarget: [number, number] | null = null;
+    private patrolTicks = 0;
+
     constructor(step: SkillStep, stat: PlayerStat) {
         super('Combat');
         this.step = step;
@@ -51,7 +65,7 @@ private state:
     }
 
     // ─────────────────────────────────────────────
-    // SMART DEBUG LOGGER (THROTTLED)
+    // LOGGING
     // ─────────────────────────────────────────────
     private lastLogKey = '';
     private lastLogTime = 0;
@@ -60,9 +74,7 @@ private state:
         const now = Date.now();
         const logKey = key ?? msg;
 
-        if (this.lastLogKey === logKey && now - this.lastLogTime < 750) {
-            return;
-        }
+        if (this.lastLogKey === logKey && now - this.lastLogTime < 750) return;
 
         this.lastLogKey = logKey;
         this.lastLogTime = now;
@@ -79,13 +91,14 @@ private state:
         if (this.interrupted) return;
 
         const banking =
-    this.state === 'shop_walk' ||
-    this.state === 'shop_open' ||
-    this.state === 'shop_sell' ||
-    this.state === 'bank_walk' ||
-    this.state === 'bank_deposit';
+            this.state === 'shop_walk' ||
+            this.state === 'shop_open' ||
+            this.state === 'shop_sell' ||
+            this.state === 'bank_walk' ||
+            this.state === 'bank_deposit';
+
         if (this.watchdog.check(player, banking)) {
-            this._log(player, 'WATCHDOG TRIGGERED → interrupt + teleport', 'watchdog');
+            this._log(player, 'WATCHDOG TRIGGERED → interrupt', 'watchdog');
             this.interrupt();
             return;
         }
@@ -94,6 +107,8 @@ private state:
             this.cooldown--;
             return;
         }
+
+        if (this.intentCooldown > 0) this.intentCooldown--;
 
         // ── LEVEL UPDATE ─────────────────────────────
         const level = getBaseLevel(player, this.stat);
@@ -105,82 +120,89 @@ private state:
         const newStep = getProgressionStep(skillName, level);
         if (newStep && newStep.minLevel > this.step.minLevel) {
             this._log(player, `LEVEL UP → ${this.step.minLevel} → ${newStep.minLevel}`, 'level_up');
-
             this.step = newStep;
             this.state = 'walk';
             this.currentNpc = null;
+            this.scanFail = 0;
+            this.patrolTarget = null;
+            this.patrolTicks = 0;
         }
 
         // ── INVENTORY FULL ───────────────────────────
-        if (isInventoryFull(player) && this.state !== 'bank_walk') {
-            this._log(player, 'INVENTORY FULL → bank_walk', 'inv_full');
+        if (isInventoryFull(player) &&
+            !['bank_walk', 'bank_deposit', 'shop_sell', 'shop_open'].includes(this.state)) {
+            this._log(player, 'INVENTORY FULL → shop_walk', 'inv_full');
             this.state = 'shop_walk';
+            this.currentNpc = null;
+            return;
         }
 
-       if (this.state === 'shop_walk') {
-    const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
+        // ── SHOP ──────────────────────────────────────
+        if (this.state === 'shop_walk') {
+            const [sx, sz, sl] = Locations.LUMBRIDGE_GENERAL;
 
-    if (!isNear(player, sx, sz, 8, sl)) {
-        this._stuckWalk(player, sx, sz);
-        return;
-    }
+            if (!isNear(player, sx, sz, 8, sl)) {
+                this._stuckWalk(player, sx, sz);
+                return;
+            }
 
-    const shopNpc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
-    if (!shopNpc) return;
+            const shopNpc = findNpcByName(player.x, player.z, player.level, 'generalshopkeeper1', 10);
+            if (!shopNpc) return;
 
-    interactNpcOp(player, shopNpc, 3);
+            interactNpcOp(player, shopNpc, 3);
+            this.currentNpc = shopNpc;
+            this.state = 'shop_open';
+            this.cooldown = 2;
+            return;
+        }
 
-    this.currentNpc = shopNpc;
-    this.state = 'shop_open';
-    return;
-}
+        if (this.state === 'shop_open') {
+            this.state = 'shop_sell';
+            return;
+        }
 
-if (this.state === 'shop_open') {
-    this.state = 'shop_sell';
-    return;
-}
+        if (this.state === 'shop_sell') {
+            if (!this.currentNpc) {
+                this.state = 'bank_walk';
+                return;
+            }
 
-if (this.state === 'shop_sell') {
-    if (!this.currentNpc) {
-        this.state = 'bank_walk';
-        return;
-    }
+            this._sellJunk(player, this.currentNpc);
 
-    this._sellJunk(player, this.currentNpc);
+            if (!isInventoryFull(player)) {
+                this.state = 'bank_walk';
+                this.currentNpc = null;
+            }
 
-    if (!isInventoryFull(player)) {
-        this.state = 'bank_walk';
-        this.currentNpc = null;
-    }
+            return;
+        }
 
-    return;
-}
+        // ── BANK ──────────────────────────────────────
+        if (this.state === 'bank_walk') {
+            const [bx, bz] = Locations.DRAYNOR_BANK;
 
-      if (this.state === 'bank_walk') {
-    const [bx, bz] = Locations.DRAYNOR_BANK;
+            if (!isNear(player, bx, bz, 8)) {
+                this._stuckWalk(player, bx, bz);
+                return;
+            }
 
-    if (!isNear(player, bx, bz, 8)) {
-        this._stuckWalk(player, bx, bz);
-        return;
-    }
+            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
+            if (!banker) return;
 
-    const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
-    if (!banker) return;
+            interactNpcOp(player, banker, 3);
+            this.state = 'bank_deposit';
+            this.cooldown = 2;
+            return;
+        }
 
-    interactNpcOp(player, banker, 3);
+        if (this.state === 'bank_deposit') {
+            this._depositGold(player);
+            this._depositLoot(player);
 
-    this.state = 'bank_deposit';
-    return;
-}
-
-if (this.state === 'bank_deposit') {
-    this._depositGold(player);
-    this._depositLoot(player);
-
-    this.state = 'walk';
-    this.cooldown = 3;
-    return;
-}
+            this.state = 'walk';
+            this.cooldown = 3;
+            return;
+        }
 
         // ── WALK ──────────────────────────────────────
         if (this.state === 'walk') {
@@ -191,74 +213,111 @@ if (this.state === 'bank_deposit') {
                 return;
             }
 
-            this.state = 'scan';
-            this.scanFail = 0;
+            // roam a bit before scanning to look more human
+            this.state = 'patrol';
+            this.patrolTicks = 0;
+            this.patrolTarget = null;
             return;
         }
 
-if (this.state === 'scan') {
-    let npc = this._findTargetNpc(player);
+        // ── PATROL ────────────────────────────────────
+        if (this.state === 'patrol') {
+            const [cx, cz] = this.step.location;
 
-    // ─────────────────────────────────────────
-    // NO NPC FOUND
-    // ─────────────────────────────────────────
-    if (!npc) {
-        this.scanFail++;
+            this.patrolTicks++;
 
-        if (this.scanFail === 1 || this.scanFail === 2) {
-            this._log(player, `scan failed (${this.scanFail})`, 'scan_fail');
+            // pick a new target every few ticks
+            if (!this.patrolTarget || this.patrolTicks % randInt(3, 6) === 0) {
+                this.patrolTarget = [
+                    cx + randInt(-12, 8),
+                    cz + randInt(-12, 8)
+                ];
+            }
+
+            const [tx, tz] = this.patrolTarget;
+            walkTo(player, tx, tz);
+
+            // occasionally search for NPCs while roaming
+            if (this.patrolTicks % 2 === 0) {
+                let npc = this._findTargetNpc(player);
+
+                if (!npc) {
+                    npc = this._findTargetNpcWider(player);
+                }
+
+                if (npc) {
+                    this._log(player, `patrol found NPC → ${this._npcLabel(npc)}`, 'patrol_found');
+
+                    this.currentNpc = npc;
+                    interactNpcOp(player, npc, 2);
+
+                    this.state = 'interact';
+                    this.interactTicks = 0;
+                    this.approachTicks = 0;
+                    this.lastXp = player.stats[this.stat];
+                    this.scanFail = 0;
+                    return;
+                }
+            }
+
+            // after a short roam, switch into scan mode
+            if (this.patrolTicks > randInt(6, 12)) {
+                this.state = 'scan';
+                this.patrolTicks = 0;
+                this.patrolTarget = null;
+            }
+
+            return;
         }
 
-        // 🚨 EARLY GATE ATTEMPT (faster than before)
-        if (this.scanFail === 1 || this.scanFail === 2) {
-            if (openNearbyGate(player, 6)) {
+        // ── SCAN ──────────────────────────────────────
+        if (this.state === 'scan') {
+            if (this.intentCooldown === 0) {
+                if (openNearbyGate(player, 6)) {
+                    this._log(player, 'opened gate during scan', 'gate_open_scan');
+                    this.intentCooldown = 3;
+                    return;
+                }
+            }
+
+            let npc = this._findTargetNpc(player);
+
+            if (!npc) {
+                this.scanFail++;
+
+                if (this.scanFail <= 2) {
+                    this._log(player, `scan fail ${this.scanFail}`, 'scan_fail');
+                }
+
+                if (this.scanFail === 2) {
+                    npc = this._findTargetNpcWider(player);
+                }
+
+                if (this.scanFail === 3) {
+                    this._stuckWalk(player, player.x + randInt(-4, 4), player.z + randInt(-4, 4));
+                    return;
+                }
+
+                if (this.scanFail >= 4) {
+                    this.scanFail = 0;
+                    this.state = 'patrol';
+                }
+
                 return;
             }
-        }
 
-        // 🔄 TRY EXPANDING SEARCH EARLY (important)
-        if (this.scanFail === 2 || this.scanFail === 3) {
-            const widerNpc = this._findTargetNpcWider?.(player) ?? null;
-            if (widerNpc) {
-                npc = widerNpc;
-            }
-        }
+            this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
 
-        // 🧠 ESCAPE STUCK ZONES QUICKER
-        if (this.scanFail === 3) {
-            this._stuckWalk(player,
-                player.x + randInt(-5, 5),
-                player.z + randInt(-5, 5)
-            );
-        }
+            this.currentNpc = npc;
+            interactNpcOp(player, npc, 2);
 
-        // 🚪 FINAL ESCAPE
-        if (this.scanFail > 4) {
-            this.state = 'walk';
+            this.state = 'interact';
+            this.interactTicks = 0;
+            this.approachTicks = 0;
+            this.lastXp = player.stats[this.stat];
             this.scanFail = 0;
+            return;
         }
-
-        return;
-    }
-
-    // ─────────────────────────────────────────
-    // NPC FOUND
-    // ─────────────────────────────────────────
-    this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
-
-    this.currentNpc = npc;
-    interactNpcOp(player, npc, 2);
-
-    this.state = 'interact';
-    this.interactTicks = 0;
-    this.approachTicks = 0;
-    this.lastXp = player.stats[this.stat];
-
-    // reset scan fail immediately on success
-    this.scanFail = 0;
-
-    return;
-}
 
         // ── COMBAT ───────────────────────────────────
         if (this.state === 'interact') {
@@ -270,7 +329,6 @@ if (this.state === 'scan') {
                 this.lastXp = player.stats[this.stat];
                 this.interactTicks = 0;
                 this.approachTicks = 0;
-                this.watchdog.notifyActivity();
                 return;
             }
 
@@ -303,7 +361,6 @@ if (this.state === 'scan') {
 
     override reset(): void {
         super.reset();
-        this._log(null, 'RESET TASK', 'reset');
 
         this.state = 'walk';
         this.interactTicks = 0;
@@ -311,23 +368,86 @@ if (this.state === 'scan') {
         this.lastXp = 0;
         this.scanFail = 0;
         this.currentNpc = null;
+        this.intentCooldown = 0;
+
+        this.patrolTarget = null;
+        this.patrolTicks = 0;
+
         this.stuck.reset();
         this.watchdog.reset();
     }
 
-    // ─────────────────────────────────────────────
-    // NPC LABEL HELPER
-    // ─────────────────────────────────────────────
     private _npcLabel(npc: Npc): string {
         const anyNpc = npc as any;
         return anyNpc.type ?? anyNpc.name ?? anyNpc.index ?? 'unknown';
     }
-private _findTargetNpcWider(player: Player): Npc | null {
+
+    // ─────────────────────────────────────────────
+    // NPC SEARCH
+    // ─────────────────────────────────────────────
+private _findTargetNpc(player: Player): Npc | null {
     const extra = this.step.extra as CombatExtra | undefined;
+    const radius = 22;
 
-    const radius = 25; // wider than normal
+    if (!extra) return null;
 
-    for (const name of [extra?.npcType, extra?.npcName].filter(Boolean) as string[]) {
+    // ── normalize all possible inputs into one array
+    const names: string[] = [];
+
+    if (extra.npcTypes?.length) {
+        names.push(...extra.npcTypes);
+    }
+
+    if (extra.npcType) {
+        names.push(extra.npcType);
+    }
+
+    if (extra.npcName) {
+        names.push(extra.npcName);
+    }
+
+    // ── randomize so bots don’t all pick same NPC
+    for (const name of names.sort(() => Math.random() - 0.5)) {
+        const npc =
+            findNpcByName(player.x, player.z, player.level, name, radius) ??
+            findNpcByPrefix(player.x, player.z, player.level, name, radius);
+
+        if (npc) return npc;
+    }
+
+    // ── fallback matching
+    if (extra.npcPrefix) {
+        return findNpcByPrefix(player.x, player.z, player.level, extra.npcPrefix, radius);
+    }
+
+    if (extra.npcSuffix) {
+        return findNpcBySuffix(player.x, player.z, player.level, extra.npcSuffix, radius);
+    }
+
+    return null;
+}
+
+   private _findTargetNpcWider(player: Player): Npc | null {
+    const extra = this.step.extra as CombatExtra | undefined;
+    const radius = 30;
+
+    if (!extra) return null;
+
+    const names: string[] = [];
+
+    if (extra.npcTypes?.length) {
+        names.push(...extra.npcTypes);
+    }
+
+    if (extra.npcType) {
+        names.push(extra.npcType);
+    }
+
+    if (extra.npcName) {
+        names.push(extra.npcName);
+    }
+
+    for (const name of names.sort(() => Math.random() - 0.5)) {
         const npc =
             findNpcByName(player.x, player.z, player.level, name, radius) ??
             findNpcByPrefix(player.x, player.z, player.level, name, radius);
@@ -337,51 +457,54 @@ private _findTargetNpcWider(player: Player): Npc | null {
 
     return null;
 }
+
     // ─────────────────────────────────────────────
-    // SELL VALUES
+    // STUCK SYSTEM
     // ─────────────────────────────────────────────
-    private static readonly SELL_PRICES: Record<number, number> = {
-        [Items.LOGS]: 3,
-        [Items.OAK_LOGS]: 6,
-        [Items.WILLOW_LOGS]: 14,
-        [Items.MAPLE_LOGS]: 25,
-        [Items.YEW_LOGS]: 50,
+    private _stuckWalk(player: Player, lx: number, lz: number): void {
+        if (!this.stuck.check(player, lx, lz)) {
+            walkTo(player, lx, lz);
+            return;
+        }
 
-        [Items.BONES]: 1,
-        [Items.COW_HIDE]: 3,
+        if (this.stuck.desperatelyStuck) {
+            teleportNear(player, lx, lz);
+            this.stuck.reset();
+            return;
+        }
 
-        // ── Low-tier gear (general store junk prices) ──
-        [Items.GOBLIN_MAIL]: 10,
+        if (openNearbyGate(player, 5)) {
+            this.intentCooldown = 3;
+            return;
+        }
 
-        [Items.BRONZE_MED_HELM]: 6,
-        [Items.BRONZE_FULL_HELM]: 8,
-        [Items.BRONZE_SQ_SHIELD]: 10,
-        [Items.BRONZE_KITESHIELD]: 14,
-
-        [Items.BRONZE_DAGGER]: 4,
-        [Items.BRONZE_LONGSWORD]: 10,
-        [Items.BRONZE_2H_SWORD]: 16,
-    };
-
-  private _sellJunk(player: Player, shopNpc: Npc): void {
-    const inv = player.getInventory(InvType.INV);
-    if (!inv) return;
-
-    const protectedItems = new Set(this.step.toolItemIds);
-
-    for (let slot = 0; slot < inv.capacity; slot++) {
-        const item = inv.get(slot);
-        if (!item) continue;
-
-        // keep tools + coins
-        if (protectedItems.has(item.id)) continue;
-        if (item.id === Items.COINS) continue;
-
-        // sell via NPC interaction (REAL SELL, not simulated)
-        interactNpcOp(player, shopNpc, 3);
-        return; // IMPORTANT: one action per tick
+        walkTo(
+            player,
+            player.x + randInt(-10, 10),
+            player.z + randInt(-10, 10)
+        );
     }
-}
+
+    // ─────────────────────────────────────────────
+    // SHOP + BANK
+    // ─────────────────────────────────────────────
+    private _sellJunk(player: Player, shopNpc: Npc): void {
+        const inv = player.getInventory(InvType.INV);
+        if (!inv) return;
+
+        const protectedItems = new Set(this.step.toolItemIds);
+
+        for (let slot = 0; slot < inv.capacity; slot++) {
+            const item = inv.get(slot);
+            if (!item) continue;
+
+            if (protectedItems.has(item.id)) continue;
+            if (item.id === Items.COINS) continue;
+
+            interactNpcOp(player, shopNpc, 3);
+            return;
+        }
+    }
 
     private _depositGold(player: Player): void {
         const inv = player.getInventory(InvType.INV);
@@ -422,46 +545,5 @@ private _findTargetNpcWider(player: Player): Npc | null {
                 bank.add(item.id, moved.completed);
             }
         }
-    }
-
-    private _findTargetNpc(player: Player): Npc | null {
-        const extra = this.step.extra as CombatExtra | undefined;
-
-        for (const name of [extra?.npcType, extra?.npcName].filter(Boolean) as string[]) {
-            const npc =
-                findNpcByName(player.x, player.z, player.level, name, 15) ??
-                findNpcByPrefix(player.x, player.z, player.level, name, 15);
-
-            if (npc) return npc;
-        }
-
-        if (extra?.npcPrefix) {
-            return findNpcByPrefix(player.x, player.z, player.level, extra.npcPrefix, 15);
-        }
-
-        if (extra?.npcSuffix) {
-            return findNpcBySuffix(player.x, player.z, player.level, extra.npcSuffix, 15);
-        }
-
-        return null;
-    }
-
-        private _stuckWalk(player: Player, lx: number, lz: number): void {
-        if (!this.stuck.check(player, lx, lz)) {
-            walkTo(player, lx, lz);
-            return;
-        }
-        if (this.stuck.desperatelyStuck) {
-            teleportNear(player, lx, lz);
-            this.stuck.reset();
-            return;
-        }
-        if (openNearbyGate(player, 5)) return;
-
-        const dx   = lx - player.x;
-        const dz   = lz - player.z;
-        const escX = player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10));
-        const escZ = player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10));
-        walkTo(player, escX, escZ);
     }
 }

@@ -402,12 +402,20 @@ export function isAdjacentToLoc(player: Player, loc: { x: number; z: number; typ
 export function openNearbyGate(player: Player, radius = 5): boolean {
     const blocker = _findLoc(player.x, player.z, player.level, radius, loc => {
         const t = LocType.get(loc.type);
-        // op1="Open" is the universal signal for closed doors and gates.
-        // Covers named gates (chicken pen, cow field), unnamed loc_XXXX gates,
-        // and wooden doors — all use op1=Open when closed.
-        return t.op?.[0]?.toLowerCase() === 'open';
+
+        const ops = (t.op ?? [])
+            .filter((o): o is string => typeof o === 'string')
+            .map(o => o.toLowerCase());
+
+        const isClosedGate =
+            ops.includes('open') &&
+            !ops.includes('close');
+
+        return isClosedGate;
     });
+
     if (!blocker) return false;
+
     interactLoc(player, blocker as any);
     return true;
 }

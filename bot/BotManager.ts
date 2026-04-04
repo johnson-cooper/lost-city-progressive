@@ -33,6 +33,48 @@ import {
 import { PlayerLoading } from '#/engine/entity/PlayerLoading.js';
 import Packet from '#/io/Packet.js';
 import { Locations } from '#/engine/bot/BotKnowledge.js';
+import { BotAppearance } from '#/engine/bot/BotAppearance.js';
+import InvType from '#/cache/config/InvType.js';
+const PLANNER_MAP = {
+    skiller: makeSkiller,
+    fighter: makeFighter,
+    balanced: makeBalanced,
+    random: makeRandom,
+} as const;
+
+type PlannerKey = keyof typeof PLANNER_MAP;
+
+function loadBotConfigs(): BotConfig[] {
+    const filePath = path.join(__dirname, 'bots.config.json');
+
+    try {
+        const raw = fs.readFileSync(filePath, 'utf8');
+        const json = JSON.parse(raw);
+
+        if (!Array.isArray(json)) {
+            throw new Error('bots.config.json must be an array');
+        }
+
+        return json.map((b: any) => {
+            const plannerKey = b.planner as PlannerKey;
+
+            if (!PLANNER_MAP[plannerKey]) {
+                throw new Error(`Invalid planner: ${b.planner}`);
+            }
+
+            return {
+                username: b.username,
+                description: b.description,
+                makePlanner: PLANNER_MAP[plannerKey],
+            };
+        });
+    } catch (err) {
+        console.error('[BotManager] Failed to load bots.config.json:', err);
+
+        // fallback so server still boots
+        return [];
+    }
+}
 
 // ── Bot definitions ───────────────────────────────────────────────────────────
 
@@ -42,15 +84,7 @@ interface BotConfig {
     description: string;
 }
 
-const BOT_CONFIGS: BotConfig[] = [
-    { username: 'alice',   makePlanner: makeSkiller,  description: 'Skiller'   },
-    { username: 'bob',     makePlanner: makeFighter,  description: 'Fighter'   },
-    { username: 'charlie', makePlanner: makeBalanced, description: 'Balanced'  },
-    { username: 'dave',    makePlanner: makeRandom,   description: 'Random'    },
-    { username: 'eve',     makePlanner: makeSkiller,  description: 'Skiller 2' },
-    { username: 'frank',   makePlanner: makeFighter,  description: 'Fighter 2' },
-    { username: 'findme',   makePlanner: makeFighter,  description: 'Fighter 2' },
-];
+const BOT_CONFIGS: BotConfig[] = loadBotConfigs();
 
 const STATUS_EVERY_TICKS = 100;
 
@@ -96,7 +130,7 @@ class BotManagerClass {
 
     // ── Private ───────────────────────────────────────────────────────────────
 
-    private _spawnBot(cfg: BotConfig): void {
+   private _spawnBot(cfg: BotConfig): void {
     if (!this.world) return;
 
     let packet: Packet;
@@ -109,7 +143,6 @@ class BotManagerClass {
         if (fs.existsSync(savePath)) {
             save = fs.readFileSync(savePath);
 
-            // safety: empty or corrupted file guard
             if (!save || save.length === 0) {
                 save = Buffer.alloc(0);
             }
@@ -133,25 +166,51 @@ class BotManagerClass {
         player = PlayerLoading.load(cfg.username, new Packet(new Uint8Array(0)), null);
     }
 
-    // ── fallback spawn position if save doesn't include coords
+    // ─────────────────────────────────────────────
+    // spawn fallback position
+    // ─────────────────────────────────────────────
     const [x, z, l] = Locations.LUMBRIDGE_SPAWN;
 
     player.x = player.x ?? x;
     player.z = player.z ?? z;
     player.level = player.level ?? l;
+    // prevent tutorial island logic from interfering
+(player as any).inTutorialIsland = false;
+(player as any).tutorialStage = 0;
 
-    // ── ensure baseLevels always valid
+    // ─────────────────────────────────────────────
+    // ensure base stats
+    // ─────────────────────────────────────────────
     if (!player.baseLevels || player.baseLevels.length !== 21) {
         player.baseLevels = new Uint8Array(21);
     }
 
-    // ── store XP baseline safely
+    // ─────────────────────────────────────────────
+    // 🔥 IMPORTANT: APPLY BOT APPEARANCE HERE
+    // ─────────────────────────────────────────────
+    try {
+        BotAppearance.randomize(player);
+    } catch (err) {
+        console.error(`[BotManager] BotAppearance failed for ${cfg.username}:`, err);
+    }
+
+    // ─────────────────────────────────────────────
+    // store XP baseline
+    // ─────────────────────────────────────────────
     this.prevLevels.set(cfg.username, new Uint8Array(player.baseLevels));
 
+    // ─────────────────────────────────────────────
+    // spawn bot
+    // ─────────────────────────────────────────────
     const bot = new BotPlayer(player, cfg.makePlanner());
     this.bots.set(cfg.username, bot);
 
     this.world.newPlayers.add(player);
+
+    // ─────────────────────────────────────────────
+    // ensure client sees correct appearance
+    // ─────────────────────────────────────────────
+    player.buildAppearance(InvType.WORN);
 
     console.log(`[BotManager] Loaded bot: ${cfg.username}`);
 }

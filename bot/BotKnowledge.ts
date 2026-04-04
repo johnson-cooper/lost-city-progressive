@@ -467,7 +467,9 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     ATTACK: [
         // Chickens / goblins (lvl 1-9): buy bronze sword from Varrock
         { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken', hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'goblin',  hitsToKill: 3 } },
+        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.TREES_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: {npcTypes: ['goblin', 'giant spider', 'giant rat'],hitsToKill: 3},},
+        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'goblin',hitsToKill: 3 } },
+        { minLevel: 1, maxLevel: 9, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.BRONZE_SWORD],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
         // Cows (lvl 10-19): buy iron scimitar from Al Kharid
         { minLevel: 10, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
         // Cows (lvl 20-39): steel scimitar
