@@ -156,17 +156,6 @@ export function interactNpcOp(player: Player, npc: Npc, op: 1 | 2 | 3 | 4 | 5): 
     const trigger = (ServerTriggerType.APNPC1 + (op - 1)) as ServerTriggerType;
     player.clearPendingAction();
     player.setInteraction(Interaction.ENGINE, npc, trigger);
-    if(op === 2) {
-        if(Math.random() < 0.05) { //1 in 20 chance to change style
-            const varp = VarPlayerType.getByName('attackstyle');
-            if (!varp) {
-                //empty
-            } else {
-                player.setVar(varp.id, Math.floor(Math.random() * 4));
-                console.log('BOT Attack style set to: ' + player.getVar(varp.id));
-            }
-        }
-    }
 }
 
 export function interactObjOp(
@@ -408,14 +397,20 @@ export function addXp(player: Player, stat: PlayerStat, xp: number): void {
 }
 
 /**
- * Sets the player's melee attack style varp.
- *   0 = Accurate   → Attack XP
- *   1 = Aggressive → Strength XP
- *   2 = Aggressive (second slot, weapon-dependent)
- *   3 = Defensive  → Defence XP
+ * Sets the player's melee combat mode (com_mode varp).
+ * This is the varp the combat engine reads to pick damagestyle from the weapon table.
+ *
+ * For unarmed (weapon_unarmed_table):
+ *   0 = Accurate   → style_melee_accurate  → Attack XP
+ *   1 = Aggressive → style_melee_aggressive → Strength XP
+ *   2 = Defensive  → style_melee_defensive  → Defence XP
+ *   3 → clamped to 2 by player_combat_stat  → Defence XP (safe alias)
+ *
+ * player_combat_stat re-reads com_mode every time a stat changes (via [changestat,_]),
+ * so the new style takes effect on the first XP gain after this call.
  */
 export function setCombatStyle(player: Player, style: 0 | 1 | 2 | 3): void {
-    const varp = VarPlayerType.getByName('attackstyle');
+    const varp = VarPlayerType.getByName('com_mode');
     if (varp) player.setVar(varp.id, style);
 }
 
@@ -467,7 +462,7 @@ export function clearBackpack(player: Player): void {
  * Returns true if the item was added and the obj removed from the world.
  */
 export function pickupGroundItem(player: Player, obj: Obj): boolean {
-    if (!obj.isValid(player.hash64)) return false;
+    if (!obj.isValid()) return false; // skip ownership/reveal check — NPC drops have a specific receiver64 that won't match the bot's hash64
 
     const inv = getBackpack(player);
     if (!inv) return false;
