@@ -12,6 +12,7 @@
  *   BotManager.init(World)   ← pass the instance, not imported at module level
  */
 
+import Obj from '#/engine/entity/Obj.js';
 import type GameMap from '#/engine/GameMap.js';
 
 // World interface — only the fields bot code actually needs
@@ -20,6 +21,7 @@ export interface BotWorldHandle {
     newPlayers:   Set<any>;
     shutdown:     boolean;
     shutdownSoon: boolean;
+    removeObj: (obj: Obj) => void;
 }
 
 let _world: BotWorldHandle | null = null;

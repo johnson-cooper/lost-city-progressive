@@ -49,6 +49,9 @@ import InvType from '#/cache/config/InvType.js';
 import { getWorld } from '#/engine/bot/BotWorld.js';
 import { botWalkPath, botFindPath } from '#/engine/GameMap.js';
 import { MoveSpeed } from '#/engine/entity/MoveSpeed.js';
+import VarPlayerType from '#/cache/config/VarPlayerType.js';
+import Obj from '#/engine/entity/Obj.js';
+import ObjType from '#/cache/config/ObjType.js';
 
 
 export { PlayerStat };
@@ -153,6 +156,96 @@ export function interactNpcOp(player: Player, npc: Npc, op: 1 | 2 | 3 | 4 | 5): 
     const trigger = (ServerTriggerType.APNPC1 + (op - 1)) as ServerTriggerType;
     player.clearPendingAction();
     player.setInteraction(Interaction.ENGINE, npc, trigger);
+    if(op === 2) {
+        if(Math.random() < 0.05) { //1 in 20 chance to change style
+            const varp = VarPlayerType.getByName('attackstyle');
+            if (!varp) {
+                //empty
+            } else {
+                player.setVar(varp.id, Math.floor(Math.random() * 4));
+                console.log('BOT Attack style set to: ' + player.getVar(varp.id));
+            }
+        }
+    }
+}
+
+export function interactObjOp(
+    player: Player,
+    obj: Obj,
+    op: 1 | 2 | 3 | 4 | 5
+): void {
+    const trigger = (ServerTriggerType.APOBJ1 + (op - 1)) as ServerTriggerType;
+
+    player.clearPendingAction();
+    player.setInteraction(Interaction.ENGINE, obj, trigger);
+
+    // OPTIONAL: auto-pickup QoL (safe to include or remove)
+    if (op === 1) {
+        // could later add anti-misclick, loot priority, etc.
+        // console.log('BOT picking up object:', obj.type);
+    }
+}
+
+//Ground items
+function _findObj(
+    cx: number, cz: number, level: number,
+    radius: number,
+    predicate: (obj:Obj) => boolean
+): Obj | null {
+    let best: Obj | null = null;
+    let bestDist = Infinity;
+
+    // Scan a grid of zones around the centre point
+    const zoneRadius = Math.ceil(radius / 8) + 1;
+    for (let dz = -zoneRadius; dz <= zoneRadius; dz++) {
+        for (let dx = -zoneRadius; dx <= zoneRadius; dx++) {
+            const zx = cx + dx * 8;
+            const zz = cz + dz * 8;
+            const zone = getWorld().gameMap.getZone(zx, zz, level);
+            if (!zone) continue;
+            for (const obj of zone.getAllObjsSafe()) {
+                if (!predicate(obj)) continue;
+                const dist = Math.abs(obj.x - cx) + Math.abs(obj.z - cz);
+                if (dist <= radius * 2 && dist < bestDist) {
+                    bestDist = dist;
+                    best     = obj;
+                }
+            }
+        }
+    }
+    return best;
+}
+export function findObjByPrefix(
+    cx: number,
+    cz: number,
+    level: number,
+    prefix: string,
+    radius = 20
+): Obj | null {
+    return _findObj(cx, cz, level, radius, obj => {
+        const t = ObjType.get(obj.type);
+        return !!(t.debugname?.startsWith(prefix));
+    });
+}
+export function findObjNear(
+    cx: number,
+    cz: number,
+    level: number,
+    objTypeId: number,
+    radius = 10
+): Obj | null {
+    return _findObj(cx, cz, level, radius, obj => obj.type === objTypeId);
+}
+export function findObjByName(
+    cx: number,
+    cz: number,
+    level: number,
+    objName: string,
+    radius = 10
+): Obj | null {
+    const typeId = ObjType.getId(objName);
+    if (typeId === -1) return null;
+    return findObjNear(cx, cz, level, typeId, radius);
 }
 
 /**
@@ -314,6 +407,18 @@ export function addXp(player: Player, stat: PlayerStat, xp: number): void {
     player.addXp(stat, xp);
 }
 
+/**
+ * Sets the player's melee attack style varp.
+ *   0 = Accurate   → Attack XP
+ *   1 = Aggressive → Strength XP
+ *   2 = Aggressive (second slot, weapon-dependent)
+ *   3 = Defensive  → Defence XP
+ */
+export function setCombatStyle(player: Player, style: 0 | 1 | 2 | 3): void {
+    const varp = VarPlayerType.getByName('attackstyle');
+    if (varp) player.setVar(varp.id, style);
+}
+
 // ── Inventory ─────────────────────────────────────────────────────────────────
 
 export function getBackpack(player: Player) {
@@ -354,6 +459,24 @@ export function removeItem(player: Player, itemId: number, count = 1): boolean {
 
 export function clearBackpack(player: Player): void {
     getBackpack(player)?.removeAll();
+}
+
+/**
+ * Directly picks up a ground object into the player's backpack,
+ * bypassing the engine interaction / script system entirely.
+ * Returns true if the item was added and the obj removed from the world.
+ */
+export function pickupGroundItem(player: Player, obj: Obj): boolean {
+    if (!obj.isValid(player.hash64)) return false;
+
+    const inv = getBackpack(player);
+    if (!inv) return false;
+
+    const added = inv.add(obj.type, obj.count);
+    if (!added.hasSucceeded()) return false;
+
+    getWorld().removeObj(obj);
+    return true;
 }
 
 export function hasItem(player: Player, itemId: number, count = 1): boolean {

@@ -15,6 +15,7 @@ import {
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,
+    addXp, setCombatStyle,
     openNearbyGate, isAdjacentToLoc,
 } from '#/engine/bot/BotAction.js';
 import {
@@ -68,6 +69,8 @@ export function teleportNear(player: Player, x: number, z: number): void {
 }
 
 
+
+
 // ── Abstract base ─────────────────────────────────────────────────────────────
 
 export abstract class BotTask {
@@ -93,6 +96,7 @@ export {
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,
+    addXp, setCombatStyle,
     Items, Shops, Locations, getProgressionStep,
     getMissingPurchases, STARTING_COINS,
     openNearbyGate, isAdjacentToLoc,

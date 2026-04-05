@@ -8,26 +8,38 @@ import {
     teleportNear, randInt, bankInvId,
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
     openNearbyGate,
+    addXp, setCombatStyle,
 } from '#/engine/bot/tasks/BotTaskBase.js';
-
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import {
+    findObjByName,
+    findObjByPrefix,
+    pickupGroundItem,
+    removeItem,
+} from '#/engine/bot/BotAction.js';
 
 type CombatExtra = {
     npcName?: string;
     npcType?: string;
-
-    // ✅ NEW (multi-target support)
     npcTypes?: string[];
-
     npcPrefix?: string;
     npcSuffix?: string;
-
-    hitsToKill?: number; // (you’re already using this too)
+    hitsToKill?: number;
 };
+
+// Melee style rotation: accurate(0)→attack, aggressive(1)→strength, defensive(3)→defence
+const TRAIN_CYCLE: Array<{ stat: PlayerStat; style: 0 | 1 | 3 }> = [
+    { stat: PlayerStat.ATTACK,   style: 0 },
+    { stat: PlayerStat.STRENGTH, style: 1 },
+    { stat: PlayerStat.DEFENCE,  style: 3 },
+];
 
 export class CombatTask extends BotTask {
     private step: SkillStep;
-    private readonly stat: PlayerStat;
+    private readonly primaryStat: PlayerStat; // governs location/progression
+    private stat: PlayerStat;                 // current training stat (rotates per kill)
+    private trainIndex = 0;
+    private readonly noAttackTimeoutTicks = 4; // ~2 seconds
 
     private state:
         | 'walk'
@@ -39,6 +51,8 @@ export class CombatTask extends BotTask {
         | 'shop_sell'
         | 'bank_walk'
         | 'bank_deposit'
+        | 'loot'
+        | 'bury'
         = 'walk';
 
     private interactTicks = 0;
@@ -46,22 +60,26 @@ export class CombatTask extends BotTask {
     private lastXp = 0;
     private scanFail = 0;
 
+    private lastBuryTime = Date.now();
+    private readonly BURY_INTERVAL = .10 * 60 * 1000;
+    private buryCount = 0;
+    private buryWaitTicks = 0;
+
     private currentNpc: Npc | null = null;
 
     private readonly stuck = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog(150);
 
-    // prevents gate spam + repeated interactions
     private intentCooldown = 0;
 
-    // patrol roaming
     private patrolTarget: [number, number] | null = null;
     private patrolTicks = 0;
 
     constructor(step: SkillStep, stat: PlayerStat) {
         super('Combat');
         this.step = step;
-        this.stat = stat;
+        this.primaryStat = stat;
+        this.stat = TRAIN_CYCLE[0].stat; // always start on attack
     }
 
     // ─────────────────────────────────────────────
@@ -88,6 +106,8 @@ export class CombatTask extends BotTask {
     }
 
     tick(player: Player): void {
+        const now = Date.now();
+
         if (this.interrupted) return;
 
         const banking =
@@ -110,11 +130,84 @@ export class CombatTask extends BotTask {
 
         if (this.intentCooldown > 0) this.intentCooldown--;
 
+        const hasBones =
+            hasItem(player, Items.BONES) ||
+            hasItem(player, Items.BIG_BONES);
+
+        const inventoryFull = isInventoryFull(player);
+        const timeReady = (now - this.lastBuryTime) >= this.BURY_INTERVAL;
+        const shouldBury = hasBones && timeReady;
+
+        if (this.state !== 'bury' && shouldBury) {
+            this.state = 'bury';
+            this._log(player, '→ bury bones', 'bury_bones');
+            return;
+        }
+
+        if (this.state === 'bury') {
+        const inv = player.getInventory(InvType.INV);
+        if (!inv) {
+            this.state = 'scan';
+            return;
+        }
+
+        // BIG BONES FIRST
+        for (let slot = 0; slot < inv.capacity; slot++) {
+            const item = inv.get(slot);
+            if (!item) continue;
+
+            if (item.id === Items.BIG_BONES) {
+                const moved = inv.remove(item.id, 1);
+
+                if (moved.completed > 0) {
+                    addXp(player, PlayerStat.PRAYER, 150);
+                    this._log(player, 'buried big bones +150 XP', 'bury_big');
+                    this.cooldown = randInt(2, 4);
+                }
+
+                return;
+            }
+        }
+
+        // NORMAL BONES
+        for (let slot = 0; slot < inv.capacity; slot++) {
+            const item = inv.get(slot);
+            if (!item) continue;
+
+            if (item.id === Items.BONES) {
+                const moved = inv.remove(item.id, 1);
+
+                if (moved.completed > 0) {
+                    addXp(player, PlayerStat.PRAYER, 45);
+                    this._log(player, 'buried bones +45 XP', 'bury_small');
+                    this.cooldown = randInt(2, 4);
+                }
+
+                return;
+            }
+        }
+
+            // No bones found — should not happen with pickupGroundItem (synchronous),
+            // but wait 1 extra tick as a safety net before giving up.
+            this.buryWaitTicks++;
+            if (this.buryWaitTicks < 2) {
+                return;
+            }
+
+            // All bones buried or server never delivered
+            this._log(player, 'finished burying', 'bury_done');
+            this.lastBuryTime = now;
+            this.buryCount = 0;
+            this.buryWaitTicks = 0;
+            this.state = 'scan';
+            return;
+        }
+
         // ── LEVEL UPDATE ─────────────────────────────
-        const level = getBaseLevel(player, this.stat);
+        const level = getBaseLevel(player, this.primaryStat);
         const skillName =
-            this.stat === PlayerStat.ATTACK ? 'ATTACK' :
-            this.stat === PlayerStat.STRENGTH ? 'STRENGTH' :
+            this.primaryStat === PlayerStat.ATTACK ? 'ATTACK' :
+            this.primaryStat === PlayerStat.STRENGTH ? 'STRENGTH' :
             'DEFENCE';
 
         const newStep = getProgressionStep(skillName, level);
@@ -213,7 +306,6 @@ export class CombatTask extends BotTask {
                 return;
             }
 
-            // roam a bit before scanning to look more human
             this.state = 'patrol';
             this.patrolTicks = 0;
             this.patrolTarget = null;
@@ -226,7 +318,6 @@ export class CombatTask extends BotTask {
 
             this.patrolTicks++;
 
-            // pick a new target every few ticks
             if (!this.patrolTarget || this.patrolTicks % randInt(3, 6) === 0) {
                 this.patrolTarget = [
                     cx + randInt(-12, 8),
@@ -237,7 +328,6 @@ export class CombatTask extends BotTask {
             const [tx, tz] = this.patrolTarget;
             walkTo(player, tx, tz);
 
-            // occasionally search for NPCs while roaming
             if (this.patrolTicks % 2 === 0) {
                 let npc = this._findTargetNpc(player);
 
@@ -249,6 +339,7 @@ export class CombatTask extends BotTask {
                     this._log(player, `patrol found NPC → ${this._npcLabel(npc)}`, 'patrol_found');
 
                     this.currentNpc = npc;
+                    setCombatStyle(player, TRAIN_CYCLE[this.trainIndex].style);
                     interactNpcOp(player, npc, 2);
 
                     this.state = 'interact';
@@ -260,7 +351,6 @@ export class CombatTask extends BotTask {
                 }
             }
 
-            // after a short roam, switch into scan mode
             if (this.patrolTicks > randInt(6, 12)) {
                 this.state = 'scan';
                 this.patrolTicks = 0;
@@ -309,6 +399,7 @@ export class CombatTask extends BotTask {
             this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
 
             this.currentNpc = npc;
+            setCombatStyle(player, TRAIN_CYCLE[this.trainIndex].style);
             interactNpcOp(player, npc, 2);
 
             this.state = 'interact';
@@ -319,16 +410,89 @@ export class CombatTask extends BotTask {
             return;
         }
 
+        // ── LOOT ──────────────────────────────────────
+        if (this.state === 'loot') {
+            let obj =
+                findObjByName(player.x, player.z, player.level, 'bones', 6) ??
+                findObjByName(player.x, player.z, player.level, 'big bones', 6);
+
+            if (!obj) {
+                obj =
+                    findObjByPrefix(player.x, player.z, player.level, 'coin', 6) ??
+                    findObjByPrefix(player.x, player.z, player.level, 'arrow', 6);
+            }
+
+            if (!obj) {
+                if (hasItem(player, Items.BONES) || hasItem(player, Items.BIG_BONES)) {
+                    this._log(player, 'no loot → bury', 'no_loot_bury');
+                    this.state = 'bury';
+                } else {
+                    this._log(player, 'no loot → scan', 'no_loot');
+                    this.state = 'scan';
+                }
+                return;
+            }
+
+            this._log(player, `looting ${obj.type} @ ${obj.x},${obj.z}`, 'loot_found');
+
+            if (!isNear(player, obj.x, obj.z, 1)) {
+                walkTo(player, obj.x, obj.z);
+                return;
+            }
+
+            // Directly add to inventory and remove from world — bypasses the engine
+            // interaction system which has unreliable timing for Obj OP triggers.
+            const picked = pickupGroundItem(player, obj as any);
+
+            if (!picked) {
+                // Obj went invalid between finding it and picking it up (another player,
+                // despawn race, no inventory space). Skip it and scan for the next target.
+                this._log(player, `pickup failed ${obj.type} → scan`, 'pickup_fail');
+                this.state = 'scan';
+                return;
+            }
+
+            this._log(player, `picked up ${obj.type} @ ${obj.x},${obj.z}`, `pickup_${obj.type}`);
+            this.watchdog.notifyActivity();
+
+            const isBones = obj.type === Items.BONES || obj.type === Items.BIG_BONES;
+            if (isBones) {
+                // Item is already in inventory — go bury immediately.
+                this.buryWaitTicks = 0;
+                this.state = 'bury';
+            }
+            this.cooldown = randInt(1, 2);
+            return;
+        }
+
         // ── COMBAT ───────────────────────────────────
         if (this.state === 'interact') {
             this.interactTicks++;
             this.approachTicks++;
 
             if (player.stats[this.stat] > this.lastXp) {
-                this._log(player, 'XP GAINED', 'xp_gain');
+                this._log(player, `XP GAINED (${this.stat === PlayerStat.ATTACK ? 'ATK' : this.stat === PlayerStat.STRENGTH ? 'STR' : 'DEF'})`, 'xp_gain');
+
+                // Rotate to the next combat style for the next kill
+                this.trainIndex = (this.trainIndex + 1) % TRAIN_CYCLE.length;
+                const next = TRAIN_CYCLE[this.trainIndex];
+                this.stat = next.stat;
+                setCombatStyle(player, next.style);
                 this.lastXp = player.stats[this.stat];
+
+                this.state = 'loot';
                 this.interactTicks = 0;
                 this.approachTicks = 0;
+                return;
+            }
+
+            if (this.interactTicks >= this.noAttackTimeoutTicks) {
+                this._log(player, 'no attack after 2s → retarget', 'no_attack_timeout');
+                this.currentNpc = null;
+                this.state = 'scan';
+                this.approachTicks = 0;
+                this.interactTicks = 0;
+                this.scanFail = 0;
                 return;
             }
 
@@ -370,8 +534,15 @@ export class CombatTask extends BotTask {
         this.currentNpc = null;
         this.intentCooldown = 0;
 
+        this.trainIndex = 0;
+        this.stat = TRAIN_CYCLE[0].stat;
+
         this.patrolTarget = null;
         this.patrolTicks = 0;
+
+        this.lastBuryTime = 0; // expire immediately so timer-fallback fires on first tick with bones
+        this.buryCount = 0;
+        this.buryWaitTicks = 0;
 
         this.stuck.reset();
         this.watchdog.reset();
@@ -385,78 +556,75 @@ export class CombatTask extends BotTask {
     // ─────────────────────────────────────────────
     // NPC SEARCH
     // ─────────────────────────────────────────────
-private _findTargetNpc(player: Player): Npc | null {
-    const extra = this.step.extra as CombatExtra | undefined;
-    const radius = 22;
+    private _findTargetNpc(player: Player): Npc | null {
+        const extra = this.step.extra as CombatExtra | undefined;
+        const radius = 22;
 
-    if (!extra) return null;
+        if (!extra) return null;
 
-    // ── normalize all possible inputs into one array
-    const names: string[] = [];
+        const names: string[] = [];
 
-    if (extra.npcTypes?.length) {
-        names.push(...extra.npcTypes);
+        if (extra.npcTypes?.length) {
+            names.push(...extra.npcTypes);
+        }
+
+        if (extra.npcType) {
+            names.push(extra.npcType);
+        }
+
+        if (extra.npcName) {
+            names.push(extra.npcName);
+        }
+
+        for (const name of names.sort(() => Math.random() - 0.5)) {
+            const npc =
+                findNpcByName(player.x, player.z, player.level, name, radius) ??
+                findNpcByPrefix(player.x, player.z, player.level, name, radius);
+
+            if (npc) return npc;
+        }
+
+        if (extra.npcPrefix) {
+            return findNpcByPrefix(player.x, player.z, player.level, extra.npcPrefix, radius);
+        }
+
+        if (extra.npcSuffix) {
+            return findNpcBySuffix(player.x, player.z, player.level, extra.npcSuffix, radius);
+        }
+
+        return null;
     }
 
-    if (extra.npcType) {
-        names.push(extra.npcType);
+    private _findTargetNpcWider(player: Player): Npc | null {
+        const extra = this.step.extra as CombatExtra | undefined;
+        const radius = 30;
+
+        if (!extra) return null;
+
+        const names: string[] = [];
+
+        if (extra.npcTypes?.length) {
+            names.push(...extra.npcTypes);
+        }
+
+        if (extra.npcType) {
+            names.push(extra.npcType);
+        }
+
+        if (extra.npcName) {
+            names.push(extra.npcName);
+        }
+
+        for (const name of names.sort(() => Math.random() - 0.5)) {
+            const npc =
+                findNpcByName(player.x, player.z, player.level, name, radius) ??
+                findNpcByPrefix(player.x, player.z, player.level, name, radius);
+
+            if (npc) return npc;
+        }
+
+        return null;
     }
-
-    if (extra.npcName) {
-        names.push(extra.npcName);
-    }
-
-    // ── randomize so bots don’t all pick same NPC
-    for (const name of names.sort(() => Math.random() - 0.5)) {
-        const npc =
-            findNpcByName(player.x, player.z, player.level, name, radius) ??
-            findNpcByPrefix(player.x, player.z, player.level, name, radius);
-
-        if (npc) return npc;
-    }
-
-    // ── fallback matching
-    if (extra.npcPrefix) {
-        return findNpcByPrefix(player.x, player.z, player.level, extra.npcPrefix, radius);
-    }
-
-    if (extra.npcSuffix) {
-        return findNpcBySuffix(player.x, player.z, player.level, extra.npcSuffix, radius);
-    }
-
-    return null;
-}
-
-   private _findTargetNpcWider(player: Player): Npc | null {
-    const extra = this.step.extra as CombatExtra | undefined;
-    const radius = 30;
-
-    if (!extra) return null;
-
-    const names: string[] = [];
-
-    if (extra.npcTypes?.length) {
-        names.push(...extra.npcTypes);
-    }
-
-    if (extra.npcType) {
-        names.push(extra.npcType);
-    }
-
-    if (extra.npcName) {
-        names.push(extra.npcName);
-    }
-
-    for (const name of names.sort(() => Math.random() - 0.5)) {
-        const npc =
-            findNpcByName(player.x, player.z, player.level, name, radius) ??
-            findNpcByPrefix(player.x, player.z, player.level, name, radius);
-
-        if (npc) return npc;
-    }
-
-    return null;
-}
 
     // ─────────────────────────────────────────────
     // STUCK SYSTEM

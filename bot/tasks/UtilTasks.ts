@@ -9,6 +9,7 @@ import {
     Items, Locations, STARTING_COINS,
     teleportToSafety, teleportNear, randInt, bankInvId, StuckDetector,
     openNearbyGate,
+    PlayerStat,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
 // ── InitTask ──────────────────────────────────────────────────────────────────
@@ -198,26 +199,86 @@ export class BankTask extends BotTask {
 // ── BuryBonesTask ─────────────────────────────────────────────────────────────
 
 export class BuryBonesTask extends BotTask {
-    private done = false;
-    constructor() { super('Prayer'); }
+    private buryCount = 0;
+
+    private state: 'bury' | 'done' = 'bury';
+
+    constructor() {
+        super('Prayer');
+    }
 
     shouldRun(player: Player): boolean {
-        return !this.done && (hasItem(player, Items.BONES) || hasItem(player, Items.BIG_BONES));
+        return hasItem(player, Items.BONES) ||
+               hasItem(player, Items.BIG_BONES);
     }
 
     tick(player: Player): void {
-        if (hasItem(player, Items.BIG_BONES)) {
-            removeItem(player, Items.BIG_BONES, 1);
-            player.addXp(6, 150);
-        } else if (hasItem(player, Items.BONES)) {
-            removeItem(player, Items.BONES, 1);
-            player.addXp(6, 45);
+        if (this.cooldown > 0) {
+            this.cooldown--;
+            return;
         }
-        this.done = true;
+
+        // ───────────────── BURY ─────────────────
+        if (this.state === 'bury') {
+
+            const before = player.stats[PlayerStat.PRAYER];
+
+            // ── BIG BONES FIRST ─────────────────
+            if (hasItem(player, Items.BIG_BONES)) {
+                const removed = removeItem(player, Items.BIG_BONES, 1);
+
+                if (!removed) {
+                    console.log(`[Prayer] ❌ failed to remove BIG_BONES`);
+                    return;
+                }
+
+                player.stats[PlayerStat.PRAYER] = before + 150;
+                this.buryCount++;
+
+                console.log(
+                    `[Prayer] 🦴 buried BIG BONES +150 XP (total=${player.stats[PlayerStat.PRAYER]})`
+                );
+
+                this.cooldown = randInt(2, 4);
+                return;
+            }
+
+            // ── NORMAL BONES ─────────────────
+            if (hasItem(player, Items.BONES)) {
+                const removed = removeItem(player, Items.BONES, 1);
+
+                if (!removed) {
+                    console.log(`[Prayer] ❌ failed to remove BONES`);
+                    return;
+                }
+
+                player.stats[PlayerStat.PRAYER] = before + 45;
+                this.buryCount++;
+
+                console.log(
+                    `[Prayer] 🦴 buried bones +45 XP (total=${player.stats[PlayerStat.PRAYER]})`
+                );
+
+                this.cooldown = randInt(2, 4);
+                return;
+            }
+
+            // ── DONE ─────────────────
+            console.log(`[Prayer] ✅ finished burying (${this.buryCount} bones)`);
+            this.state = 'done';
+            return;
+        }
     }
 
-    isComplete(_p: Player): boolean { return this.done; }
-    override reset(): void { super.reset(); this.done = false; }
+    isComplete(_player: Player): boolean {
+        return this.state === 'done';
+    }
+
+    override reset(): void {
+        super.reset();
+        this.buryCount = 0;
+        this.state = 'bury';
+    }
 }
 
 // ── IdleTask ──────────────────────────────────────────────────────────────────

@@ -470,8 +470,10 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.TREES_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: {npcTypes: ['goblin', 'giant spider', 'giant rat'],hitsToKill: 3},},
         { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD],   xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'goblin',hitsToKill: 3 } },
         { minLevel: 1, maxLevel: 9, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.BRONZE_SWORD],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
+        //scorpions
+        { minLevel: 10, maxLevel: 39, action: 'combat', location: Locations.MINE_AL_KHARID,     toolItemIds: [Items.BRONZE_SWORD],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES, extra: { npcType: 'scorpion',     hitsToKill: 5 } },
         // Cows (lvl 10-19): buy iron scimitar from Al Kharid
-        { minLevel: 10, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
+        { minLevel: 5, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR],  xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
         // Cows (lvl 20-39): steel scimitar
         { minLevel: 20, maxLevel: 39, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',     hitsToKill: 5 } },
         // Al Kharid warriors (lvl 40+): mithril scimitar
