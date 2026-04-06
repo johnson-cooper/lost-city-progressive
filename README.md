@@ -26,8 +26,8 @@ Java Dependency \- Updated 4/4/2026 Typescript Compiler Rewrite by Lost City
 COMBAT:
 
 - ATTACK (IMPLEMENTED)  
-- STRENGTH (WIP)  
-- DEFENCE (WIP)  
+- STRENGTH (DONE)  
+- DEFENCE (DONE)  
 - MAGIC  
 - RANGE  
 - PRAYER (WIP)  
@@ -42,9 +42,8 @@ GATHERING:
 
 ARTISAN:
 
-- FIREMAKING (IMPLEMENTED)  
+- FIREMAKING (DONE)  
 - FLETCHING  
-- FARMING  
 - SMITHING  
 - COOKING  
 - CRAFTING  
@@ -54,108 +53,10 @@ MISC:
 
 - AGILITY  
 - THIEVING  
-- SLAYER
 
-## 
-
-## 
-
-## **PROGRESSION**
-
-### **🌳 Woodcutting**
-
-* **1–14:** Trees in Lumbridge (bronze axe) → logs  
-* **15–29:** Oaks in Draynor (iron axe) → oak logs  
-* **30–59:** Willows in Draynor (steel axe) → willow logs  
-* **60–99:** Yews in Varrock (mithril axe) → yew logs  
-   
-
----
-
-### **🎣 Fishing**
-
-* **1–4:** Shrimp (small net, Draynor shore)  
-* **5–19:** Sardine (rod \+ bait, Draynor)  
-* **20–29:** Trout (fly fishing, Barbarian Village)  
-* **30–39:** Salmon (fly fishing, Barbarian Village)  
-* **40–99:** Lobster (Karamja lobster pots)  
-   
-
----
-
-### **⛏️ Mining**
-
-* **1–14:** Copper \+ Tin (Al-Kharid mine)  
-* **15–29:** Iron (Varrock East)  
-* **30–99:** Coal (Dwarven Mine)  
-   
-
----
-
-## **🔥 Processing Skills**
-
-### **🔥 Firemaking**
-
-* **1–14:** Logs  
-* **15–29:** Oak logs  
-* **30–44:** Willow logs  
-* **45–59:** Maple logs  
-* **60–99:** Yew logs  
-   
-
----
-
-### **🍳 Cooking**
-
-* **1–4:** Shrimp  
-* **1–14:** Sardines  
-* **15–24:** Trout  
-* **25–39:** Salmon  
-* **40–44:** Lobster  
-* **45–99:** Swordfish
-
----
-
-### **⚒️ Smithing**
-
-* **1–14:** Bronze bars (copper \+ tin)  
-* **15–29:** Iron bars (50% success chance)  
-* **30–99:** Steel bars (iron \+ coal)  
-   
-
----
-
-## **⚔️ Combat Skills**
-
-### **🗡️ ATTACK \- STRENGTH \- DEFENCE**
-
-* **1–9:** Chickens / goblins / cows (bronze sword)  
-* **5–19:** Cows (iron scimitar)  
-* **10–39:** Scorpions (Al-Kharid mine area)  
-* **20–39:** Cows (steel scimitar)  
-* **40–99:** Al-Kharid warriors (mithril scimitar)
-
-    
-   
-
----
-
-### **🧙 Magic**
-
-* **1–99:** Wind Strike on goblins
-
----
-
-### **🏹 Ranged**
-
-* **1–99:** Chickens (oak shortbow \+ bronze arrows)  
-   
-
----
-
-## **⚙️ Unimplemented / Stub Skills**
-
-These are currently placeholders:
+## CREDITS
+_mrsam 
+attackishere
 
 * 🪶 Fletching  
 * 🕵️ Thieving  
