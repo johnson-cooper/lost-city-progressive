@@ -2,28 +2,29 @@
 // id matches the "type" column in hiscore_large
 const SKILLS = [
   // Combat
-  { id: 0,  key: 'attack',      name: 'Attack',      category: 'combat'    },
-  { id: 2,  key: 'strength',    name: 'Strength',    category: 'combat'    },
-  { id: 1,  key: 'defence',     name: 'Defence',     category: 'combat'    },
-  { id: 3,  key: 'hitpoints',   name: 'Hitpoints',   category: 'combat'    },
-  { id: 4,  key: 'ranged',      name: 'Ranged',      category: 'combat'    },
-  { id: 5,  key: 'prayer',      name: 'Prayer',      category: 'combat'    },
-  { id: 6,  key: 'magic',       name: 'Magic',       category: 'combat'    },
-  // Gathering
-  { id: 14, key: 'mining',      name: 'Mining',      category: 'gathering' },
-  { id: 9,  key: 'woodcutting', name: 'Woodcutting', category: 'gathering' },
-  { id: 10, key: 'fishing',     name: 'Fishing',     category: 'gathering' },
-  // Artisan
-  { id: 13, key: 'smithing',    name: 'Smithing',    category: 'artisan'   },
-  { id: 7,  key: 'cooking',     name: 'Cooking',     category: 'artisan'   },
-  { id: 8,  key: 'fletching',   name: 'Fletching',   category: 'artisan'   },
-  { id: 11, key: 'firemaking',  name: 'Firemaking',  category: 'artisan'   },
-  { id: 12, key: 'crafting',    name: 'Crafting',    category: 'artisan'   },
-  // Support
-  { id: 15, key: 'herblore',    name: 'Herblore',    category: 'support'   },
-  { id: 16, key: 'agility',     name: 'Agility',     category: 'support'   },
-  { id: 17, key: 'thieving',    name: 'Thieving',    category: 'support'   },
-  { id: 20, key: 'runecrafting',name: 'Runecrafting',category: 'support'   },
+  { id: 1,  key: 'attack',       name: 'Attack',       category: 'combat'    },
+  { id: 2,  key: 'defence',      name: 'Defence',      category: 'combat'    },
+  { id: 3,  key: 'strength',     name: 'Strength',     category: 'combat'    },
+  { id: 4,  key: 'hitpoints',    name: 'Hitpoints',    category: 'combat'    },
+  { id: 5,  key: 'ranged',       name: 'Ranged',       category: 'combat'    },
+  { id: 6,  key: 'prayer',       name: 'Prayer',       category: 'combat'    },
+  { id: 7,  key: 'magic',        name: 'Magic',        category: 'combat'    },
+
+  // Skilling (matches client order)
+  { id: 8,  key: 'cooking',      name: 'Cooking',      category: 'artisan'   },
+  { id: 9,  key: 'woodcutting',  name: 'Woodcutting',  category: 'gathering' },
+  { id: 10,  key: 'fletching',    name: 'Fletching',    category: 'artisan'   },
+  { id: 11, key: 'fishing',      name: 'Fishing',      category: 'gathering' },
+  { id: 12, key: 'firemaking',   name: 'Firemaking',   category: 'artisan'   },
+  { id: 13, key: 'crafting',     name: 'Crafting',     category: 'artisan'   },
+  { id: 14, key: 'smithing',     name: 'Smithing',     category: 'artisan'   },
+  { id: 15, key: 'mining',       name: 'Mining',       category: 'gathering' },
+  { id: 16, key: 'herblore',     name: 'Herblore',     category: 'support'   },
+  { id: 17, key: 'agility',      name: 'Agility',      category: 'support'   },
+  { id: 18, key: 'thieving',     name: 'Thieving',     category: 'support'   },
+
+  // Last skill in this revision
+  { id: 19, key: 'runecrafting', name: 'Runecrafting', category: 'support'   },
 ];
 
 // ── SVG ICONS ─────────────────────────────────────────────────────────────────
