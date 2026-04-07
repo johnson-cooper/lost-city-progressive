@@ -1,5 +1,3 @@
-
-
 # LOST CITY SINGLEPLAYER PROGRESSIVE
 
 instructions:
