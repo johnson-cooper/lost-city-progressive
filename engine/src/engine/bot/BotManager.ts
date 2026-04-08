@@ -34,6 +34,7 @@ import {
 import { PlayerLoading } from '#/engine/entity/PlayerLoading.js';
 import Packet from '#/io/Packet.js';
 import { Locations } from '#/engine/bot/BotKnowledge.js';
+import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import { BotAppearance } from '#/engine/bot/BotAppearance.js';
 import InvType from '#/cache/config/InvType.js';
 import Environment from '#/util/Environment.js';
@@ -198,8 +199,25 @@ class BotManagerClass {
     // ─────────────────────────────────────────────
     const [x, z, l] = Locations.LUMBRIDGE_SPAWN;
 
-    player.x = player.x ?? x;
-    player.z = player.z ?? z;
+    // Scatter new bots (no saved position) across walkable tiles near spawn.
+    // Each candidate is validated against the collision map so bots never land
+    // in water, inside walls, or on any other blocked tile.
+    // Falls back to the exact spawn tile if all 20 attempts find no clear tile.
+    if (player.x == null || player.z == null) {
+        let spawnX = x;
+        let spawnZ = z;
+        for (let attempt = 0; attempt < 20; attempt++) {
+            const tx = x + Math.floor(Math.random() * 11) - 5;
+            const tz = z + Math.floor(Math.random() * 11) - 5;
+            if (isZoneAllocated(l, tx, tz) && !isMapBlocked(tx, tz, l)) {
+                spawnX = tx;
+                spawnZ = tz;
+                break;
+            }
+        }
+        player.x = spawnX;
+        player.z = spawnZ;
+    }
     player.level = player.level ?? l;
     // prevent tutorial island logic from interfering
 (player as any).inTutorialIsland = false;

@@ -24,10 +24,16 @@ import {
     getBaseLevel, PlayerStat,
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId, INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
-    isAdjacentToLoc, openNearbyGate, botJitter,
+    isAdjacentToLoc, openNearbyGate, botJitter, nearestBank,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { findNpcByPrefix } from './BotTaskBase.js';
+import { getCombatLevel } from '#/engine/bot/BotAction.js';
+
+/** Draynor village woodcutting spots — aggressive Dark Wizards patrol here, minimum combat 16. */
+const DRAYNOR_WC_LOCATIONS: Array<[number, number, number]> = [
+    Locations.WILLOWS_DRAYNOR,
+];
 
 export class WoodcuttingTask extends BotTask {
     private step: SkillStep;
@@ -55,7 +61,14 @@ export class WoodcuttingTask extends BotTask {
     }
 
     shouldRun(player: Player): boolean {
-        return this.step.toolItemIds.every(id => hasItem(player, id));
+        if (!this.step.toolItemIds.every(id => hasItem(player, id))) return false;
+
+        // Draynor village has aggressive Dark Wizards — require combat level 16
+        const [sx, sz, sl] = this.step.location;
+        const isDraynor = DRAYNOR_WC_LOCATIONS.some(([lx, lz, ll]) => lx === sx && lz === sz && ll === sl);
+        if (isDraynor && getCombatLevel(player) < 16) return false;
+
+        return true;
     }
 
     tick(player: Player): void {
@@ -73,12 +86,15 @@ export class WoodcuttingTask extends BotTask {
             this.currentTree  = null;
         }
 
-        // ── Sell logs at general store ────────────────────────────────────────
+        // ── Bank logs ─────────────────────────────────────────────────────────
   if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+            const [bx, bz] = nearestBank(player);
             if (!isNear(player, bx, bz, 8)) { this._stuckWalk(player, bx, bz); return; }
             const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
             if (!banker) { walkTo(player, bx, bz); return; }
+            // Walk close to the banker first — prevents the engine routing backward
+            // around bank counters when setInteraction is called from 8+ tiles away.
+            if (!isNear(player, banker.x, banker.z, 3)) { walkTo(player, banker.x, banker.z); return; }
             interactNpcOp(player, banker, 3);
             this.cooldown = 4; this.state = 'bank_done'; return;
         }

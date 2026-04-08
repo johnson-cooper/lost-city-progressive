@@ -86,6 +86,13 @@ type GatewayRegion = {
     readonly approachZ: number;
     /** How close (Chebyshev) to the approach tile before trying to open the gate. */
     readonly arrivalRadius: number;
+    /**
+     * If set, the bot is teleported to this tile instead of interacting with the
+     * gate.  Use for gates that require a toll or complex dialog that bots cannot
+     * handle (e.g. the Al Kharid toll gate).
+     */
+    readonly teleportDestX?: number;
+    readonly teleportDestZ?: number;
 };
 
 const GATEWAY_REGIONS: GatewayRegion[] = [
@@ -97,12 +104,62 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // (Lumbridge) to open the gate — NOT from the south where the wall has
         // no opening.  Without this routing a bot walking to [3294, 3172] hits
         // the wall 55 tiles south of the gate and can never open it.
+        //
+        // The gate charges a 10-coin toll and opens a dialog that bots cannot
+        // handle.  Once the bot reaches the approach tile it is teleported
+        // directly to the inside (3271, 3228) — the first open tile past the wall.
         name: 'AlKharid',
         destInRegion:   (x, z) => x >= 3265 && z >= 3155 && z <= 3242,
         playerInRegion: (x, z) => x >= 3267 && z >= 3155 && z <= 3242,
         approachX: 3267,
         approachZ: 3228,
         arrivalRadius: 4,
+        teleportDestX: 3271,
+        teleportDestZ: 3228,
+    },
+    {
+        // ── Al Kharid exit (inside → Lumbridge) ──────────────────────────────
+        // Reverse of AlKharid: bots inside Al Kharid (x >= 3267) heading west
+        // back toward Lumbridge or Draynor hit the same toll wall.  Approach
+        // the inside gate tile (3270, 3228) and teleport to the Lumbridge side
+        // (3265, 3228) — one tile west of the wall opening.
+        name: 'AlKharidExit',
+        destInRegion:   (x, z) => x < 3267 && z >= 3155 && z <= 3242,
+        playerInRegion: (x, z) => x < 3267 && z >= 3155 && z <= 3242,
+        approachX: 3270,
+        approachZ: 3228,
+        arrivalRadius: 4,
+        teleportDestX: 3265,
+        teleportDestZ: 3228,
+    },
+    {
+        // ── Port Sarim → Karamja (boat) ───────────────────────────────────────
+        // Bots heading to Karamja fishing spots (x < 2970) walk to the Port
+        // Sarim docks (~3030, 3218) and are teleported to the Karamja landing
+        // (2956, 3143).  The boat costs 30 coins and triggers a dialog that
+        // bots cannot handle natively, so teleport is used instead.
+        name: 'PortSarimToKaramja',
+        destInRegion:   (x, _z) => x < 2970,
+        playerInRegion: (x, _z) => x < 2970,
+        approachX: 3031,
+        approachZ: 3217,
+        arrivalRadius: 5,
+        teleportDestX: 2956,
+        teleportDestZ: 3147,
+    },
+    {
+        // ── Karamja → Port Sarim (boat return) ───────────────────────────────
+        // Bots on Karamja (x < 2970) heading back to the mainland (x >= 2990,
+        // e.g. to bank) walk to the Karamja dock (2956, 3145) and are
+        // teleported to the Port Sarim arrival tile (3047, 3235).
+        name: 'KaramjaToPortSarim',
+        destInRegion:   (x, _z) => x >= 2990,
+        playerInRegion: (x, _z) => x >= 2990,
+        approachX: 2956,
+        approachZ: 3145,
+        arrivalRadius: 5,
+        teleportDestX: 3047,
+        teleportDestZ: 3235,
     },
     {
         // ── Lumbridge cow pen ─────────────────────────────────────────────────
@@ -130,9 +187,71 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
     },
 ];
 
+// ── Route corridors ───────────────────────────────────────────────────────────
+
 /**
- * Raw pathfinding toward a single tile: accurate → relaxed → compass → naive.
- * Does NOT do any gateway pre-routing.  Call walkTo() for normal movement.
+ * Terrain corridors — solid obstacles (buildings, castle walls) that the BFS
+ * pathfinder can technically route around, but where the obstacle is large
+ * enough that long-distance midpoint calculations consistently land on the
+ * wrong side of the wall and leave the bot looping.
+ *
+ * When walkTo() detects the player is in a source zone heading to a destination
+ * beyond the obstacle, it first steers toward `viaX/Z` — a known-clear
+ * intermediate tile on the correct side of the obstacle.  Once the bot reaches
+ * or passes the obstacle (`playerCleared` = true) normal pathfinding resumes.
+ *
+ * Only active on the ground floor (level 0).
+ */
+type RouteCorridor = {
+    readonly name: string;
+    /** Bot is stuck on the near side of the obstacle. */
+    readonly playerInZone:  (x: number, z: number) => boolean;
+    /** Destination is on the far side — corridor routing is needed. */
+    readonly destBeyond:    (x: number, z: number) => boolean;
+    /** Bot has cleared the obstacle — resume normal pathfinding. */
+    readonly playerCleared: (x: number, z: number) => boolean;
+    /** Safe intermediate tile on the near side of the obstacle. */
+    readonly viaX: number;
+    readonly viaZ: number;
+};
+
+const ROUTE_CORRIDORS: RouteCorridor[] = [
+    {
+        // ── Lumbridge castle — westbound bypass ───────────────────────────────
+        // Bots spawning east of the castle (Lumbridge east road, x > 3226) and
+        // heading west toward Draynor village (x < 3185) have the castle walls
+        // directly across their straight-line path.  The BFS can route around
+        // the castle, but the 90-tile midpoint segment often lands on or just
+        // behind the walls, causing the pathfinder to return an empty result and
+        // the bot to loop on the 15-tile compass fallback indefinitely.
+        //
+        // Fix: redirect to (3194, 3226) — the open field west of the castle
+        // already used by the level-1 woodcutting bots — before continuing west.
+        // From there the remaining distance to any Draynor destination is ≤ 110
+        // tiles and the pathfinder has a completely clear westward run.
+        name: 'LumbridgeCastleWest',
+        playerInZone:  (x, z) => x > 3226 && z >= 3200 && z <= 3260,
+        destBeyond:    (x, _z) => x < 3185,
+        playerCleared: (x, _z) => x <= 3200,
+        viaX: 3194,
+        viaZ: 3226,
+    },
+];
+
+/**
+ * Raw pathfinding toward a single tile: accurate → relaxed → swept-angle → naive.
+ * Does NOT do gateway or corridor pre-routing.  Call walkTo() for normal movement.
+ *
+ * Long-distance fallback strategy (dist > 100):
+ *   1. Try the direct 90-tile midpoint (existing behaviour).
+ *   2. If that fails, sweep ±20 °, ±40 °, ±60 ° around the direct heading at
+ *      the same 90-tile distance.  A modest angle offset finds a reachable tile
+ *      around a large building without straying far off course.
+ *   3. If still failing, repeat the sweep at shorter (60-tile) segments.
+ *
+ * Final compass fallback (all midpoints failed):
+ *   Try 8 compass directions at step sizes 50 → 25 → 15 tiles.
+ *   Larger steps are necessary to actually clear a wide obstacle like a castle.
  */
 function _pathTowards(player: Player, destX: number, destZ: number): void {
     const dx   = destX - player.x;
@@ -140,28 +259,47 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
     const dist = Math.sqrt(dx * dx + dz * dz);
     if (dist < 1) return;
 
+    const baseAngle = Math.atan2(dz, dx);
+
     if (dist <= 100) {
+        // Short hop — try direct path first
         let path = botWalkPath(player.level, player.x, player.z, destX, destZ);
         if (path.length === 0) path = botFindPath(player.level, player.x, player.z, destX, destZ);
         if (path.length > 0) { player.queueWaypoints(path); return; }
     } else {
-        const midX = Math.round(player.x + (dx / dist) * 90);
-        const midZ = Math.round(player.z + (dz / dist) * 90);
-        let path = botWalkPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length > 0) { player.queueWaypoints(path); return; }
+        // Long distance — try midpoints at the direct heading then sweep outward
+        // so the pathfinder can find a clear intermediate tile around any obstacle
+        const segDist = Math.min(90, dist - 1);
+        for (const deg of [0, 20, -20, 40, -40, 60, -60]) {
+            const angle = baseAngle + deg * Math.PI / 180;
+            const midX  = Math.round(player.x + Math.cos(angle) * segDist);
+            const midZ  = Math.round(player.z + Math.sin(angle) * segDist);
+            let path = botWalkPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length > 0) { player.queueWaypoints(path); return; }
+        }
+        // Retry with shorter segments in case the 90-tile target is unreachable
+        for (const deg of [0, 20, -20, 40, -40, 60, -60]) {
+            const angle = baseAngle + deg * Math.PI / 180;
+            const midX  = Math.round(player.x + Math.cos(angle) * 60);
+            const midZ  = Math.round(player.z + Math.sin(angle) * 60);
+            let path = botWalkPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length > 0) { player.queueWaypoints(path); return; }
+        }
     }
 
-    // Both pathfinders failed — try 8 compass directions at 15 tiles
-    const STEP = 15;
-    const baseAngle = Math.atan2(dz, dx);
-    for (const deg of [0, 45, -45, 90, -90, 135, -135, 180]) {
-        const angle = baseAngle + deg * Math.PI / 180;
-        const midX  = Math.round(player.x + Math.cos(angle) * STEP);
-        const midZ  = Math.round(player.z + Math.sin(angle) * STEP);
-        let path  = botWalkPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length > 0) { player.queueWaypoints(path); return; }
+    // All directed midpoints failed — sweep 8 compass directions at increasing
+    // step sizes so the bot can escape wide obstacles, not just doorway-width ones
+    for (const step of [50, 25, 15]) {
+        for (const deg of [0, 45, -45, 90, -90, 135, -135, 180]) {
+            const angle = baseAngle + deg * Math.PI / 180;
+            const midX  = Math.round(player.x + Math.cos(angle) * step);
+            const midZ  = Math.round(player.z + Math.sin(angle) * step);
+            let path  = botWalkPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
+            if (path.length > 0) { player.queueWaypoints(path); return; }
+        }
     }
 
     // Absolute last resort: 1-tile naive step
@@ -172,7 +310,9 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
  * Walk toward (destX, destZ) using accurate collision-respecting pathfinding.
  *
  * Automatically routes through known gateway regions (Al Kharid gate, cow pen,
- * Varrock north) so bots always approach gates from the correct side.
+ * Varrock north) so bots always approach gates from the correct side, and
+ * through terrain corridors (Lumbridge castle west bypass, etc.) so bots
+ * are never trapped looping against a large solid obstacle.
  *
  * For destinations beyond 100 tiles, walks in 90-tile segments — each call
  * advances the bot and the next tick continues toward the final goal.
@@ -181,6 +321,13 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
  * moveSpeed is INSTANT, permanently blocking headless player movement.
  */
 export function walkTo(player: Player, destX: number, destZ: number): void {
+    // Cancel any active engine interaction (setInteraction target) before setting
+    // new waypoints.  Without this, processInteraction() re-routes the player back
+    // toward the old target every tick, overriding the walkTo waypoints and causing
+    // the "moving backwards" symptom when transitioning between task states
+    // (e.g. fishing spot → bank, or woodcutting → bank).
+    player.clearPendingAction();
+
     player.moveSpeed = MoveSpeed.WALK;
 
     if (Math.abs(player.x - destX) < 1 && Math.abs(player.z - destZ) < 1) return;
@@ -203,10 +350,31 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
             return;
         }
 
-        // Close to approach tile — try to open the gate.
+        // Close to approach tile — cross the gate.
+        if (gw.teleportDestX !== undefined && gw.teleportDestZ !== undefined) {
+            // Toll/dialog gate that bots can't interact with — teleport through.
+            player.teleJump(gw.teleportDestX, gw.teleportDestZ, player.level);
+            return;
+        }
         if (openNearbyGate(player, 8)) return; // gate interaction queued, wait
         // Gate is open (or no gate found) — fall through to normal pathfinding.
         break;
+    }
+
+    // ── Terrain corridor routing ─────────────────────────────────────────────
+    // For large solid obstacles (castle walls, etc.) the straight-line midpoint
+    // often lands behind the wall and the pathfinder returns empty.  Corridors
+    // redirect the bot through a known-clear intermediate tile on the near side
+    // of the obstacle so the BFS always has a viable segment to walk.
+    if (player.level === 0) {
+        for (const corridor of ROUTE_CORRIDORS) {
+            if ( corridor.playerCleared(player.x, player.z)) continue; // already past it
+            if (!corridor.playerInZone(player.x, player.z))  continue; // not in this zone
+            if (!corridor.destBeyond(destX, destZ))           continue; // dest doesn't cross it
+
+            _pathTowards(player, corridor.viaX, corridor.viaZ);
+            return;
+        }
     }
 
     // ── Normal pathfinding ──────────────────────────────────────────────────

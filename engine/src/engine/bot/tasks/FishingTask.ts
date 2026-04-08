@@ -11,9 +11,16 @@ import {
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId, INTERACT_TIMEOUT,
     StuckDetector, ProgressWatchdog,
-    openNearbyGate, botJitter,
+    openNearbyGate, botJitter, nearestBank,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import { getCombatLevel } from '#/engine/bot/BotAction.js';
+
+/** Draynor village fishing spots — aggressive Dark Wizards patrol here, minimum combat 16. */
+const DRAYNOR_FISH_LOCATIONS: Array<[number, number, number]> = [
+    Locations.FISH_DRAYNOR,
+    Locations.FISH_ALKHARID
+];
 
 export class FishingTask extends BotTask {
     private step: SkillStep;
@@ -36,7 +43,14 @@ export class FishingTask extends BotTask {
     }
 
     shouldRun(player: Player): boolean {
-        return this.step.toolItemIds.every(id => hasItem(player, id));
+        if (!this.step.toolItemIds.every(id => hasItem(player, id))) return false;
+
+        // Draynor village has aggressive Dark Wizards — require combat level 16
+        const [sx, sz, sl] = this.step.location;
+        const isDraynor = DRAYNOR_FISH_LOCATIONS.some(([lx, lz, ll]) => lx === sx && lz === sz && ll === sl);
+        if (isDraynor && getCombatLevel(player) < 16) return false;
+
+        return true;
     }
 
     tick(player: Player): void {
@@ -62,7 +76,7 @@ export class FishingTask extends BotTask {
 
         // ── Bank flow ────────────────────────────────────────────────────────
         if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+            const [bx, bz] = nearestBank(player);
 
             if (!isNear(player, bx, bz, 8)) {
                 this._stuckWalk(player, bx, bz);
@@ -74,6 +88,9 @@ export class FishingTask extends BotTask {
                 walkTo(player, bx, bz);
                 return;
             }
+            // Walk close to the banker first — prevents the engine routing backward
+            // around bank counters when setInteraction is called from 8+ tiles away.
+            if (!isNear(player, banker.x, banker.z, 3)) { walkTo(player, banker.x, banker.z); return; }
 
             interactNpcOp(player, banker, 3);
             this.cooldown = 4;
@@ -205,19 +222,27 @@ export class FishingTask extends BotTask {
     // ── Spot detection ───────────────────────────────────────────────────────
 
     private _findFishSpot(player: Player): Npc | null {
+        // Cage/harpoon spots on Karamja use the _rarefish suffix.
+        // Fly-rod fresh-water spots use _freshfish.
+        // Net/bait salt-water spots use _saltfish.
+        const isRarefish =
+            this.step.itemGained === Items.RAW_LOBSTER ||
+            this.step.itemGained === Items.RAW_SWORDFISH;
+
         const isFreshwater =
             this.step.itemGained === Items.RAW_TROUT ||
             this.step.itemGained === Items.RAW_SALMON;
 
-        const suffix = isFreshwater ? '_freshfish' : '_saltfish';
+        const suffix = isRarefish ? '_rarefish' : isFreshwater ? '_freshfish' : '_saltfish';
 
         return findNpcBySuffix(player.x, player.z, player.level, suffix, 20);
     }
 
     private _interact(player: Player, spot: Npc): void {
+        // op3 = harpoon (swordfish/tuna) or bait rod.
+        // op1 = cage (lobster) or net — handled by default interactNpc().
         const useOp3 =
             this.step.itemConsumed === Items.FISHING_BAIT ||
-            this.step.itemGained === Items.RAW_LOBSTER ||
             this.step.itemGained === Items.RAW_SWORDFISH;
 
         if (useOp3) interactNpcOp(player, spot, 3);

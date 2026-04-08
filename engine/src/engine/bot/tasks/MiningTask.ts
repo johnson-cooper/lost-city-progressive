@@ -11,7 +11,7 @@ import {
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId,
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
-    openNearbyGate, botJitter,
+    openNearbyGate, botJitter, nearestBank,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 
@@ -62,7 +62,7 @@ export class MiningTask extends BotTask {
 
         // ── Banking ──────────────────────────────────────────────────────────
         if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+            const [bx, bz] = nearestBank(player);
 
             if (!isNear(player, bx, bz, 8)) {
                 this._stuckWalk(player, bx, bz);
@@ -74,6 +74,9 @@ export class MiningTask extends BotTask {
                 walkTo(player, bx, bz);
                 return;
             }
+            // Walk close to the banker first — prevents the engine routing backward
+            // around bank counters when setInteraction is called from 8+ tiles away.
+            if (!isNear(player, banker.x, banker.z, 3)) { walkTo(player, banker.x, banker.z); return; }
 
             interactNpcOp(player, banker, 3);
             this.cooldown = 4;

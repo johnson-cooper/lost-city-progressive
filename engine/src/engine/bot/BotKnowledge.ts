@@ -1,4 +1,3 @@
-
 export const Items = {
     // Currency
     COINS:              995,
@@ -151,7 +150,7 @@ export const Objects = {
 
 export const Locations = {
     // ── Spawn ─────────────────────────────────────────────────────────────────
-    LUMBRIDGE_SPAWN:         [3244, 3240, 0] as [number, number, number],  // ✅ road north of Lumbridge castle
+    LUMBRIDGE_SPAWN:         [3180, 3240, 0] as [number, number, number],  // ✅ road north of Lumbridge castle
 
     // ── Banks ─────────────────────────────────────────────────────────────────
     LUMBRIDGE_BANK:          [3208, 3220, 2] as [number, number, number],  // castle 2nd floor
@@ -193,8 +192,8 @@ export const Locations = {
     // ── Fishing ───────────────────────────────────────────────────────────────
     FISH_DRAYNOR:            [3088, 3228, 0] as [number, number, number],  // ✅ shrimp + sardine (net/bait)
     FISH_BARBARIAN:          [3105, 3432, 0] as [number, number, number],  // ✅ trout + salmon (fly rod) — best accessible spot
-    FISH_KARAMJA:            [2923, 3178, 0] as [number, number, number],  // 🚫 boat-only — do not use in progressions
-
+    FISH_KARAMJA:            [2924, 3173, 0] as [number, number, number],  // ⛩ lobster + swordfish (pot/harpoon) — boat-routed via Port Sarim
+    FISH_ALKHARID:            [3277, 3142, 0] as [number, number, number],  // ✅ shrimp + sardine (net/bait)
     // ── Combat ────────────────────────────────────────────────────────────────
     CHICKENS_LUMBRIDGE:      [3232, 3295, 0] as [number, number, number],  // ✅ level 1 chickens, no walls
     GOBLINS_LUMBRIDGE:       [3243, 3234, 0] as [number, number, number],  // ✅ level 2/5 goblins, road north of castle
@@ -361,8 +360,10 @@ export const FishingGearByMethod: Record<string, ToolRequirement[]> = {
 //
 // ACCESSIBILITY NOTES:
 //   All active combat/skilling locations use gate-free spots OR are handled
-//   by BotAction.walkTo() gateway routing (AlKharid, CowPen, VarrockNorth).
-//   Karamja fishing is NOT used — requires boat, bots cannot board ships.
+//   by BotAction.walkTo() gateway routing (AlKharid, AlKharidExit, CowPen,
+//   VarrockNorth, PortSarimToKaramja, KaramjaToPortSarim).
+//   Karamja fishing (lobster/swordfish) is routed via the Port Sarim boat
+//   gateways — bots teleport through the toll in both directions.
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface SkillStep {
@@ -387,26 +388,32 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // Level 60+:   two yew spots (north Varrock via gateway, Falador south open).
     WOODCUTTING: [
         { minLevel: 1,  maxLevel: 14, action: 'woodcut', location: Locations.TREES_LUMBRIDGE,   toolItemIds: [Items.BRONZE_AXE],  xpPerAction: 250,  ticksPerAction: 5, successRate: 0.65, itemGained: Items.LOGS        },
+        { minLevel: 1,  maxLevel: 14, action: 'woodcut', location: Locations.TREES_DRAYNOR,   toolItemIds: [Items.BRONZE_AXE],  xpPerAction: 250,  ticksPerAction: 5, successRate: 0.65, itemGained: Items.LOGS        },
         { minLevel: 15, maxLevel: 29, action: 'woodcut', location: Locations.OAKS_DRAYNOR,      toolItemIds: [Items.IRON_AXE],    xpPerAction: 375,  ticksPerAction: 5, successRate: 0.60, itemGained: Items.OAK_LOGS    },
         { minLevel: 30, maxLevel: 59, action: 'woodcut', location: Locations.WILLOWS_DRAYNOR,   toolItemIds: [Items.STEEL_AXE],   xpPerAction: 675,  ticksPerAction: 4, successRate: 0.65, itemGained: Items.WILLOW_LOGS },
         { minLevel: 30, maxLevel: 59, action: 'woodcut', location: Locations.WILLOWS_BARBARIAN, toolItemIds: [Items.STEEL_AXE],   xpPerAction: 675,  ticksPerAction: 4, successRate: 0.65, itemGained: Items.WILLOW_LOGS },
-        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_VARROCK,      toolItemIds: [Items.MITHRIL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.40, itemGained: Items.YEW_LOGS    },
-        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_FALADOR,      toolItemIds: [Items.MITHRIL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.40, itemGained: Items.YEW_LOGS    },
+        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_VARROCK,      toolItemIds: [Items.STEEL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.40, itemGained: Items.YEW_LOGS    },
+        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_FALADOR,      toolItemIds: [Items.STEEL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.40, itemGained: Items.YEW_LOGS    },
     ],
 
     // ── Fishing ──────────────────────────────────────────────────────────────
-    // XP from fishing.struct productexp, levels from saltfish.rs2.
-    // NOTE: Karamja lobster/swordfish spots require a boat — not used.
-    //       Best accessible high-level spot is Barbarian Village fly rod (salmon).
+    // XP from fishing.struct productexp, levels from saltfish.rs2 / rarefish.rs2.
+    // Karamja is reached via the PortSarimToKaramja / KaramjaToPortSarim boat
+    // gateways in BotAction.walkTo() — bots teleport through the toll.
+    // Banking: Draynor Bank (nearest) after the boat ride back to Port Sarim.
     FISHING: [
-        // Level 1-4:  net fishing — shrimp at Draynor shore
-        { minLevel: 1,  maxLevel: 4,  action: 'fish', location: Locations.FISH_DRAYNOR,   toolItemIds: [Items.SMALL_FISHING_NET],              xpPerAction: 100, ticksPerAction: 5, successRate: 0.60, itemGained: Items.RAW_SHRIMP                                    },
-        // Level 5-19: bait rod — sardine at Draynor shore
-        { minLevel: 5,  maxLevel: 19, action: 'fish', location: Locations.FISH_DRAYNOR,   toolItemIds: [Items.FISHING_ROD, Items.FISHING_BAIT], xpPerAction: 200, ticksPerAction: 5, successRate: 0.55, itemGained: Items.RAW_SARDINE, itemConsumed: Items.FISHING_BAIT },
+        // Level 1-19: net fishing — shrimp at Al Kharid shore
+        { minLevel: 1,  maxLevel: 19,  action: 'fish', location: Locations.FISH_ALKHARID,   toolItemIds: [Items.SMALL_FISHING_NET],              xpPerAction: 100, ticksPerAction: 5, successRate: 0.60, itemGained: Items.RAW_SHRIMP                                    },
+        { minLevel: 1,  maxLevel: 19,  action: 'fish', location: Locations.FISH_DRAYNOR,   toolItemIds: [Items.SMALL_FISHING_NET],              xpPerAction: 100, ticksPerAction: 5, successRate: 0.60, itemGained: Items.RAW_SHRIMP                                    },
+        { minLevel: 1,  maxLevel: 19,  action: 'fish', location: Locations.FISH_KARAMJA,   toolItemIds: [Items.SMALL_FISHING_NET],              xpPerAction: 100, ticksPerAction: 5, successRate: 0.60, itemGained: Items.RAW_SHRIMP                                    },
         // Level 20-29: fly rod — trout at Barbarian Village
         { minLevel: 20, maxLevel: 29, action: 'fish', location: Locations.FISH_BARBARIAN, toolItemIds: [Items.FLY_FISHING_ROD, Items.FEATHER],  xpPerAction: 500, ticksPerAction: 5, successRate: 0.55, itemGained: Items.RAW_TROUT,   itemConsumed: Items.FEATHER      },
-        // Level 30-99: fly rod — salmon at Barbarian Village (best accessible spot)
-        { minLevel: 30, maxLevel: 99, action: 'fish', location: Locations.FISH_BARBARIAN, toolItemIds: [Items.FLY_FISHING_ROD, Items.FEATHER],  xpPerAction: 700, ticksPerAction: 5, successRate: 0.50, itemGained: Items.RAW_SALMON,  itemConsumed: Items.FEATHER      },
+        // Level 30-39: fly rod — salmon at Barbarian Village
+        { minLevel: 30, maxLevel: 39, action: 'fish', location: Locations.FISH_BARBARIAN, toolItemIds: [Items.FLY_FISHING_ROD, Items.FEATHER],  xpPerAction: 700, ticksPerAction: 5, successRate: 0.50, itemGained: Items.RAW_SALMON,  itemConsumed: Items.FEATHER      },
+        // Level 40-49: cage — lobster at Karamja (boat-routed via Port Sarim)
+        { minLevel: 40, maxLevel: 49, action: 'fish', location: Locations.FISH_KARAMJA,   toolItemIds: [Items.LOBSTER_POT],                    xpPerAction: 900, ticksPerAction: 5, successRate: 0.50, itemGained: Items.RAW_LOBSTER                                    },
+        // Level 50-99: harpoon — swordfish at Karamja (boat-routed via Port Sarim)
+        { minLevel: 50, maxLevel: 99, action: 'fish', location: Locations.FISH_KARAMJA,   toolItemIds: [Items.HARPOON],                        xpPerAction: 1000, ticksPerAction: 5, successRate: 0.45, itemGained: Items.RAW_SWORDFISH                                 },
     ],
 
     // ── Mining ───────────────────────────────────────────────────────────────
@@ -466,7 +473,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     ATTACK: [
         // ── Level 1-9: chickens + goblins ────────────────────────────────────
         { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'goblin',    hitsToKill: 3 } },
+        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: ['goblin', 'giant spider', 'man' ],  hitsToKill: 3 } },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
         { minLevel: 10, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 20-29: cows + barbarians ───────────────────────────────────
@@ -551,6 +558,22 @@ export const SkillProgression: Record<string, SkillStep[]> = {
  * Returns a matching progression step for the given skill and level.
  * When multiple steps match (e.g. chickens OR goblins at level 1) one is
  * chosen at random — giving bots natural variety without any extra logic.
+IEVING: [],
+
+    // Agility — stub (requires course locs not easily spoofed with teleport)
+    AGILITY: [],
+
+    // Runecrafting — stub (requires talisman + altar interaction)
+    RUNECRAFT: [],
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Returns a matching progression step for the given skill and level.
+ * If multiple steps match (e.g. chickens OR goblins at level 1) picks randomly.
  */
 export function getProgressionStep(skill: string, level: number): SkillStep | null {
     const steps = SkillProgression[skill];

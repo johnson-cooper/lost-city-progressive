@@ -22,6 +22,7 @@ import {
     Items, Shops, Locations,
     getProgressionStep,
 } from '#/engine/bot/BotKnowledge.js';
+import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
 import type { Purchase } from '#/engine/bot/BotNeeds.js';
@@ -77,12 +78,70 @@ export function teleportNear(player: Player, x: number, z: number): void {
  *
  * @param radius  Maximum tile offset in each axis (default 5).
  */
+// ── Nearest-bank helper ───────────────────────────────────────────────────────
+
+/**
+ * All bot-accessible banks on the ground floor.
+ * Lumbridge castle 2nd-floor bank is intentionally excluded — bots don't
+ * climb stairs.  Al Kharid bank is included; the GATEWAY_REGIONS routing in
+ * walkTo handles the gate automatically.
+ */
+const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
+    Locations.DRAYNOR_BANK,
+    Locations.VARROCK_WEST_BANK,
+    Locations.VARROCK_EAST_BANK,
+    Locations.AL_KHARID_BANK,
+    
+];
+
+/**
+ * Returns the [x, z, level] tuple of the bank closest to the player's
+ * current tile, using Chebyshev distance.  Tasks should call this once
+ * per banking state entry rather than hard-coding a single bank.
+ */
+export function nearestBank(player: Player): [number, number, number] {
+    let best     = BOT_BANKS[0];
+    let bestDist = Number.MAX_SAFE_INTEGER;
+    for (const bank of BOT_BANKS) {
+        const dist = Math.max(Math.abs(player.x - bank[0]), Math.abs(player.z - bank[1]));
+        if (dist < bestDist) { bestDist = dist; best = bank; }
+    }
+    return best;
+}
+
+// ── botJitter ─────────────────────────────────────────────────────────────────
+
+/**
+ * Prime-pair seeds used by botJitter's fallback sequence.
+ * Each entry produces a different (jx, jz) spread for the same slot number.
+ * Keeping them here as a constant avoids re-allocating the array every tick.
+ */
+const JITTER_SEEDS: ReadonlyArray<[mx: number, mz: number, bx: number, bz: number]> = [
+    [ 7, 13,  3,  7],
+    [11, 17,  5, 11],
+    [19, 23,  7, 13],
+    [29, 31, 11, 17],
+    [37, 41, 13, 19],
+];
+
 export function botJitter(player: Player, x: number, z: number, radius = 5): [number, number] {
-    const slot = (player as any).slot ?? 0;
-    // Two independent prime-multiplied hashes give an even 2-D spread
-    const jx = ((slot * 7  + 3) % (radius * 2 + 1)) - radius;
-    const jz = ((slot * 13 + 7) % (radius * 2 + 1)) - radius;
-    return [x + jx, z + jz];
+    const slot  = (player as any).slot ?? 0;
+    const level = player.level;
+    const span  = radius * 2 + 1;
+
+    // Try each deterministic seed in order until we land on a walkable tile.
+    // Using the slot as the hash input keeps the result stable across ticks
+    // (same bot always gets the same jittered destination for a given area).
+    for (const [mx, mz, bx, bz] of JITTER_SEEDS) {
+        const tx = x + ((slot * mx + bx) % span) - radius;
+        const tz = z + ((slot * mz + bz) % span) - radius;
+        if (isZoneAllocated(level, tx, tz) && !isMapBlocked(tx, tz, level)) {
+            return [tx, tz];
+        }
+    }
+
+    // All offsets are blocked — return the base tile unchanged
+    return [x, z];
 }
 
 
@@ -212,7 +271,7 @@ export class ProgressWatchdog {
      *                        Generous enough to cover long walks (Barbarian Village,
      *                        Karamja ship travel), but catches indefinite oscillation.
      */
-    constructor(stallTickLimit = 100) {
+    constructor(stallTickLimit = 150) {
         this.limit = stallTickLimit;
     }
 

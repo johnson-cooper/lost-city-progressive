@@ -9,7 +9,7 @@ import {
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
     openNearbyGate,
     addXp, setCombatStyle,
-    botJitter,
+    botJitter, nearestBank,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import {
@@ -268,7 +268,7 @@ export class CombatTask extends BotTask {
 
         // ── BANK ──────────────────────────────────────
         if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+            const [bx, bz] = nearestBank(player);
 
             if (!isNear(player, bx, bz, 8)) {
                 this._stuckWalk(player, bx, bz);
@@ -277,6 +277,9 @@ export class CombatTask extends BotTask {
 
             const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
             if (!banker) return;
+            // Walk close to the banker first — prevents the engine routing backward
+            // around bank counters when setInteraction is called from 8+ tiles away.
+            if (!isNear(player, banker.x, banker.z, 3)) { walkTo(player, banker.x, banker.z); return; }
 
             interactNpcOp(player, banker, 3);
             this.state = 'bank_deposit';
@@ -335,6 +338,13 @@ export class CombatTask extends BotTask {
 
                 if (npc) {
                     this._log(player, `patrol found NPC → ${this._npcLabel(npc)}`, 'patrol_found');
+
+                    // Walk into melee range before engaging — prevents the engine
+                    // routing backward when the NPC is partially obstructed.
+                    if (!isNear(player, npc.x, npc.z, 5)) {
+                        walkTo(player, npc.x, npc.z);
+                        return;
+                    }
 
                     this.currentNpc = npc;
                     setCombatStyle(player, TRAIN_CYCLE[this.trainIndex].style);
@@ -395,6 +405,13 @@ export class CombatTask extends BotTask {
             }
 
             this._log(player, `found NPC → ${this._npcLabel(npc)}`, 'npc_found');
+
+            // Walk into melee range before engaging — prevents the engine
+            // routing backward when the NPC is partially obstructed.
+            if (!isNear(player, npc.x, npc.z, 5)) {
+                walkTo(player, npc.x, npc.z);
+                return;
+            }
 
             this.currentNpc = npc;
             setCombatStyle(player, TRAIN_CYCLE[this.trainIndex].style);

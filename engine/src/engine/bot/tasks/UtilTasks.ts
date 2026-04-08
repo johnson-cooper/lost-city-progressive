@@ -8,7 +8,7 @@ import {
     hasItem, addItem, removeItem,
     Items, Locations, STARTING_COINS,
     teleportToSafety, teleportNear, randInt, bankInvId, StuckDetector,
-    openNearbyGate,
+    openNearbyGate, nearestBank,
     PlayerStat,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
@@ -94,15 +94,10 @@ export class BankTask extends BotTask {
     private waitTicks = 0;
     private findFailTicks = 0;
     private readonly stuck = new StuckDetector(30, 4, 2);
-    private readonly bankCoord: [number, number, number];
     private readonly keepItems: number[];
 
-    constructor(
-        bankCoord: [number, number, number] = Locations.DRAYNOR_BANK,
-        keepItems: number[] = []
-    ) {
+    constructor(keepItems: number[] = []) {
         super('Bank');
-        this.bankCoord = bankCoord;
         this.keepItems = keepItems;
     }
 
@@ -112,7 +107,7 @@ export class BankTask extends BotTask {
         if (this.interrupted) return;
         if (this.cooldown > 0) { this.cooldown--; return; }
 
-        const [bx, bz, bl] = this.bankCoord;
+        const [bx, bz, bl] = nearestBank(player);
 
         if (this.state === 'walk') {
             if (!isNear(player, bx, bz, 8, bl)) {
@@ -151,6 +146,9 @@ export class BankTask extends BotTask {
                 return;
             }
             this.findFailTicks = 0;
+            // Walk close to the banker first — prevents the engine routing backward
+            // around bank counters when setInteraction is called from 8+ tiles away.
+            if (!isNear(player, banker.x, banker.z, 3)) { walkTo(player, banker.x, banker.z); return; }
             interactNpcOp(player, banker, 3);
             this.state = 'interact';
             this.waitTicks = 0;
