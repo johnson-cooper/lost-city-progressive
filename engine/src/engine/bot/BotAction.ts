@@ -64,10 +64,115 @@ export { PlayerStat };
 // ── Walking ───────────────────────────────────────────────────────────────────
 
 /**
+ * Gateway regions — fenced or walled areas that require routing through a
+ * specific approach tile / gate before reaching the interior destination.
+ *
+ * When walkTo() is called with a destination inside one of these regions and
+ * the bot is currently outside, it walks to `approachX/Z` first, then tries
+ * to open the gate before continuing.  Once the bot is inside the region
+ * (playerInRegion = true) normal pathfinding resumes.
+ *
+ * Coordinate bounds are conservative on purpose — when in doubt keep them tight
+ * so ordinary nearby destinations are never accidentally re-routed.
+ */
+type GatewayRegion = {
+    readonly name: string;
+    /** Destination is in the gated area. */
+    readonly destInRegion:   (x: number, z: number) => boolean;
+    /** Bot is already inside — skip gateway routing. */
+    readonly playerInRegion: (x: number, z: number) => boolean;
+    /** Tile to walk to so the bot faces the gate from the correct side. */
+    readonly approachX: number;
+    readonly approachZ: number;
+    /** How close (Chebyshev) to the approach tile before trying to open the gate. */
+    readonly arrivalRadius: number;
+};
+
+const GATEWAY_REGIONS: GatewayRegion[] = [
+    {
+        // ── Al Kharid south ───────────────────────────────────────────────────
+        // The Lumbridge-AlKharid wall runs at x ≈ 3268, z ≈ 3197..3244.
+        // Gate tile: ~[3268, 3227].  Destinations inside: warriors, bank,
+        // scimitar shop, furnace, etc.  Bots must approach from the west side
+        // (Lumbridge) to open the gate — NOT from the south where the wall has
+        // no opening.  Without this routing a bot walking to [3294, 3172] hits
+        // the wall 55 tiles south of the gate and can never open it.
+        name: 'AlKharid',
+        destInRegion:   (x, z) => x >= 3265 && z >= 3155 && z <= 3242,
+        playerInRegion: (x, z) => x >= 3267 && z >= 3155 && z <= 3242,
+        approachX: 3267,
+        approachZ: 3228,
+        arrivalRadius: 4,
+    },
+    {
+        // ── Lumbridge cow pen ─────────────────────────────────────────────────
+        // Fenced enclosure north of Lumbridge castle.  South gate at ~[3253, 3265].
+        // Bots walking directly to the interior ([3255, 3276]) hit the south
+        // fence unless they approach through the gate tile.
+        name: 'CowPen',
+        destInRegion:   (x, z) => x >= 3248 && x <= 3265 && z >= 3266 && z <= 3296,
+        playerInRegion: (x, z) => x >= 3248 && x <= 3265 && z >= 3266 && z <= 3296,
+        approachX: 3253,
+        approachZ: 3263,
+        arrivalRadius: 4,
+    },
+    {
+        // ── Varrock north (yew trees behind palace) ───────────────────────────
+        // The yews at [3204, 3499] are north of Varrock palace and reachable
+        // only by navigating through the city.  Routing through the Varrock
+        // south road entry gives the pathfinder a clear corridor to follow.
+        name: 'VarrockNorth',
+        destInRegion:   (x, z) => x >= 3180 && x <= 3240 && z >= 3470,
+        playerInRegion: (x, z) => x >= 3180 && x <= 3240 && z >= 3430,
+        approachX: 3212,
+        approachZ: 3432,
+        arrivalRadius: 10,
+    },
+];
+
+/**
+ * Raw pathfinding toward a single tile: accurate → relaxed → compass → naive.
+ * Does NOT do any gateway pre-routing.  Call walkTo() for normal movement.
+ */
+function _pathTowards(player: Player, destX: number, destZ: number): void {
+    const dx   = destX - player.x;
+    const dz   = destZ - player.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 1) return;
+
+    if (dist <= 100) {
+        let path = botWalkPath(player.level, player.x, player.z, destX, destZ);
+        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, destX, destZ);
+        if (path.length > 0) { player.queueWaypoints(path); return; }
+    } else {
+        const midX = Math.round(player.x + (dx / dist) * 90);
+        const midZ = Math.round(player.z + (dz / dist) * 90);
+        let path = botWalkPath(player.level, player.x, player.z, midX, midZ);
+        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
+        if (path.length > 0) { player.queueWaypoints(path); return; }
+    }
+
+    // Both pathfinders failed — try 8 compass directions at 15 tiles
+    const STEP = 15;
+    const baseAngle = Math.atan2(dz, dx);
+    for (const deg of [0, 45, -45, 90, -90, 135, -135, 180]) {
+        const angle = baseAngle + deg * Math.PI / 180;
+        const midX  = Math.round(player.x + Math.cos(angle) * STEP);
+        const midZ  = Math.round(player.z + Math.sin(angle) * STEP);
+        let path  = botWalkPath(player.level, player.x, player.z, midX, midZ);
+        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
+        if (path.length > 0) { player.queueWaypoints(path); return; }
+    }
+
+    // Absolute last resort: 1-tile naive step
+    player.queueWaypoint(player.x + Math.sign(dx), player.z + Math.sign(dz));
+}
+
+/**
  * Walk toward (destX, destZ) using accurate collision-respecting pathfinding.
  *
- * Uses botWalkPath (accurate=true, range=104) so the bot always reaches the
- * exact destination tile and can route around castle walls, rivers, and gates.
+ * Automatically routes through known gateway regions (Al Kharid gate, cow pen,
+ * Varrock north) so bots always approach gates from the correct side.
  *
  * For destinations beyond 100 tiles, walks in 90-tile segments — each call
  * advances the bot and the next tick continues toward the final goal.
@@ -75,6 +180,39 @@ export { PlayerStat };
  * Must set moveSpeed=WALK first — updateMovement() skips its reset when
  * moveSpeed is INSTANT, permanently blocking headless player movement.
  */
+export function walkTo(player: Player, destX: number, destZ: number): void {
+    player.moveSpeed = MoveSpeed.WALK;
+
+    if (Math.abs(player.x - destX) < 1 && Math.abs(player.z - destZ) < 1) return;
+
+    // ── Gateway routing ─────────────────────────────────────────────────────
+    // If the destination is inside a gated region and the bot is outside,
+    // walk to the approach tile first, then open the gate, then proceed.
+    for (const gw of GATEWAY_REGIONS) {
+        if (!gw.destInRegion(destX, destZ))         continue; // dest not in this region
+        if ( gw.playerInRegion(player.x, player.z)) continue; // already inside
+
+        const gwDist = Math.max(
+            Math.abs(player.x - gw.approachX),
+            Math.abs(player.z - gw.approachZ)
+        ); // Chebyshev distance
+
+        if (gwDist > gw.arrivalRadius) {
+            // Not yet at the approach tile — walk toward it first.
+            _pathTowards(player, gw.approachX, gw.approachZ);
+            return;
+        }
+
+        // Close to approach tile — try to open the gate.
+        if (openNearbyGate(player, 8)) return; // gate interaction queued, wait
+        // Gate is open (or no gate found) — fall through to normal pathfinding.
+        break;
+    }
+
+    // ── Normal pathfinding ──────────────────────────────────────────────────
+    _pathTowards(player, destX, destZ);
+}
+
 
 export function interactHeldOp(
     player: Player,
@@ -109,7 +247,8 @@ export function interactHeldOp(
         return true;
     }
     return true;
-} 
+}
+
 export function interactHeldOpU(
     player: Player,
     inv: Inventory,
@@ -166,56 +305,6 @@ export function interactHeldOpU(
     return true;
 }
 
-export function walkTo(player: Player, destX: number, destZ: number): void {
-    player.moveSpeed = MoveSpeed.WALK;
-
-    const dx   = destX - player.x;
-    const dz   = destZ - player.z;
-    const dist = Math.sqrt(dx * dx + dz * dz);
-
-    if (dist < 1) return;
-
-    if (dist <= 100) {
-        // Try accurate=true first (exact tile), fall back to accurate=false (any adjacent tile)
-        let path = botWalkPath(player.level, player.x, player.z, destX, destZ);
-        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, destX, destZ);
-        if (path.length > 0) {
-            player.queueWaypoints(path);
-            return;
-        }
-    } else {
-        const midX = Math.round(player.x + (dx / dist) * 90);
-        const midZ = Math.round(player.z + (dz / dist) * 90);
-        let path = botWalkPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length > 0) {
-            player.queueWaypoints(path);
-            return;
-        }
-    }
-
-    // Both pathfinders failed — try 8 compass directions at 15 tiles
-    const STEP = 15;
-    const baseAngle = Math.atan2(dz, dx);
-    const angles = [0, 45, -45, 90, -90, 135, -135, 180].map(d => d * Math.PI / 180);
-
-    for (const offset of angles) {
-        const angle = baseAngle + offset;
-        const midX  = Math.round(player.x + Math.cos(angle) * STEP);
-        const midZ  = Math.round(player.z + Math.sin(angle) * STEP);
-        let path  = botWalkPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length === 0) path = botFindPath(player.level, player.x, player.z, midX, midZ);
-        if (path.length > 0) {
-            player.queueWaypoints(path);
-            return;
-        }
-    }
-
-    // Absolute last resort: 1-tile naive step
-    player.queueWaypoint(player.x + Math.sign(dx), player.z + Math.sign(dz));
-}
-
-
 /** True if the bot has queued walk steps remaining. */
 export function hasWaypoints(player: Player): boolean {
     return player.hasWaypoints();
@@ -264,10 +353,8 @@ export function interactObjOp(
     player.clearPendingAction();
     player.setInteraction(Interaction.ENGINE, obj, trigger);
 
-    // OPTIONAL: auto-pickup QoL (safe to include or remove)
     if (op === 1) {
         // could later add anti-misclick, loot priority, etc.
-        // console.log('BOT picking up object:', obj.type);
     }
 }
 
@@ -280,7 +367,6 @@ function _findObj(
     let best: Obj | null = null;
     let bestDist = Infinity;
 
-    // Scan a grid of zones around the centre point
     const zoneRadius = Math.ceil(radius / 8) + 1;
     for (let dz = -zoneRadius; dz <= zoneRadius; dz++) {
         for (let dx = -zoneRadius; dx <= zoneRadius; dx++) {
@@ -300,6 +386,7 @@ function _findObj(
     }
     return best;
 }
+
 export function findObjByPrefix(
     cx: number,
     cz: number,
@@ -312,6 +399,7 @@ export function findObjByPrefix(
         return !!(t.debugname?.startsWith(prefix));
     });
 }
+
 export function findObjNear(
     cx: number,
     cz: number,
@@ -321,6 +409,7 @@ export function findObjNear(
 ): Obj | null {
     return _findObj(cx, cz, level, radius, obj => obj.type === objTypeId);
 }
+
 export function findObjByName(
     cx: number,
     cz: number,
@@ -363,7 +452,6 @@ export function findNpcNear(cx: number, cz: number, level: number, npcTypeId: nu
 
 /**
  * Search zones around (cx, cz) for a live NPC whose debug name matches.
- * e.g. findNpcByName(..., 'bob') finds Bob the Axe Seller.
  */
 export function findNpcByName(cx: number, cz: number, level: number, npcName: string, radius = 10): Npc | null {
     const typeId = NpcType.getId(npcName);
@@ -381,7 +469,6 @@ export function findLocNear(cx: number, cz: number, level: number, locTypeId: nu
 
 /**
  * Search zones around (cx, cz) for a live Loc whose debug name matches.
- * e.g. findLocByName(..., 'willow_tree') finds a willow tree.
  */
 export function findLocByName(cx: number, cz: number, level: number, locName: string, radius = 10): Loc | null {
     const typeId = LocType.getId(locName);
@@ -391,9 +478,7 @@ export function findLocByName(cx: number, cz: number, level: number, locName: st
 
 /**
  * Search for any Loc whose type name starts with a prefix.
- * e.g. findLocByPrefix(..., 'copperrock') finds copperrock1 or copperrock2.
  * Optional exclude: substring that must NOT appear in the debugname.
- * e.g. findLocByPrefix(..., 'tree', 10, 'stump') skips tree stumps.
  */
 export function findLocByPrefix(cx: number, cz: number, level: number, prefix: string, radius = 10, exclude?: string): Loc | null {
     return _findLoc(cx, cz, level, radius, loc => {
@@ -406,7 +491,6 @@ export function findLocByPrefix(cx: number, cz: number, level: number, prefix: s
 
 /**
  * Search for any NPC whose type name starts with a prefix.
- * e.g. findNpcByPrefix(..., '_saltfish') finds any saltfish spot variant.
  */
 export function findNpcByPrefix(cx: number, cz: number, level: number, prefix: string, radius = 20): Npc | null {
     return _findNpc(cx, cz, level, radius, npc => {
@@ -425,7 +509,6 @@ function _findNpc(
     let best: Npc | null = null;
     let bestDist = Infinity;
 
-    // Scan a grid of zones around the centre point
     const zoneRadius = Math.ceil(radius / 8) + 1;
     for (let dz = -zoneRadius; dz <= zoneRadius; dz++) {
         for (let dx = -zoneRadius; dx <= zoneRadius; dx++) {
@@ -494,16 +577,6 @@ export function addXp(player: Player, stat: PlayerStat, xp: number): void {
 
 /**
  * Sets the player's melee combat mode (com_mode varp).
- * This is the varp the combat engine reads to pick damagestyle from the weapon table.
- *
- * For unarmed (weapon_unarmed_table):
- *   0 = Accurate   → style_melee_accurate  → Attack XP
- *   1 = Aggressive → style_melee_aggressive → Strength XP
- *   2 = Defensive  → style_melee_defensive  → Defence XP
- *   3 → clamped to 2 by player_combat_stat  → Defence XP (safe alias)
- *
- * player_combat_stat re-reads com_mode every time a stat changes (via [changestat,_]),
- * so the new style takes effect on the first XP gain after this call.
  */
 export function setCombatStyle(player: Player, style: 0 | 1 | 2 | 3): void {
     const varp = VarPlayerType.getByName('com_mode');
@@ -558,7 +631,7 @@ export function clearBackpack(player: Player): void {
  * Returns true if the item was added and the obj removed from the world.
  */
 export function pickupGroundItem(player: Player, obj: Obj): boolean {
-    if (!obj.isValid()) return false; // skip ownership/reveal check — NPC drops have a specific receiver64 that won't match the bot's hash64
+    if (!obj.isValid()) return false;
 
     const inv = getBackpack(player);
     if (!inv) return false;
@@ -580,7 +653,6 @@ export function getCombatLevel(player: Player): number {
 
 /**
  * Search for any NPC whose debugname ends with a given suffix.
- * e.g. findNpcBySuffix(..., '_saltfish') matches '0_44_53_saltfish' etc.
  */
 export function findNpcBySuffix(cx: number, cz: number, level: number, suffix: string, radius = 20): Npc | null {
     return _findNpc(cx, cz, level, radius, npc => {
@@ -599,33 +671,37 @@ export function isAdjacentToLoc(player: Player, loc: { x: number; z: number; typ
     const t = LocType.get(loc.type);
     const w = t.width  ?? 1;
     const l = t.length ?? 1;
-    // Bot must be within 1 tile of any face of the bounding box
     const dx = Math.max(0, Math.max(loc.x - player.x, player.x - (loc.x + w - 1)));
     const dz = Math.max(0, Math.max(loc.z - player.z, player.z - (loc.z + l - 1)));
     return dx <= 1 && dz <= 1 && (dx + dz) <= 1;
 }
 
 /**
- * Scan within `radius` tiles for any closed door or gate (op1 = "Open").
- * Covers standard named gates/doors as well as loc_XXXX-named gates that
- * have no "gate" in their debugname.
- *
- * Returns true if an obstruction was found and an Open interaction was queued.
- * Call from walk/scan states when the bot appears blocked.
+ * Open-action keywords (lowercased) that indicate a closed/passable door or gate.
+ * Covers standard "Open", toll gates ("Pay-toll(10gp)"), and walk-through doors.
  */
-export function openNearbyGate(player: Player, radius = 5): boolean {
+const GATE_OPEN_KEYWORDS  = ['open', 'pay', 'pay-toll', 'walk-through', 'pass-through', 'enter'];
+const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
+
+/**
+ * Scan within `radius` tiles for any closed door, gate, or toll gate.
+ * Handles standard "Open" ops as well as "Pay-toll(10gp)" variants used by
+ * the Al Kharid gate and similar toll structures.
+ *
+ * Returns true if an obstruction was found and an Open/Pay interaction was
+ * queued.  Call from walk/scan states when the bot appears blocked.
+ */
+export function openNearbyGate(player: Player, radius = 10): boolean {
     const blocker = _findLoc(player.x, player.z, player.level, radius, loc => {
         const t = LocType.get(loc.type);
-
         const ops = (t.op ?? [])
             .filter((o): o is string => typeof o === 'string')
             .map(o => o.toLowerCase());
 
-        const isClosedGate =
-            ops.includes('open') &&
-            !ops.includes('close');
+        const hasOpenOp  = ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
+        const hasCloseOp = ops.some(op => GATE_CLOSE_KEYWORDS.some(kw => op === kw));
 
-        return isClosedGate;
+        return hasOpenOp && !hasCloseOp;
     });
 
     if (!blocker) return false;

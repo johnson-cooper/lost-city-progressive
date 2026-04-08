@@ -68,7 +68,22 @@ export function teleportNear(player: Player, x: number, z: number): void {
     player.teleJump(x, z, player.level);
 }
 
-
+/**
+ * Return a stable per-bot jitter offset so different bots spread around a
+ * shared destination instead of all walking to the exact same tile.
+ *
+ * Uses the player's slot number as a deterministic seed so the offset is
+ * consistent for each bot across ticks (no per-tick re-randomisation).
+ *
+ * @param radius  Maximum tile offset in each axis (default 5).
+ */
+export function botJitter(player: Player, x: number, z: number, radius = 5): [number, number] {
+    const slot = (player as any).slot ?? 0;
+    // Two independent prime-multiplied hashes give an even 2-D spread
+    const jx = ((slot * 7  + 3) % (radius * 2 + 1)) - radius;
+    const jz = ((slot * 13 + 7) % (radius * 2 + 1)) - radius;
+    return [x + jx, z + jz];
+}
 
 
 // ── Abstract base ─────────────────────────────────────────────────────────────
@@ -197,7 +212,7 @@ export class ProgressWatchdog {
      *                        Generous enough to cover long walks (Barbarian Village,
      *                        Karamja ship travel), but catches indefinite oscillation.
      */
-    constructor(stallTickLimit = 400) {
+    constructor(stallTickLimit = 100) {
         this.limit = stallTickLimit;
     }
 

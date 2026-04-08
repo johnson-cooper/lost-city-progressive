@@ -28,7 +28,7 @@ import { Items, Shops, SkillStep } from '#/engine/bot/BotKnowledge.js';
  *   Magic:    staff of air (unknown) + 100 mind runes (100 × 4gp) =  400gp+
  * 1000gp covers all starting gear with a comfortable buffer.
  */
-export const STARTING_COINS = 1000;
+export const STARTING_COINS = 100;
 
 // ── Inventory checks ──────────────────────────────────────────────────────────
 

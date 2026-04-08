@@ -11,7 +11,7 @@ import {
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId, INTERACT_TIMEOUT,
     StuckDetector, ProgressWatchdog,
-    openNearbyGate,
+    openNearbyGate, botJitter,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 
@@ -104,7 +104,8 @@ export class FishingTask extends BotTask {
             const [lx, lz, ll] = this.step.location;
 
             if (!isNear(player, lx, lz, 15, ll)) {
-                this._stuckWalk(player, lx, lz);
+                const [jx, jz] = botJitter(player, lx, lz, 5);
+                this._stuckWalk(player, jx, jz);
                 return;
             }
 

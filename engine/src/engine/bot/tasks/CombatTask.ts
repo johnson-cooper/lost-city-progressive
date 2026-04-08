@@ -9,6 +9,7 @@ import {
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
     openNearbyGate,
     addXp, setCombatStyle,
+    botJitter,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import {
@@ -297,7 +298,8 @@ export class CombatTask extends BotTask {
             const [lx, lz, ll] = this.step.location;
 
             if (!isNear(player, lx, lz, 15, ll)) {
-                this._stuckWalk(player, lx, lz);
+                const [jx, jz] = botJitter(player, lx, lz, 6);
+                this._stuckWalk(player, jx, jz);
                 return;
             }
 
@@ -310,13 +312,14 @@ export class CombatTask extends BotTask {
         // ── PATROL ────────────────────────────────────
         if (this.state === 'patrol') {
             const [cx, cz] = this.step.location;
+            const [jcx, jcz] = botJitter(player, cx, cz, 8);
 
             this.patrolTicks++;
 
             if (!this.patrolTarget || this.patrolTicks % randInt(3, 6) === 0) {
                 this.patrolTarget = [
-                    cx + randInt(-12, 8),
-                    cz + randInt(-12, 8)
+                    jcx + randInt(-8, 8),
+                    jcz + randInt(-8, 8)
                 ];
             }
 
@@ -643,7 +646,7 @@ export class CombatTask extends BotTask {
             return;
         }
 
-        if (openNearbyGate(player, 5)) {
+        if (openNearbyGate(player, 10)) {
             this.intentCooldown = 3;
             return;
         }
