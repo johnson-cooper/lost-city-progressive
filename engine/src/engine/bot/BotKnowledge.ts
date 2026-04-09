@@ -78,6 +78,7 @@ export const Items = {
     BRONZE_FULL_HELM:   1155,
     BRONZE_SQ_SHIELD:   1173,
     BRONZE_KITESHIELD:  1189,
+    
 
     BRONZE_DAGGER:      1205,
     BRONZE_LONGSWORD:   1291,

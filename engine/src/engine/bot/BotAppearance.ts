@@ -1,6 +1,6 @@
 import IdkType from '#/cache/config/IdkType.js';
 import InvType from '#/cache/config/InvType.js';
-import { randInt } from '#/engine/bot/tasks/BotTaskBase.js';
+import { Items, randInt } from '#/engine/bot/tasks/BotTaskBase.js';
 import Player from '#/engine/entity/Player.js';
 import { check, IDKTypeValid } from '#/engine/script/ScriptValidators.js';
 
@@ -25,7 +25,7 @@ const GENDERS = {
     FEMALE: 1
 };
 
-const STARTER_WEAPONS = [1277, 1279, 1321, 1203, 1171, 1173];
+const STARTER_WEAPONS = [Items.BRONZE_AXE, Items.BRONZE_PICKAXE, Items.BRONZE_SWORD, Items.BRONZE_SCIMITAR, Items.IRON_AXE, Items.IRON_SCIMITAR];
 
 function pick<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
