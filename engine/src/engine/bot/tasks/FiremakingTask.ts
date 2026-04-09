@@ -16,6 +16,7 @@ import {
     bankInvId,
     openNearbyGate,
     teleportNear,
+    nearestBank,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
@@ -147,7 +148,7 @@ private spawnFire(player: Player): void {
         // ───────────────── BANK WALK ─────────────────
 
         if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
+            const [bx, bz] = nearestBank(player);
 
             if (!isNear(player, bx, bz, 8)) {
                 this._stuckWalk(player, bx, bz);

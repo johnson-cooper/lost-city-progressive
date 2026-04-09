@@ -18,16 +18,21 @@
 import LocType from '#/cache/config/LocType.js';
 import {
     BotTask, Player, Loc, InvType,
-    walkTo, interactLoc, interactNpcOp,
+    walkTo, interactLoc,
     findLocByPrefix, findNpcByName,
     hasItem, addItem, isInventoryFull, isNear,
     getBaseLevel, PlayerStat,
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId, INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
-    isAdjacentToLoc, openNearbyGate,
+    isAdjacentToLoc, openNearbyGate, botJitter, advanceBankWalk,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
-import { findNpcByPrefix } from './BotTaskBase.js';
+import { getCombatLevel, getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
+
+/** Draynor village woodcutting spots — aggressive Dark Wizards patrol here, minimum combat 16. */
+const DRAYNOR_WC_LOCATIONS: Array<[number, number, number]> = [
+    Locations.WILLOWS_DRAYNOR,
+];
 
 export class WoodcuttingTask extends BotTask {
     private step: SkillStep;
@@ -40,11 +45,13 @@ export class WoodcuttingTask extends BotTask {
      *   bank_walk → walking to sell logs
      *   bank_done → logs sold, return to walk
      */
-    private state: 'walk' | 'approach' | 'interact' | 'bank_walk' | 'bank_done' = 'walk';
+    private state: 'walk' | 'approach' | 'interact' | 'flee' | 'bank_walk' | 'bank_done' = 'walk';
     private interactTicks  = 0;
     private lastXp         = 0;
     private scanFailTicks  = 0;
     private approachTicks  = 0;   // ticks spent approaching a tree
+    private fleeTicks      = 0;
+    private readonly FLEE_TICKS = 12;
     private currentTree:  Loc | null = null;
     private readonly stuck    = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog();
@@ -55,7 +62,14 @@ export class WoodcuttingTask extends BotTask {
     }
 
     shouldRun(player: Player): boolean {
-        return this.step.toolItemIds.every(id => hasItem(player, id));
+        if (!this.step.toolItemIds.every(id => hasItem(player, id))) return false;
+
+        // Draynor village has aggressive Dark Wizards — require combat level 16
+        const [sx, sz, sl] = this.step.location;
+        const isDraynor = DRAYNOR_WC_LOCATIONS.some(([lx, lz, ll]) => lx === sx && lz === sz && ll === sl);
+        if (isDraynor && getCombatLevel(player) < 16) return false;
+
+        return true;
     }
 
     tick(player: Player): void {
@@ -63,6 +77,20 @@ export class WoodcuttingTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) { this.interrupt(); return; }
         if (this.cooldown > 0) { this.cooldown--; return; }
+
+        // ── Aggressor detection ───────────────────────────────────────────────
+        if (this.state !== 'bank_walk' && this.state !== 'bank_done' && this.state !== 'flee') {
+            const aggressor = findAggressorNpc(player, 8);
+            if (aggressor) {
+                const npcLvl = getNpcCombatLevel(aggressor);
+                if (npcLvl > player.combatLevel) {
+                    this.state = 'flee';
+                    this.fleeTicks = 0;
+                    this.currentTree = null;
+                    return;
+                }
+            }
+        }
 
         // Upgrade step when level-up unlocks a better tree tier
         const level   = getBaseLevel(player, PlayerStat.WOODCUTTING);
@@ -73,28 +101,52 @@ export class WoodcuttingTask extends BotTask {
             this.currentTree  = null;
         }
 
-        // ── Sell logs at general store ────────────────────────────────────────
-  if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
-            if (!isNear(player, bx, bz, 8)) { this._stuckWalk(player, bx, bz); return; }
-            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
-            if (!banker) { walkTo(player, bx, bz); return; }
-            interactNpcOp(player, banker, 3);
-            this.cooldown = 4; this.state = 'bank_done'; return;
+        // ── Bank logs ─────────────────────────────────────────────────────────
+        if (this.state === 'bank_walk') {
+            const result = advanceBankWalk(player, this.stuck);
+            if (result === 'walk') return;
+            // 'ready' = interaction queued; 'direct' = deposit without UI
+            this.cooldown = result === 'ready' ? 3 : 0;
+            this.state = 'bank_done';
+            return;
         }
 
         if (this.state === 'bank_done') {
             this._depositLoot(player);
+            this._rerollStep(player); // re-randomise tree location for the next run
             this.state = 'walk'; this.cooldown = 3; return;
         }
 
         if (isInventoryFull(player)) { this.state = 'bank_walk'; return; }
 
+        // ── Flee ──────────────────────────────────────────────────────────────
+        if (this.state === 'flee') {
+            this.fleeTicks++;
+            const [lx, lz] = this.step.location;
+            this._stuckWalk(player, lx, lz);
+            if (this.fleeTicks >= this.FLEE_TICKS || isNear(player, lx, lz, 12)) {
+                this.state = 'walk';
+                this.fleeTicks = 0;
+            }
+            return;
+        }
+
         // ── Walk to tree area ─────────────────────────────────────────────────
         if (this.state === 'walk') {
             const [lx, lz, ll] = this.step.location;
             if (!isNear(player, lx, lz, 15, ll)) {
-                this._stuckWalk(player, lx, lz,);
+                // Via waypoint: route through intermediate coord before destination.
+                // Used to steer around obstacles (e.g. Draynor Mansion for Barbarian
+                // Village willows).  Only apply when the bot hasn't yet passed it —
+                // check player.z so a bot already north of the waypoint skips it.
+                const via = this.step.via;
+                if (via && player.level === via[2] && player.z < via[1] && !isNear(player, via[0], via[1], 5)) {
+                    const [jx, jz] = botJitter(player, via[0], via[1], 3);
+                    this._stuckWalk(player, jx, jz);
+                    return;
+                }
+                const [jx, jz] = botJitter(player, lx, lz, 5);
+                this._stuckWalk(player, jx, jz);
                 return;
             }
             this.state = 'approach'; // arrived — now find and approach a tree
@@ -190,6 +242,7 @@ export class WoodcuttingTask extends BotTask {
         this.scanFailTicks = 0;
         this.approachTicks = 0;
         this.lastXp        = 0;
+        this.fleeTicks     = 0;
         this.currentTree   = null;
         this.stuck.reset();
         this.watchdog.reset();
@@ -245,6 +298,21 @@ export class WoodcuttingTask extends BotTask {
         }
     }
 
+
+    // ── Step re-roll ─────────────────────────────────────────────────────────
+
+    /** Pick a fresh random step matching the bot's current level and owned tools. */
+    private _rerollStep(player: Player): void {
+        const level = getBaseLevel(player, PlayerStat.WOODCUTTING);
+        const newStep = getProgressionStep(
+            'WOODCUTTING', level,
+            ids => ids.every(id => hasItem(player, id)),
+        );
+        if (newStep) {
+            this.step = newStep;
+            this.currentTree = null;
+        }
+    }
 
         private _depositLoot(player: Player): void {
         const inv = player.getInventory(InvType.INV);

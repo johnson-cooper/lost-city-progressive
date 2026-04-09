@@ -4,6 +4,8 @@
  * Wraps a real engine Player with bot AI.
  */
 
+import fs from 'fs';
+import path from 'path';
 import Player from '#/engine/entity/Player.js';
 import InvType from '#/cache/config/InvType.js';
 import { BotTask } from '#/engine/bot/tasks/Index.js';
@@ -14,8 +16,19 @@ const RESCAN_TICKS = 600;
 
 const NO_INTERRUPT_TASKS = new Set(['ShopTrip', 'Bank', 'Walk', 'Init', 'Idle', 'Prayer']);
 
-const IDLE_PHRASES    = ['nice', 'gz', 'good spot', 'banking brb', 'almost there', 'good xp here', 'gg', 'brb'];
-const LEVELUP_PHRASES = ['gz me', 'finally!', 'level up!', 'yes!', 'grind never stops', 'getting there'];
+// ── Phrase lists loaded from data/bot/bot_phrases.json ───────────────────────
+// Falls back to a minimal built-in list if the file is missing.
+let IDLE_PHRASES:    string[] = ['nice', 'gz', 'good spot', 'banking brb', 'almost there', 'good xp here', 'gg', 'brb'];
+let LEVELUP_PHRASES: string[] = ['gz me', 'finally!', 'level up!', 'yes!', 'grind never stops', 'getting there'];
+
+try {
+    const raw = fs.readFileSync(path.join('data', 'bot', 'bot_phrases.json'), 'utf8');
+    const data = JSON.parse(raw) as { idle?: string[]; levelup?: string[] };
+    if (Array.isArray(data.idle)    && data.idle.length    > 0) IDLE_PHRASES    = data.idle;
+    if (Array.isArray(data.levelup) && data.levelup.length > 0) LEVELUP_PHRASES = data.levelup;
+} catch {
+    // File not found or malformed — keep the built-in defaults silently.
+}
 
 function pick<T>(arr: T[]): T { return arr[Math.floor(Math.random() * arr.length)]; }
 function chance(p: number): boolean { return Math.random() < p; }

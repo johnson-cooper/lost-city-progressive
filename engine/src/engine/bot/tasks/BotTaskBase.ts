@@ -11,7 +11,7 @@ import Loc from '#/engine/entity/Loc.js';
 import InvType from '#/cache/config/InvType.js';
 import { Inventory } from '#/engine/Inventory.js';
 import {
-    walkTo, interactNpc, interactNpcOp, interactLoc,
+    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,
@@ -22,6 +22,7 @@ import {
     Items, Shops, Locations,
     getProgressionStep,
 } from '#/engine/bot/BotKnowledge.js';
+import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
 import type { Purchase } from '#/engine/bot/BotNeeds.js';
@@ -68,7 +69,81 @@ export function teleportNear(player: Player, x: number, z: number): void {
     player.teleJump(x, z, player.level);
 }
 
+/**
+ * Return a stable per-bot jitter offset so different bots spread around a
+ * shared destination instead of all walking to the exact same tile.
+ *
+ * Uses the player's slot number as a deterministic seed so the offset is
+ * consistent for each bot across ticks (no per-tick re-randomisation).
+ *
+ * @param radius  Maximum tile offset in each axis (default 5).
+ */
+// ── Nearest-bank helper ───────────────────────────────────────────────────────
 
+/**
+ * All bot-accessible banks on the ground floor.
+ * Lumbridge castle 2nd-floor bank is intentionally excluded — bots don't
+ * climb stairs.  Al Kharid bank is included; the GATEWAY_REGIONS routing in
+ * walkTo handles the gate automatically.
+ */
+const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
+    Locations.DRAYNOR_BANK,
+    Locations.VARROCK_WEST_BANK,
+    Locations.VARROCK_EAST_BANK,
+    Locations.AL_KHARID_BANK,
+    Locations.FALADOR_EAST_BANK,
+    
+];
+
+/**
+ * Returns the [x, z, level] tuple of the bank closest to the player's
+ * current tile, using Chebyshev distance.  Tasks should call this once
+ * per banking state entry rather than hard-coding a single bank.
+ */
+export function nearestBank(player: Player): [number, number, number] {
+    let best     = BOT_BANKS[0];
+    let bestDist = Number.MAX_SAFE_INTEGER;
+    for (const bank of BOT_BANKS) {
+        const dist = Math.max(Math.abs(player.x - bank[0]), Math.abs(player.z - bank[1]));
+        if (dist < bestDist) { bestDist = dist; best = bank; }
+    }
+    return best;
+}
+
+// ── botJitter ─────────────────────────────────────────────────────────────────
+
+/**
+ * Prime-pair seeds used by botJitter's fallback sequence.
+ * Each entry produces a different (jx, jz) spread for the same slot number.
+ * Keeping them here as a constant avoids re-allocating the array every tick.
+ */
+const JITTER_SEEDS: ReadonlyArray<[mx: number, mz: number, bx: number, bz: number]> = [
+    [ 7, 13,  3,  7],
+    [11, 17,  5, 11],
+    [19, 23,  7, 13],
+    [29, 31, 11, 17],
+    [37, 41, 13, 19],
+];
+
+export function botJitter(player: Player, x: number, z: number, radius = 5): [number, number] {
+    const slot  = (player as any).slot ?? 0;
+    const level = player.level;
+    const span  = radius * 2 + 1;
+
+    // Try each deterministic seed in order until we land on a walkable tile.
+    // Using the slot as the hash input keeps the result stable across ticks
+    // (same bot always gets the same jittered destination for a given area).
+    for (const [mx, mz, bx, bz] of JITTER_SEEDS) {
+        const tx = x + ((slot * mx + bx) % span) - radius;
+        const tz = z + ((slot * mz + bz) % span) - radius;
+        if (isZoneAllocated(level, tx, tz) && !isMapBlocked(tx, tz, level)) {
+            return [tx, tz];
+        }
+    }
+
+    // All offsets are blocked — return the base tile unchanged
+    return [x, z];
+}
 
 
 // ── Abstract base ─────────────────────────────────────────────────────────────
@@ -92,7 +167,7 @@ export abstract class BotTask {
 export type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 export {
     Player, Npc, Loc, InvType, Inventory,
-    walkTo, interactNpc, interactNpcOp, interactLoc,
+    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,
@@ -101,6 +176,79 @@ export {
     getMissingPurchases, STARTING_COINS,
     openNearbyGate, isAdjacentToLoc,
 };
+
+// ── Shared banking helper ─────────────────────────────────────────────────────
+
+/**
+ * Drives the 'bank_walk' state for any gathering task.
+ *
+ * Priority order:
+ *   1. Bank booth (bankbooth loc, op2 = Use-quickly → @openbank immediately, no dialog).
+ *      Works at ALL banks.  Avoids NPC name ambiguity entirely.
+ *   2. Banker NPC by prefix 'banker' (Lumbridge 2nd floor, Draynor, Varrock…).
+ *   3. Banker NPC by prefix 'kharidbanker' (Al Kharid — debug name starts with 'kharid').
+ *   4. Direct fallback: no interactive entity found but bot is already at the bank
+ *      tile — proceed to deposit anyway (deposit functions work directly on
+ *      inventory objects and do NOT require the bank UI to be open).
+ *
+ * Returns:
+ *   'walk'   — still navigating, caller should return for this tick
+ *   'ready'  — interaction queued (or fallback triggered), set cooldown + state
+ *   'direct' — fallback: skip interaction, deposit immediately
+ */
+export function advanceBankWalk(
+    player: Player,
+    stuckDetector: StuckDetector,
+): 'walk' | 'ready' | 'direct' {
+    const [bx, bz] = nearestBank(player);
+
+    if (!isNear(player, bx, bz, 3)) {
+        // Still walking — drive bot all the way to the bank coord (which should be
+        // inside the building) before the booth search activates.
+        if (!stuckDetector.check(player, bx, bz)) {
+            walkTo(player, bx, bz);
+        } else if (stuckDetector.desperatelyStuck) {
+            teleportNear(player, bx, bz);
+            stuckDetector.reset();
+        } else {
+            walkTo(player, bx + randInt(-4, 4), bz + randInt(-4, 4));
+        }
+        return 'walk';
+    }
+
+    // ── At bank (inside): try booth first ────────────────────────────────────
+    // Search radius 6 — large enough to find booths across the floor but small
+    // enough not to reach through the walls of the building from outside.
+    // The bot is already at the interior coord so no wall-pierce is possible.
+    const booth = findLocByName(player.x, player.z, player.level, 'bankbooth', 6);
+    if (booth) {
+        if (!isNear(player, booth.x, booth.z, 1)) {
+            walkTo(player, booth.x, booth.z);
+            return 'walk';
+        }
+        interactLocOp(player, booth, 2); // op2 = Use-quickly → @openbank, no dialog
+        return 'ready';
+    }
+
+    // ── Fallback: banker NPC ──────────────────────────────────────────────────
+    // Al Kharid bankers have debug names starting with 'kharidbanker', not 'banker'.
+    const banker =
+        findNpcByPrefix(player.x, player.z, player.level, 'banker', 10) ??
+        findNpcByPrefix(player.x, player.z, player.level, 'kharidbanker', 10);
+    if (banker) {
+        if (!isNear(player, banker.x, banker.z, 3)) {
+            walkTo(player, banker.x, banker.z);
+            return 'walk';
+        }
+        interactNpcOp(player, banker, 3); // op3 = Bank on standard bankers
+        return 'ready';
+    }
+
+    // ── Ultimate fallback: deposit without UI interaction ─────────────────────
+    // Deposit functions use player.getInventory(bankInvId()) directly — no open
+    // bank UI required.  Only reached if no booth or NPC is visible.
+    return 'direct';
+}
 
 // ── StuckDetector ─────────────────────────────────────────────────────────────
 
@@ -197,7 +345,7 @@ export class ProgressWatchdog {
      *                        Generous enough to cover long walks (Barbarian Village,
      *                        Karamja ship travel), but catches indefinite oscillation.
      */
-    constructor(stallTickLimit = 400) {
+    constructor(stallTickLimit = 200) {
         this.limit = stallTickLimit;
     }
 

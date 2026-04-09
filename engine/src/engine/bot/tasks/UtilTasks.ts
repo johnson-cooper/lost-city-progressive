@@ -8,7 +8,7 @@ import {
     hasItem, addItem, removeItem,
     Items, Locations, STARTING_COINS,
     teleportToSafety, teleportNear, randInt, bankInvId, StuckDetector,
-    openNearbyGate,
+    openNearbyGate, advanceBankWalk,
     PlayerStat,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
@@ -90,19 +90,12 @@ export class WalkTask extends BotTask {
 // ── BankTask ──────────────────────────────────────────────────────────────────
 
 export class BankTask extends BotTask {
-    private state: 'walk' | 'find' | 'interact' | 'deposit' | 'done' = 'walk';
-    private waitTicks = 0;
-    private findFailTicks = 0;
+    private state: 'walk' | 'deposit' | 'done' = 'walk';
     private readonly stuck = new StuckDetector(30, 4, 2);
-    private readonly bankCoord: [number, number, number];
     private readonly keepItems: number[];
 
-    constructor(
-        bankCoord: [number, number, number] = Locations.DRAYNOR_BANK,
-        keepItems: number[] = []
-    ) {
+    constructor(keepItems: number[] = []) {
         super('Bank');
-        this.bankCoord = bankCoord;
         this.keepItems = keepItems;
     }
 
@@ -112,54 +105,13 @@ export class BankTask extends BotTask {
         if (this.interrupted) return;
         if (this.cooldown > 0) { this.cooldown--; return; }
 
-        const [bx, bz, bl] = this.bankCoord;
-
         if (this.state === 'walk') {
-            if (!isNear(player, bx, bz, 8, bl)) {
-                if (this.stuck.check(player, bx, bz)) {
-                    if (this.stuck.desperatelyStuck) {
-                        teleportNear(player, bx, bz);
-                        this.stuck.reset();
-                        return;
-                    }
-                    if (openNearbyGate(player, 5)) return;
-                    const dx = bx - player.x, dz = bz - player.z;
-                    walkTo(
-                        player,
-                        player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),
-                        player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : (dx > 0 ? 10 : -10)),
-                    );
-                    return;
-                }
-                walkTo(player, bx, bz);
-                return;
-            }
-            this.state = 'find';
-            return;
-        }
-
-        if (this.state === 'find') {
-            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 8)
-                        ?? findNpcByPrefix(player.x, player.z, player.level, 'kharidbanker', 8);
-            if (!banker) {
-                this.findFailTicks++;
-                if (this.findFailTicks > 6) {
-                    this.state = 'walk';
-                    this.findFailTicks = 0;
-                }
-                walkTo(player, bx + randInt(-4, 4), bz + randInt(-4, 4));
-                return;
-            }
-            this.findFailTicks = 0;
-            interactNpcOp(player, banker, 3);
-            this.state = 'interact';
-            this.waitTicks = 0;
-            return;
-        }
-
-        if (this.state === 'interact') {
-            this.waitTicks++;
-            if (this.waitTicks >= 3) this.state = 'deposit';
+            const result = advanceBankWalk(player, this.stuck);
+            if (result === 'walk') return;
+            // 'ready' = interaction queued (booth op2 or banker op3); wait 3 ticks
+            // 'direct' = no entity found — deposit directly (inventory APIs work without open UI)
+            this.cooldown = result === 'ready' ? 3 : 0;
+            this.state = 'deposit';
             return;
         }
 
@@ -175,8 +127,6 @@ export class BankTask extends BotTask {
     override reset(): void {
         super.reset();
         this.state = 'walk';
-        this.waitTicks = 0;
-        this.findFailTicks = 0;
         this.stuck.reset();
     }
 

@@ -1,6 +1,6 @@
 import IdkType from '#/cache/config/IdkType.js';
 import InvType from '#/cache/config/InvType.js';
-import { randInt } from '#/engine/bot/tasks/BotTaskBase.js';
+import { Items, randInt } from '#/engine/bot/tasks/BotTaskBase.js';
 import Player from '#/engine/entity/Player.js';
 import { check, IDKTypeValid } from '#/engine/script/ScriptValidators.js';
 
@@ -25,7 +25,7 @@ const GENDERS = {
     FEMALE: 1
 };
 
-const STARTER_WEAPONS = [1277, 1279, 1321, 1203, 1171, 1173];
+const STARTER_WEAPONS = [Items.BRONZE_AXE, Items.BRONZE_PICKAXE, Items.BRONZE_SWORD, Items.BRONZE_SCIMITAR, Items.IRON_AXE, Items.IRON_SCIMITAR];
 
 function pick<T>(arr: T[]): T {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -102,6 +102,16 @@ export class BotAppearance {
 
         worn.set(3, item(pick(STARTER_WEAPONS), player)); // weapon
         //^ I believe the login script already does this ^
+
+        // Set movement animations so the run-toggle in walkTo works.
+        // Without a valid runanim the engine hard-forces MoveSpeed.WALK
+        // regardless of player.run, so bots can never run.
+        player.readyanim  = 808; // human_ready
+        player.walkanim   = 819; // human_walk_f
+        player.walkanim_b = 820; // human_walk_b
+        player.walkanim_l = 821; // human_walk_l
+        player.walkanim_r = 822; // human_walk_r
+        player.runanim    = 824; // human_running
 
         player.buildAppearance(InvType.WORN);
     }

@@ -4,26 +4,29 @@
 
 import {
     BotTask, Player, Loc, InvType,
-    walkTo, interactLoc, interactNpcOp,
-    findLocByPrefix, findNpcByPrefix,
+    walkTo, interactLoc,
+    findLocByPrefix,
     hasItem, isInventoryFull, isNear,
     getBaseLevel, PlayerStat,
     Items, Locations, getProgressionStep,
     teleportToSafety, teleportNear, randInt, bankInvId,
     INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
-    openNearbyGate,
+    openNearbyGate, botJitter, advanceBankWalk,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
 
 export class MiningTask extends BotTask {
     private step: SkillStep;
 
-    private state: 'walk' | 'approach' | 'scan' | 'interact' | 'bank_walk' | 'bank_done' = 'walk';
+    private state: 'walk' | 'approach' | 'scan' | 'interact' | 'flee' | 'bank_walk' | 'bank_done' = 'walk';
 
     private interactTicks = 0;
     private lastXp = 0;
     private scanFailTicks = 0;
     private approachTicks = 0;
+    private fleeTicks = 0;
+    private readonly FLEE_TICKS = 12;
 
     private currentRock: Loc | null = null;
 
@@ -50,6 +53,20 @@ export class MiningTask extends BotTask {
             return;
         }
 
+        // ── Aggressor detection ─────────────────────────────────────────────
+        if (this.state !== 'bank_walk' && this.state !== 'bank_done' && this.state !== 'flee') {
+            const aggressor = findAggressorNpc(player, 8);
+            if (aggressor) {
+                const npcLvl = getNpcCombatLevel(aggressor);
+                if (npcLvl > player.combatLevel) {
+                    this.state = 'flee';
+                    this.fleeTicks = 0;
+                    this.currentRock = null;
+                    return;
+                }
+            }
+        }
+
         // ── Progression upgrade ─────────────────────────────────────────────
         const level = getBaseLevel(player, PlayerStat.MINING);
         const newStep = getProgressionStep('MINING', level);
@@ -62,27 +79,16 @@ export class MiningTask extends BotTask {
 
         // ── Banking ──────────────────────────────────────────────────────────
         if (this.state === 'bank_walk') {
-            const [bx, bz] = Locations.DRAYNOR_BANK;
-
-            if (!isNear(player, bx, bz, 8)) {
-                this._stuckWalk(player, bx, bz);
-                return;
-            }
-
-            const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10);
-            if (!banker) {
-                walkTo(player, bx, bz);
-                return;
-            }
-
-            interactNpcOp(player, banker, 3);
-            this.cooldown = 4;
+            const result = advanceBankWalk(player, this.stuck);
+            if (result === 'walk') return;
+            this.cooldown = result === 'ready' ? 3 : 0;
             this.state = 'bank_done';
             return;
         }
 
         if (this.state === 'bank_done') {
             this._depositOre(player);
+            this._rerollStep(player); // re-randomise rock location for the next run
             this.state = 'walk';
             this.cooldown = 3;
             return;
@@ -93,12 +99,34 @@ export class MiningTask extends BotTask {
             return;
         }
 
+        // ── Flee ──────────────────────────────────────────────────────────────
+        if (this.state === 'flee') {
+            this.fleeTicks++;
+            const [lx, lz] = this.step.location;
+            this._stuckWalk(player, lx, lz);
+            if (this.fleeTicks >= this.FLEE_TICKS || isNear(player, lx, lz, 12)) {
+                this.state = 'walk';
+                this.fleeTicks = 0;
+            }
+            return;
+        }
+
         // ── Walk to mining area ─────────────────────────────────────────────
         if (this.state === 'walk') {
-            const [lx, lz] = this.step.location;
+            const [lx, lz, ll] = this.step.location;
 
-            if (!isNear(player, lx, lz, 15)) {
-                this._stuckWalk(player, lx, lz);
+            if (!isNear(player, lx, lz, 15, ll)) {
+                // Via waypoint: route through intermediate coord before destination.
+                // Used to steer around obstacles (e.g. Draynor Mansion for Barbarian
+                // Village mine).  Only apply when the bot hasn't yet passed it.
+                const via = this.step.via;
+                if (via && player.level === via[2] && player.z < via[1] && !isNear(player, via[0], via[1], 5)) {
+                    const [jx, jz] = botJitter(player, via[0], via[1], 3);
+                    this._stuckWalk(player, jx, jz);
+                    return;
+                }
+                const [jx, jz] = botJitter(player, lx, lz, 5);
+                this._stuckWalk(player, jx, jz);
                 return;
             }
 
@@ -185,9 +213,22 @@ export class MiningTask extends BotTask {
         this.scanFailTicks = 0;
         this.approachTicks = 0;
         this.lastXp = 0;
+        this.fleeTicks = 0;
         this.currentRock = null;
         this.stuck.reset();
         this.watchdog.reset();
+    }
+
+    // ── Step re-roll ────────────────────────────────────────────────────────
+
+    /** Pick a fresh random step matching the bot's current level and owned tools. */
+    private _rerollStep(player: Player): void {
+        const level = getBaseLevel(player, PlayerStat.MINING);
+        const newStep = getProgressionStep(
+            'MINING', level,
+            ids => ids.every(id => hasItem(player, id)),
+        );
+        if (newStep) this.step = newStep;
     }
 
     // ── Rock search ────────────────────────────────────────────────────────

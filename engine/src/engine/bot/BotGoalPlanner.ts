@@ -95,7 +95,7 @@ const SKILLS_WITH_CONTENT = new Set(
 // Shops close enough to Lumbridge spawn that bots can reach without getting stuck.
 // Bots will ONLY go to these shops automatically. Starter weapons/tools are given
 // via InitTask so bots never need to walk to Varrock or Port Sarim just to begin.
-const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL']);
+const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMITARS']);
 
 // ── Planner ───────────────────────────────────────────────────────────────────
 
@@ -142,6 +142,10 @@ export class BotGoalPlanner {
             const missing = getMissingPurchases(player, step);
 
             if (missing.length === 0) {
+                // Double-check: getMissingPurchases omits unaffordable items (returns empty list
+                // even if tools are missing), so we must verify the bot actually owns every tool.
+                if (!step.toolItemIds.every(id => hasItem(player, id))) continue;
+
                 // Check consumable availability (bait, feathers, raw fish for cooking, logs for FM)
                 // If the step consumes an item that isn't purchasable (e.g. raw fish, logs),
                 // the bot must first produce it via a different skill step.
@@ -281,6 +285,8 @@ export class BotGoalPlanner {
 
             const missing = getMissingPurchases(player, step);
             if (missing.length === 0) {
+                // getMissingPurchases silently drops unaffordable items, so verify ownership
+                if (!step.toolItemIds.every(id => hasItem(player, id))) continue;
                 // Has all tools — can fight
                 return new CombatTask(step, stat); // has weapon
             }
@@ -311,6 +317,7 @@ export class BotGoalPlanner {
         return [
             Items.BRONZE_AXE,
             Items.BRONZE_SWORD,
+            Items.IRON_SCIMITAR,
             Items.BRONZE_PICKAXE,
             Items.SMALL_FISHING_NET,
             Items.TINDERBOX,
