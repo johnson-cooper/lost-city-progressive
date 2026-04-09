@@ -910,7 +910,7 @@ const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
  * Returns true if an obstruction was found and an Open/Pay interaction was
  * queued.  Call from walk/scan states when the bot appears blocked.
  */
-export function openNearbyGate(player: Player, radius = 10): boolean {
+export function openNearbyGate(player: Player, radius = 30): boolean {
     const blocker = _findLoc(player.x, player.z, player.level, radius, loc => {
         const t = LocType.get(loc.type);
         const ops = (t.op ?? [])

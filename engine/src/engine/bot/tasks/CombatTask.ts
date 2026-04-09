@@ -439,7 +439,7 @@ export class CombatTask extends BotTask {
         // ── SCAN ──────────────────────────────────────
         if (this.state === 'scan') {
             if (this.intentCooldown === 0) {
-                if (openNearbyGate(player, 8)) {
+                if (openNearbyGate(player, 30)) {
                     this._log(player, 'opened gate during scan', 'gate_open_scan');
                     this.intentCooldown = 4;
                     return;
@@ -602,7 +602,7 @@ export class CombatTask extends BotTask {
             }
 
             if (this.approachTicks >= INTERACT_TIMEOUT) {
-                if (openNearbyGate(player, 8)) {
+                if (openNearbyGate(player, 30)) {
                     this.approachTicks = 0;
                     this.cooldown = 4;
                     return;
@@ -791,7 +791,7 @@ export class CombatTask extends BotTask {
             return;
         }
 
-        if (openNearbyGate(player, 10)) {
+        if (openNearbyGate(player, 30)) {
             this.intentCooldown = 3;
             return;
         }

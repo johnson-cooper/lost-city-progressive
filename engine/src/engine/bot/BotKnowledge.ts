@@ -474,59 +474,49 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // picks randomly, shouldRun() filters to whatever weapon the bot currently has.
     ATTACK: [
         // ── Level 1-9: chickens + goblins ────────────────────────────────────
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE2, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
-        { minLevel: 3, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 3, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE2,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE2, toolItemIds: [], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE2,     toolItemIds: [], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
         // ── Level 20-29: cows + barbarians ───────────────────────────────────
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
+        { minLevel: 20, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 30-39: cows + barbarians (steel) ────────────────────────────
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 40+: Al Kharid warriors (+ barbarian fallback) ─────────────
-        { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.AL_KHARID_WARRIORS, toolItemIds: [Items.MITHRIL_SCIMITAR], xpPerAction: 280, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'warrior',   hitsToKill: 8 } },
-        { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR],   xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
+        { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.AL_KHARID_WARRIORS, toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 280, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'warrior',   hitsToKill: 8 } },
     ],
 
     // ── Combat — Strength ────────────────────────────────────────────────────
     STRENGTH: [
         // ── Level 1-9: chickens + goblins ────────────────────────────────────
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
-         { minLevel: 1, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE2, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE2,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
-        { minLevel: 10, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE2,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 20-29: cows + barbarians ───────────────────────────────────
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
+        { minLevel: 20, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 30-39: cows + barbarians (steel) ────────────────────────────
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 40+: Al Kharid warriors (+ barbarian fallback) ─────────────
         { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.AL_KHARID_WARRIORS, toolItemIds: [Items.MITHRIL_SCIMITAR], xpPerAction: 280, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'warrior',   hitsToKill: 8 } },
-        { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR],   xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
     ],
 
     // ── Combat — Defence ─────────────────────────────────────────────────────
      DEFENCE: [
         // ── Level 1-9: chickens + goblins ────────────────────────────────────
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
-        { minLevel: 1,  maxLevel: 9,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
-         { minLevel: 5, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.CHICKENS_LUMBRIDGE2, toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'chicken',   hitsToKill: 2 } },
+        { minLevel: 1,  maxLevel: 99,  action: 'combat', location: Locations.GOBLINS_LUMBRIDGE,  toolItemIds: [Items.BRONZE_SWORD], xpPerAction: 120, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcTypes: ['goblin', 'giant spider', 'man'],  hitsToKill: 3 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
+        { minLevel: 3, maxLevel: 99, action: 'combat', location: Locations.COWS_LUMBRIDGE2,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
-        { minLevel: 10, maxLevel: 19, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
         // ── Level 20-29: cows + barbarians ───────────────────────────────────
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 20, maxLevel: 29, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
+        { minLevel: 20, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.IRON_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 30-39: cows + barbarians (steel) ────────────────────────────
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.COWS_LUMBRIDGE,     toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 200, ticksPerAction: 4, successRate: 1.0, itemGained: Items.COW_HIDE, extra: { npcType: 'cow',       hitsToKill: 5 } },
-        { minLevel: 30, maxLevel: 39, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR], xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
         // ── Level 40+: Al Kharid warriors (+ barbarian fallback) ─────────────
         { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.AL_KHARID_WARRIORS, toolItemIds: [Items.MITHRIL_SCIMITAR], xpPerAction: 280, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'warrior',   hitsToKill: 8 } },
-        { minLevel: 40, maxLevel: 99, action: 'combat', location: Locations.BARBARIANS_VILLAGE, toolItemIds: [Items.STEEL_SCIMITAR],   xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.BONES,    extra: { npcType: 'barbarian', hitsToKill: 6 } },
     ],
 
     // ── Prayer ───────────────────────────────────────────────────────────────
