@@ -11,7 +11,7 @@ import Loc from '#/engine/entity/Loc.js';
 import InvType from '#/cache/config/InvType.js';
 import { Inventory } from '#/engine/Inventory.js';
 import {
-    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
+    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp, interactUseLocOp,
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,
@@ -167,7 +167,7 @@ export abstract class BotTask {
 export type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 export {
     Player, Npc, Loc, InvType, Inventory,
-    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
+    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp, interactUseLocOp,
     findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
     hasItem, countItem, addItem, removeItem, isInventoryFull,
     getBaseLevel, PlayerStat, hasWaypoints,

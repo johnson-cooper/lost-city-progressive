@@ -207,7 +207,7 @@ export const Locations = {
     AL_KHARID_WARRIORS:      [3294, 3172, 0] as [number, number, number],  // ⛩ Al Kharid palace — AlKharid gateway
 
     // ── Skilling stations ─────────────────────────────────────────────────────
-    LUMBRIDGE_RANGE:         [3209, 3216, 0] as [number, number, number],  // ✅ Lumbridge castle kitchen range
+    ALKHRAID_RANGE:         [3292, 3203, 0] as [number, number, number],  // ✅ tile directly south of Al Kharid palace range (3292,3202) — stand here to cook
     FIRE_LUMBRIDGE_ROAD:     [3218, 3253, 0] as [number, number, number],  // ✅ firemaking road
     AL_KHARID_FURNACE:       [3192, 3162, 0] as [number, number, number],  // ⛩ inside Al Kharid
     VARROCK_ANVIL:           [3188, 3422, 0] as [number, number, number],  // ✅
@@ -455,12 +455,12 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // ── Cooking ──────────────────────────────────────────────────────────────
     // XP from cooking_generic.dbrow experience, levels from levelrequired.
     COOKING: [
-        { minLevel: 1,  maxLevel: 4,  action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 300,  ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP,    itemGained: Items.SHRIMP    },
-        { minLevel: 1,  maxLevel: 14, action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 400,  ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE,   itemGained: Items.SARDINE   },
-        { minLevel: 15, maxLevel: 24, action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 700,  ticksPerAction: 4, successRate: 0.70, itemConsumed: Items.RAW_TROUT,     itemGained: Items.TROUT     },
-        { minLevel: 25, maxLevel: 39, action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 900,  ticksPerAction: 4, successRate: 0.70, itemConsumed: Items.RAW_SALMON,    itemGained: Items.SALMON    },
-        { minLevel: 40, maxLevel: 44, action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.80, itemConsumed: Items.RAW_LOBSTER,   itemGained: Items.LOBSTER   },
-        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.LUMBRIDGE_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
+        { minLevel: 1,  maxLevel: 4,  action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 300,  ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP,    itemGained: Items.SHRIMP    },
+        { minLevel: 1,  maxLevel: 14, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 400,  ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE,   itemGained: Items.SARDINE   },
+        { minLevel: 15, maxLevel: 24, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 700,  ticksPerAction: 4, successRate: 0.70, itemConsumed: Items.RAW_TROUT,     itemGained: Items.TROUT     },
+        { minLevel: 25, maxLevel: 39, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 900,  ticksPerAction: 4, successRate: 0.70, itemConsumed: Items.RAW_SALMON,    itemGained: Items.SALMON    },
+        { minLevel: 40, maxLevel: 44, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.80, itemConsumed: Items.RAW_LOBSTER,   itemGained: Items.LOBSTER   },
+        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
     ],
 
     // ── Combat — Attack ──────────────────────────────────────────────────────

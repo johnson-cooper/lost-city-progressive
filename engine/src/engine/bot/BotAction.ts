@@ -57,6 +57,8 @@ import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import CategoryType from '#/cache/config/CategoryType.js';
 import { Inventory } from '#/engine/Inventory.js';
 import { Items } from '#/engine/bot/BotKnowledge.js';
+import UnsetMapFlag from '#/network/game/server/model/UnsetMapFlag.js';
+import Environment from '#/util/Environment.js';
 
 
 export { PlayerStat };
@@ -424,6 +426,38 @@ export function interactHeldOp(
         console.log('BOT burying bone traditionally:', itemId);
         return true;
     }
+    return true;
+}
+
+/**
+ * oplocu handler converted -- useful for cooking, smithing,
+ */
+export function interactUseLocOp(player: Player, loc: Loc, item:number, slot:number): boolean {
+    if (player.delayed) {
+        player.write(new UnsetMapFlag());
+        return false;
+    }
+    const inv = player.getInventory(InvType.INV);
+    if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, item)) {
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+    if (!loc) {
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+    player.clearPendingAction();
+    if (ObjType.get(item).members && !Environment.NODE_MEMBERS) {
+        player.messageGame("To use this item please login to a members' server.");
+        player.write(new UnsetMapFlag());
+        return false;
+    }
+    player.lastUseItem = item;
+    player.lastUseSlot = slot;
+    player.setInteraction(Interaction.ENGINE, loc, ServerTriggerType.APLOCU);
+    //player.opcalled = true; //<- This is in NetworkPlayer not sure if its needed
     return true;
 }
 
@@ -902,15 +936,22 @@ export function isAdjacentToLoc(player: Player, loc: { x: number; z: number; typ
 
 /**
  * Open-action keywords (lowercased) that indicate a closed/passable door or gate.
- * Covers standard "Open", toll gates ("Pay-toll(10gp)"), and walk-through doors.
+ * Covers standard "Open", toll gates ("Pay-toll(10gp)"), walk-through doors,
+ * and Al Kharid palace curtains (loc_1528: op1="Open").
  */
 const GATE_OPEN_KEYWORDS  = ['open', 'pay', 'pay-toll', 'walk-through', 'pass-through', 'enter'];
 const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
 
+/** Loc debug-name prefixes that represent closeable barriers (curtains, etc.). */
+const BARRIER_NAME_PREFIXES = ['loc_1528'];  // Al Kharid palace curtain (closed state)
+
 /**
- * Scan within `radius` tiles for any closed door, gate, or toll gate.
- * Handles standard "Open" ops as well as "Pay-toll(10gp)" variants used by
- * the Al Kharid gate and similar toll structures.
+ * Scan within `radius` tiles for any closed door, gate, toll gate, or curtain.
+ * Handles:
+ *   - Standard "Open" ops (doors, gates)
+ *   - "Pay-toll(10gp)" variants (Al Kharid gate)
+ *   - Walk-through / pass-through doors
+ *   - Al Kharid palace curtains (loc_1528 — op1="Open", blockwalk=yes while closed)
  *
  * Returns true if an obstruction was found and an Open/Pay interaction was
  * queued.  Call from walk/scan states when the bot appears blocked.
@@ -918,6 +959,13 @@ const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
 export function openNearbyGate(player: Player, radius = 30): boolean {
     const blocker = _findLoc(player.x, player.z, player.level, radius, loc => {
         const t = LocType.get(loc.type);
+
+        // Explicit curtain check — matches closed Al Kharid palace curtains by type name
+        // even if the op array format differs between server builds.
+        if (BARRIER_NAME_PREFIXES.some(prefix => t.debugname?.startsWith(prefix))) {
+            return true;
+        }
+
         const ops = (t.op ?? [])
             .filter((o): o is string => typeof o === 'string')
             .map(o => o.toLowerCase());

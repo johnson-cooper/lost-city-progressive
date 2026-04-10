@@ -730,7 +730,7 @@ class World {
         this.cycleStats[WorldStat.PLAYER] = Date.now() - start;
     }
 
-   private processLogouts(): void {
+  private processLogouts(): void {
     const start: number = Date.now();
 
     for (const player of this.playerLoop.all()) {
@@ -756,7 +756,7 @@ class World {
             !force &&
             this.currentTick - player.lastConnected >= World.TIMEOUT_NO_CONNECTION
         ) {
-            if (isClientConnected(player)) {
+            if (isClientConnected(player) || !player.is_bot) {
                 // connection lost for 30s: request idle logout
                 player.requestIdleLogout = true;
             }

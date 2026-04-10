@@ -15,7 +15,7 @@
  */
 
 import Player from '#/engine/entity/Player.js';
-import { PlayerStat, getBaseLevel, hasItem } from '#/engine/bot/BotAction.js';
+import { PlayerStat, getBaseLevel, hasItem, countItem } from '#/engine/bot/BotAction.js';
 import { Items, SkillProgression, getProgressionStep } from '#/engine/bot/BotKnowledge.js';
 import {
     getMissingPurchases, canAffordStep, totalCostOfMissing,
@@ -29,6 +29,7 @@ import { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
 import { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
 import { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
 import { FiremakingTask } from '#/engine/bot/tasks/FiremakingTask.js';
+import { CookingTask }   from '#/engine/bot/tasks/CookingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -129,6 +130,16 @@ export class BotGoalPlanner {
     // ── Internal ──────────────────────────────────────────────────────────────
 
     private _pickBestTask(player: Player): BotTask | null {
+        // ── COOKING priority: cook whenever any fish are available ───────────
+        // Without this, FISHING (weight 25) almost always beats COOKING (weight 15)
+        // in the weighted shuffle, so bots accumulate fish forever and never cook.
+        // If the bot has ≥ 5 fish (bank or inventory) and cooking is in their
+        // personality, cook immediately regardless of the weighted skill order.
+        if ((this.personality.weights['COOKING'] ?? 0) > 0) {
+            const cookTask = this._findCookingTask(player);
+            if (cookTask) return cookTask;
+        }
+
         // Build candidate list ordered by weight (highest first after shuffle)
         const candidates = this._buildCandidates(player);
         if (candidates.length === 0) return new IdleTask(30);
@@ -136,6 +147,18 @@ export class BotGoalPlanner {
         for (const skillName of candidates) {
             const stat  = SKILL_STAT[skillName];
             const level = getBaseLevel(player, stat);
+
+            // ── COOKING: scan all matching steps for one whose fish is in bank ─
+            // getProgressionStep picks randomly, but multiple steps share the same
+            // level (e.g. RAW_SHRIMP step and RAW_SARDINE step both start at lv 1).
+            // We must find the step whose consumed item the bot actually has ≥ 28 of,
+            // rather than hoping the random pick matches.
+            if (skillName === 'COOKING') {
+                const cookTask2 = this._findCookingTask(player);
+                if (cookTask2) return cookTask2;
+                continue; // no matching fish found — try next skill
+            }
+
             const step  = getProgressionStep(skillName, level);
             if (!step) continue;
 
@@ -153,9 +176,9 @@ export class BotGoalPlanner {
 
                 const hasInv = hasItem(player, step.itemConsumed, 1);
 
-                // 🔥 NEW: check bank too
+                // Check bank for consumable (count for cooking minimum-batch check)
                 const bid = bankInvId();
-                let hasBank = false;
+                let bankConsumeCount = 0;
 
                 if (bid !== -1) {
                     const bank = player.getInventory(bid);
@@ -163,14 +186,12 @@ export class BotGoalPlanner {
                         for (let i = 0; i < bank.capacity; i++) {
                             const item = bank.get(i);
                             if (!item) continue;
-                            if (item.id === step.itemConsumed) {
-                                hasBank = true;
-                                break;
-                            }
+                            if (item.id === step.itemConsumed) bankConsumeCount += item.count;
                         }
                     }
                 }
 
+                const hasBank = bankConsumeCount > 0;
                 if (!hasInv && !hasBank) {
                     // 🔥 fallback to woodcutting ONLY if no logs anywhere
                     if (skillName === 'FIREMAKING') {
@@ -192,13 +213,13 @@ export class BotGoalPlanner {
                                 }
                             }
                             // Has everything — go do the skill
-                            if (step.action === 'combat') return new CombatTask(step, stat);
-                            if (step.action === 'woodcut') return new WoodcuttingTask(step);
-                            if (step.action === 'mine')    return new MiningTask(step);
-                            if (step.action === 'fish')    return new FishingTask(step);
-                            if (step.action === 'firemaking')    return new FiremakingTask(step);
-                            
-                            // Other skills (cook, smith, etc.) not yet implemented
+                            if (step.action === 'combat')    return new CombatTask(step, stat);
+                            if (step.action === 'woodcut')   return new WoodcuttingTask(step);
+                            if (step.action === 'mine')      return new MiningTask(step);
+                            if (step.action === 'fish')      return new FishingTask(step);
+                            if (step.action === 'firemaking') return new FiremakingTask(step);
+
+                            // Other skills (smith, etc.) not yet implemented
                             continue;
                         }
 
@@ -222,6 +243,44 @@ export class BotGoalPlanner {
                     const combatFallback = this._cheapestCombatTask(player);
                     return combatFallback ?? new IdleTask(30);
                 }
+
+    /**
+     * If the bot has any cookable fish (in bank OR carried inventory) for their
+     * current cooking level, return a CookingTask for that fish.  Otherwise null.
+     *
+     * We count both locations because bots often switch tasks before filling their
+     * inventory, so fish may never reach the bank.  CookingTask always does a
+     * bank_walk first, depositing the carried fish before withdrawing a full load.
+     *
+     * Threshold is 1 — matching CookingTask.MIN_FISH — so cooking starts as soon
+     * as the bot has caught anything.
+     */
+    private _findCookingTask(player: Player): CookingTask | null {
+        const bid  = bankInvId();
+        const bank = bid !== -1 ? player.getInventory(bid) : null;
+        const level = getBaseLevel(player, PlayerStat.COOKING);
+        const steps = SkillProgression['COOKING'].filter(
+            s => level >= s.minLevel && level <= s.maxLevel
+        );
+        for (const cs of steps) {
+            const fishId = cs.itemConsumed;
+            if (!fishId) continue;
+
+            // Count fish in bank
+            let count = 0;
+            if (bank) {
+                for (let i = 0; i < bank.capacity; i++) {
+                    const it = bank.get(i);
+                    if (it?.id === fishId) count += it.count;
+                }
+            }
+            // Also count fish currently in carried inventory (not yet banked)
+            count += countItem(player, fishId);
+
+            if (count >= 10) return new CookingTask(cs);
+        }
+        return null;
+    }
 
     /**
      * Returns skill names in weighted-random order.
