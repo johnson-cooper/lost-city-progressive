@@ -495,5 +495,112 @@ export const SkillBehaviors: { [key: string]: (player: BotPlayer) => void } = {
 
         // 4. Attack target
         handleCombat(player, [112]); // Moss Giants
+    },
+
+    // ==========================================
+    // SOPHISTICATED: THIEVING (Pickpocketing NPCs)
+    // ==========================================
+    adv_thieving_pickpocket: (player) => {
+        const Locations = require('./Locations.js').Locations;
+        
+        // Check if stunned or in combat (some engines set target when caught)
+        if (player.target) {
+            // Eat food if taking damage from being caught
+            if (BotUtils.getHpPercent(player) < 50) {
+                const foodIds = [315, 333, 379, 385]; // Shrimps, Trout, Lobster, Shark
+                for (const food of foodIds) {
+                    if (BotUtils.hasItem(player, food)) {
+                        BotUtils.interactInventory(player, food, 'Eat');
+                        return;
+                    }
+                }
+            }
+            return; // Wait until stun/combat resolves
+        }
+
+        // Need to bank?
+        if (BotUtils.isFull(player) || BotUtils.getHpPercent(player) < 30) {
+            const nearestBank = BotUtils.getNearestBank(player);
+            if (BotUtils.isNear(player, nearestBank)) {
+                BotUtils.bankItems(player); 
+            } else {
+                BotUtils.walkTo(player, nearestBank);
+            }
+            return;
+        }
+
+        // Determine target based on level (17 = Thieving)
+        const lvl = player.baseLevels[17];
+        let targetIds = [1, 2, 3, 4]; // Men/Women (Lvl 1)
+        let loc = Locations.Lumbridge.respawn;
+
+        if (lvl >= 70) {
+            targetIds = [20]; // Paladins
+            loc = Locations.Ardougne.castle_paladins;
+        } else if (lvl >= 55) {
+            targetIds = [23, 26]; // Knights
+            loc = Locations.Ardougne.market_knights;
+        } else if (lvl >= 38) {
+            targetIds = [7]; // Master Farmer
+            loc = Locations.Draynor.master_farmer;
+        }
+
+        if (BotUtils.isNear(player, loc)) {
+            handleNpcAction(player, targetIds, 'Pickpocket');
+        } else {
+            BotUtils.walkTo(player, loc);
+        }
+    },
+
+    // ==========================================
+    // SOPHISTICATED: THIEVING (Market Stalls)
+    // ==========================================
+    adv_thieving_stall: (player) => {
+        const Locations = require('./Locations.js').Locations;
+        
+        // Check if caught by guards
+        if (player.target) {
+            // If caught, walk away to drop aggro or eat
+            if (BotUtils.getHpPercent(player) < 50) {
+                const foodIds = [315, 333, 379, 385]; 
+                for (const food of foodIds) {
+                    if (BotUtils.hasItem(player, food)) {
+                        BotUtils.interactInventory(player, food, 'Eat');
+                        return;
+                    }
+                }
+            }
+            BotUtils.walkTo(player, { x: player.x + (Math.random() > 0.5 ? 5 : -5), z: player.z + (Math.random() > 0.5 ? 5 : -5) });
+            return;
+        }
+
+        // Need to bank?
+        if (BotUtils.isFull(player) || BotUtils.getHpPercent(player) < 30) {
+            if (BotUtils.isNear(player, Locations.Ardougne.south_bank)) {
+                BotUtils.bankItems(player); 
+            } else {
+                BotUtils.walkTo(player, Locations.Ardougne.south_bank);
+            }
+            return;
+        }
+
+        // Determine target stall based on level
+        const lvl = player.baseLevels[17];
+        let targetId = 2561; // Baker's stall (Lvl 5)
+        let loc = Locations.Ardougne.market_bakers_stall;
+
+        if (lvl >= 50) {
+            targetId = 2565; // Silver stall
+            loc = Locations.Ardougne.market_silver_stall;
+        } else if (lvl >= 20) {
+            targetId = 2560; // Silk stall
+            loc = Locations.Ardougne.market_silk_stall;
+        }
+
+        if (BotUtils.isNear(player, loc)) {
+            handleAction(player, targetId, 'Steal-from');
+        } else {
+            BotUtils.walkTo(player, loc);
+        }
     }
 };

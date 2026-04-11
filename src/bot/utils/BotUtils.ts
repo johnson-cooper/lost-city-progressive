@@ -109,6 +109,8 @@ export class BotUtils {
             Locations.AlKharid.bank,
             Locations.Catherby.bank,
             Locations.Seers.bank,
+            Locations.Ardougne.north_bank,
+            Locations.Ardougne.south_bank,
             Locations.Edgeville.bank
         ];
 

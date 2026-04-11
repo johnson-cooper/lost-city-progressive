@@ -82,6 +82,20 @@ export const Locations = {
         flax_field: { x: 2744, z: 3444 },
         spinning_wheel: { x: 2711, z: 3471, y: 1 }
     },
+
+    // ==========================================
+    // ARDOUGNE (Thieving Hub)
+    // ==========================================
+    Ardougne: {
+        north_bank: { x: 2616, z: 3332 },
+        south_bank: { x: 2654, z: 3283 },
+        market_bakers_stall: { x: 2668, z: 3311 },
+        market_silk_stall: { x: 2662, z: 3315 },
+        market_silver_stall: { x: 2656, z: 3318 },
+        market_knights: { x: 2662, z: 3306 },
+        castle_paladins: { x: 2575, z: 3292 },
+        nature_rune_chest: { x: 2671, z: 3301, y: 1 }
+    },
     
     // ==========================================
     // EDGEVILLE (Pking & Yews)
