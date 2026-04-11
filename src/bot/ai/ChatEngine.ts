@@ -65,7 +65,10 @@ export class ChatEngine {
         if (!selectedCategory) return;
 
         // 3. Weighted Random Selection for Reply
-        const replyText = this.getWeightedRandomReply(selectedCategory.replies);
+        let replyText = this.getWeightedRandomReply(selectedCategory.replies);
+
+        // 3.5. Parse dynamic variables (like skill levels)
+        replyText = this.parseVariables(bot, replyText);
 
         // 4. Simulate human typing delay (WPM based)
         // Assume an average of 4 chars per second (250ms per char) + basic reaction time
@@ -83,6 +86,21 @@ export class ChatEngine {
                 BotUtils.speakPublicly(bot, replyText);
             }
         }, typingDelayMs);
+    }
+
+    /**
+     * Replaces template tags like {wc_level} with the bot's actual in-game stats.
+     */
+    private static parseVariables(bot: BotPlayer, text: string): string {
+        // baseLevels index mapping (LostCity standard)
+        // 8 = Woodcutting, 10 = Fishing, 14 = Mining, etc.
+        
+        return text
+            .replace(/{wc_level}/g, bot.baseLevels[8]?.toString() || '1')
+            .replace(/{fish_level}/g, bot.baseLevels[10]?.toString() || '1')
+            .replace(/{mine_level}/g, bot.baseLevels[14]?.toString() || '1')
+            .replace(/{combat_level}/g, bot.combatLevel?.toString() || '3')
+            .replace(/{name}/g, bot.username);
     }
 
     private static getWeightedRandomReply(replies: Reply[]): string {

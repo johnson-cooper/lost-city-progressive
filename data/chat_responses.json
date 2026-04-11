@@ -21,19 +21,35 @@
   "levels_woodcutting": {
     "patterns": ["wc lvl", "wc level", "woodcutting lvl"],
     "replies": [
-      { "text": "almost 60", "weight": 3 },
-      { "text": "72", "weight": 2 },
-      { "text": "not high enough lol", "weight": 4 },
-      { "text": "getting there", "weight": 3 }
+      { "text": "{wc_level}", "weight": 4 },
+      { "text": "lvl {wc_level}", "weight": 3 },
+      { "text": "im {wc_level}", "weight": 3 },
+      { "text": "not high enough lol ({wc_level})", "weight": 2 }
     ]
   },
   "levels_fishing": {
     "patterns": ["fish lvl", "fishing lvl"],
     "replies": [
-      { "text": "76", "weight": 3 },
-      { "text": "low rn", "weight": 4 },
-      { "text": "going for sharks eventually", "weight": 2 },
-      { "text": "like 40", "weight": 3 }
+      { "text": "{fish_level}", "weight": 4 },
+      { "text": "lvl {fish_level}", "weight": 3 },
+      { "text": "im at {fish_level}", "weight": 3 },
+      { "text": "only {fish_level} rn", "weight": 2 }
+    ]
+  },
+  "levels_mining": {
+    "patterns": ["mine lvl", "mining lvl", "mining level"],
+    "replies": [
+      { "text": "{mine_level}", "weight": 4 },
+      { "text": "im {mine_level}", "weight": 3 },
+      { "text": "{mine_level} lol", "weight": 2 }
+    ]
+  },
+  "levels_combat": {
+    "patterns": ["cb lvl", "combat lvl", "what lvl are u"],
+    "replies": [
+      { "text": "{combat_level}", "weight": 4 },
+      { "text": "lvl {combat_level}", "weight": 3 },
+      { "text": "im {combat_level}", "weight": 3 }
     ]
   },
   "accusations": {
