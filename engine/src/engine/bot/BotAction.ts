@@ -392,6 +392,24 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
 }
 
 
+/**
+ * Equips an item by finding it in the inventory and using the interactHeldOp (typically op 2 or 3 for Wear/Wield).
+ */
+export function equipItem(player: Player, itemId: number): boolean {
+    const inv = player.getInventory(InvType.INV);
+    if (!inv) return false;
+    
+    for (let slot = 0; slot < inv.capacity; slot++) {
+        const item = inv.get(slot);
+        if (item && item.id === itemId) {
+            // "Wear" / "Wield" is typically op 2 for weapons/armor in 225
+            interactHeldOp(player, inv, itemId, slot, 2);
+            return true;
+        }
+    }
+    return false;
+}
+
 export function interactHeldOp(
     player: Player,
     inv: Inventory,
