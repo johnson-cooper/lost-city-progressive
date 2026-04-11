@@ -1,0 +1,67 @@
+{
+  "greetings": {
+    "patterns": ["hello", "hi", "hey", "yoo", "hiya", "sup", "greetings", "wb"],
+    "replies": [
+      { "text": "hey", "weight": 5 },
+      { "text": "sup", "weight": 4 },
+      { "text": "hi", "weight": 3 },
+      { "text": "hello", "weight": 2 },
+      { "text": "yo", "weight": 4 }
+    ]
+  },
+  "questions": {
+    "patterns": ["how are you", "hru", "how r u", "wassup", "whats up"],
+    "replies": [
+      { "text": "im good u", "weight": 4 },
+      { "text": "nm u", "weight": 5 },
+      { "text": "chilling, you?", "weight": 3 },
+      { "text": "just playing rn", "weight": 2 }
+    ]
+  },
+  "levels_woodcutting": {
+    "patterns": ["wc lvl", "wc level", "woodcutting lvl"],
+    "replies": [
+      { "text": "almost 60", "weight": 3 },
+      { "text": "72", "weight": 2 },
+      { "text": "not high enough lol", "weight": 4 },
+      { "text": "getting there", "weight": 3 }
+    ]
+  },
+  "levels_fishing": {
+    "patterns": ["fish lvl", "fishing lvl"],
+    "replies": [
+      { "text": "76", "weight": 3 },
+      { "text": "low rn", "weight": 4 },
+      { "text": "going for sharks eventually", "weight": 2 },
+      { "text": "like 40", "weight": 3 }
+    ]
+  },
+  "accusations": {
+    "patterns": ["bot", "macro", "autoing", "autoer", "botting"],
+    "replies": [
+      { "text": "lol im not a bot", "weight": 5 },
+      { "text": "??", "weight": 4 },
+      { "text": "im just watching tv while i play", "weight": 3 },
+      { "text": "reported for false report", "weight": 1 }
+    ]
+  },
+  "farewells": {
+    "patterns": ["bye", "cya", "gtg", "brb", "peace", "seeya"],
+    "replies": [
+      { "text": "cya", "weight": 5 },
+      { "text": "lates", "weight": 3 },
+      { "text": "brb", "weight": 2 },
+      { "text": "bye", "weight": 4 }
+    ]
+  },
+  "generic_statements": {
+    "patterns": [".*"],
+    "replies": [
+      { "text": "lol", "weight": 5 },
+      { "text": "yeah", "weight": 4 },
+      { "text": "haha", "weight": 3 },
+      { "text": "nice", "weight": 4 },
+      { "text": "true", "weight": 2 }
+    ]
+  }
+}
