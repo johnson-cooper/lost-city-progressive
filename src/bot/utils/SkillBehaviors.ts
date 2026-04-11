@@ -5,6 +5,21 @@ import { BotUtils } from './BotUtils.js';
 // THE HELPERS (Put these above your SkillBehaviors)
 // ==========================================
 
+import { EquipmentManager } from './EquipmentManager.js';
+
+// Helper for "Power" gathering (drops items instead of banking)
+function handlePowerAction(player: BotPlayer, ids: number | number[], action: string, keepIds: number[] = []) {
+    if (BotUtils.isFull(player)) {
+        BotUtils.dropItems(player, keepIds);
+        return;
+    }
+    if (player.target) return;
+    
+    const idArray = Array.isArray(ids) ? ids : [ids];
+    const target = BotUtils.find(player, idArray);
+    if (target) BotUtils.interact(player, target, action);
+}
+
 // Handles world interactions (Mining, Woodcutting, Thieving, Fishing)
 function handleAction(player: BotPlayer, ids: number | number[], action: string) {
     if (BotUtils.isFull(player)) return BotUtils.walkToBank(player); 
@@ -284,5 +299,201 @@ export const SkillBehaviors: { [key: string]: (player: BotPlayer) => void } = {
                 BotUtils.walkTo(player, { x: player.x - 2, z: player.z - 2 });
             }
         }
+    },
+
+    // ==========================================
+    // ADVANCED: POWER LEVELERS
+    // ==========================================
+    power_miner: (player) => handlePowerAction(player, [2092, 2093], 'Mine', [1265]), // Iron
+    power_woodcutter: (player) => handlePowerAction(player, [1308, 5551, 5552, 5553], 'Chop down', [1351]), // Willow
+    power_fisher: (player) => {
+        if (BotUtils.isFull(player)) { BotUtils.dropItems(player, [314, 309, 313]); return; } // Drop trout/salmon, keep feathers/rod
+        if (player.target) return;
+        const target = BotUtils.findNpc(player, 15);
+        if (target) BotUtils.interact(player, target, 'Lure');
+    },
+
+    // ==========================================
+    // ADVANCED: HIGH ALCHER
+    // ==========================================
+    adv_high_alcher: (player) => {
+        const nearestBank = BotUtils.getNearestBank(player);
+        if (!BotUtils.isNear(player, nearestBank)) {
+            BotUtils.walkTo(player, nearestBank);
+            return;
+        }
+
+        const natureRuneId = 561;
+        const notedItemId = 850; // Mock: noted willow longbows
+        if (!BotUtils.hasItem(player, natureRuneId) || !BotUtils.hasItem(player, notedItemId)) {
+            BotUtils.speakPublicly(player, "Out of alchs :(");
+            player.activeBotSkill = "Banking";
+            return;
+        }
+
+        // Cast High Alch (spell id 55) on noted item
+        if (player.stepsTaken % 5 === 0 && !player.target) {
+            BotUtils.interactInventory(player, notedItemId, 'Cast High Level Alchemy');
+        }
+    },
+
+    // ==========================================
+    // ADVANCED: ESSENCE MINER (Varrock)
+    // ==========================================
+    adv_essence_miner: (player) => {
+        const Locations = require('./Locations.js').Locations;
+        if (BotUtils.isFull(player)) {
+            // Need to bank
+            if (BotUtils.isNear(player, Locations.Varrock.east_bank)) {
+                BotUtils.bankItems(player, [1265]); // Keep pickaxe
+            } else {
+                BotUtils.walkTo(player, Locations.Varrock.east_bank);
+            }
+        } else {
+            // Check if in mine instance (mocked checking Z level or bounds)
+            if (player.y > 0) {
+                // We are inside the mine instance
+                handleAction(player, 2491, 'Mine'); // Mine Essence
+            } else {
+                // Walk to Aubury
+                if (BotUtils.isNear(player, Locations.Varrock.aubury_shop)) {
+                    const aubury = BotUtils.findNpc(player, 5); // Aubury NPC ID
+                    if (aubury && !player.target) {
+                        BotUtils.handleDialogue(player, aubury); // Teleport trigger
+                    }
+                } else {
+                    BotUtils.walkTo(player, Locations.Varrock.aubury_shop);
+                }
+            }
+        }
+    },
+
+    // ==========================================
+    // ADVANCED: BONE GRINDER (Combat + Instant Bury)
+    // ==========================================
+    adv_bone_grinder: (player) => {
+        const boneId = 526;
+        if (BotUtils.hasItem(player, boneId)) {
+            BotUtils.interactInventory(player, boneId, 'Bury');
+            return;
+        }
+
+        // Default combat behavior if no bones to bury
+        if (BotUtils.isFull(player) || BotUtils.getHpPercent(player) < 20) return BotUtils.walkToBank(player);
+        if (player.target) return;
+        
+        const target = BotUtils.findNpc(player, 10);
+        if (target) {
+            BotUtils.interact(player, target, 'Attack');
+        }
+    },
+
+    // ==========================================
+    // SOPHISTICATED: MINER & SMITHER (Al Kharid)
+    // ==========================================
+    adv_miner_smither: (player) => {
+        const Locations = require('./Locations.js').Locations;
+        EquipmentManager.equipBestTool(player, 14, 'pickaxe'); // 14 = Mining
+
+        const ironOreId = 440;
+        const ironBarId = 2351;
+
+        if (BotUtils.isFull(player)) {
+            // If inventory full of ORE, go to furnace
+            if (BotUtils.hasItem(player, ironOreId)) {
+                if (BotUtils.isNear(player, Locations.AlKharid.furnace)) {
+                    handleItemOnObject(player, ironOreId, [116, 2643]); // Smelt Iron
+                } else {
+                    BotUtils.walkTo(player, Locations.AlKharid.furnace);
+                }
+            } 
+            // If inventory is full of BARS, go to bank
+            else if (BotUtils.hasItem(player, ironBarId)) {
+                if (BotUtils.isNear(player, Locations.AlKharid.bank)) {
+                    BotUtils.bankItems(player, [1265]); // Bank everything but basic pickaxe
+                } else {
+                    BotUtils.walkTo(player, Locations.AlKharid.bank);
+                }
+            }
+        } else {
+            // Mine ore
+            if (BotUtils.isNear(player, Locations.AlKharid.mine_north)) {
+                handleAction(player, [2092, 2093], 'Mine'); // Iron rocks
+            } else {
+                BotUtils.walkTo(player, Locations.AlKharid.mine_north);
+            }
+        }
+    },
+
+    // ==========================================
+    // SOPHISTICATED: WOODCUTTER & FLETCHER (Seers)
+    // ==========================================
+    adv_woodcutter_fletcher: (player) => {
+        const Locations = require('./Locations.js').Locations;
+        EquipmentManager.equipBestTool(player, 8, 'axe'); // 8 = Woodcutting
+
+        const maplesId = 1517;
+        const unstrungBowId = 62; // Maple longbow (u)
+        const knifeId = 946;
+
+        if (BotUtils.isFull(player)) {
+            // If full of logs, fletch them
+            if (BotUtils.hasItem(player, maplesId)) {
+                handleInventoryAction(player, maplesId, 'Craft'); // Knife on logs
+            } 
+            // If full of bows, bank them
+            else if (BotUtils.hasItem(player, unstrungBowId)) {
+                if (BotUtils.isNear(player, Locations.Seers.bank)) {
+                    BotUtils.bankItems(player, [1351, 946]); // Keep axe and knife
+                } else {
+                    BotUtils.walkTo(player, Locations.Seers.bank);
+                }
+            }
+        } else {
+            // Cut trees
+            if (BotUtils.isNear(player, Locations.Seers.bank)) { // Maples are right outside Seers bank
+                handleAction(player, [1307, 4674], 'Chop down'); // Maples
+            } else {
+                BotUtils.walkTo(player, Locations.Seers.bank);
+            }
+        }
+    },
+
+    // ==========================================
+    // SOPHISTICATED: PROGRESSIVE COMBATANT (Eater/Looter)
+    // ==========================================
+    adv_combat_looter: (player) => {
+        // 1. Check HP. If below 40%, try to eat.
+        if (BotUtils.getHpPercent(player) < 40) {
+            const foodIds = [315, 333, 379, 385]; // Shrimps, Trout, Lobster, Shark
+            for (const food of foodIds) {
+                if (BotUtils.hasItem(player, food)) {
+                    BotUtils.interactInventory(player, food, 'Eat');
+                    return;
+                }
+            }
+            // Out of food, must bank
+            player.activeBotSkill = "Banking";
+            return;
+        }
+
+        // 2. Check if inventory is full of loot
+        if (BotUtils.isFull(player)) {
+            player.activeBotSkill = "Banking";
+            return;
+        }
+
+        if (player.target) return; // Currently fighting
+
+        // 3. Loot ground items (e.g., bones or coins) if available
+        const lootIds = [526, 995]; // Bones, Coins
+        const groundItem = BotUtils.find(player, lootIds); // Mock loc finder acting as ground item finder
+        if (groundItem && BotUtils.isNear(player, groundItem)) {
+            BotUtils.interact(player, groundItem, 'Take');
+            return;
+        }
+
+        // 4. Attack target
+        handleCombat(player, [112]); // Moss Giants
     }
 };

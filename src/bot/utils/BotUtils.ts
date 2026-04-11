@@ -71,6 +71,22 @@ export class BotUtils {
     }
 
     /**
+     * Helper to drop items (Mock for Power Leveling).
+     */
+    static dropItems(player: BotPlayer, keepIds: number[] = []): void {
+        // Mock: player.inventory.filter(i => !keepIds.includes(i.id)).forEach(i => player.drop(i));
+        player.clearInventory();
+    }
+
+    /**
+     * Helper to speak/interact with an NPC through dialogue.
+     */
+    static handleDialogue(player: BotPlayer, targetNpc: any): void {
+        player.setInteraction(targetNpc);
+        // Mock: player.client.sendPacket({ type: "NPC_ACTION_1", target: targetNpc.id });
+    }
+
+    /**
      * Helper to walk to the bank (Mock).
      * Calculates the nearest bank from the Locations file and initiates pathing.
      */
