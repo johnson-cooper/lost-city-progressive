@@ -93,12 +93,26 @@ export class ChatEngine {
      */
     private static parseVariables(bot: BotPlayer, text: string): string {
         // baseLevels index mapping (LostCity standard)
-        // 8 = Woodcutting, 10 = Fishing, 14 = Mining, etc.
-        
         return text
+            .replace(/{attack_level}/g, bot.baseLevels[0]?.toString() || '1')
+            .replace(/{defense_level}/g, bot.baseLevels[1]?.toString() || '1')
+            .replace(/{strength_level}/g, bot.baseLevels[2]?.toString() || '1')
+            .replace(/{hitpoints_level}/g, bot.baseLevels[3]?.toString() || '10')
+            .replace(/{ranged_level}/g, bot.baseLevels[4]?.toString() || '1')
+            .replace(/{prayer_level}/g, bot.baseLevels[5]?.toString() || '1')
+            .replace(/{magic_level}/g, bot.baseLevels[6]?.toString() || '1')
+            .replace(/{cooking_level}/g, bot.baseLevels[7]?.toString() || '1')
             .replace(/{wc_level}/g, bot.baseLevels[8]?.toString() || '1')
-            .replace(/{fish_level}/g, bot.baseLevels[10]?.toString() || '1')
-            .replace(/{mine_level}/g, bot.baseLevels[14]?.toString() || '1')
+            .replace(/{fletching_level}/g, bot.baseLevels[9]?.toString() || '1')
+            .replace(/{fishing_level}/g, bot.baseLevels[10]?.toString() || '1')
+            .replace(/{firemaking_level}/g, bot.baseLevels[11]?.toString() || '1')
+            .replace(/{crafting_level}/g, bot.baseLevels[12]?.toString() || '1')
+            .replace(/{smithing_level}/g, bot.baseLevels[13]?.toString() || '1')
+            .replace(/{mining_level}/g, bot.baseLevels[14]?.toString() || '1')
+            .replace(/{herblore_level}/g, bot.baseLevels[15]?.toString() || '1')
+            .replace(/{agility_level}/g, bot.baseLevels[16]?.toString() || '1')
+            .replace(/{thieving_level}/g, bot.baseLevels[17]?.toString() || '1')
+            .replace(/{runecrafting_level}/g, bot.baseLevels[20]?.toString() || '1')
             .replace(/{combat_level}/g, bot.combatLevel?.toString() || '3')
             .replace(/{name}/g, bot.username);
     }
