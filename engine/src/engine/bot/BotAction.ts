@@ -617,10 +617,14 @@ export function interactObjOp(player: Player, obj: Obj, op: 1 | 2 | 3 | 4 | 5): 
 }
 
 //Ground items
-function _findObj(cx: number, cz: number, level: number, radius: number, predicate: (obj: Obj) => boolean): Obj | null {
+//Ground items
+function _findObj(
+    player: Player, cx: number, cz: number, level: number,
+    radius: number,
+    predicate: (obj:Obj) => boolean
+): Obj | null {
     let best: Obj | null = null;
     let bestDist = Infinity;
-
     const zoneRadius = Math.ceil(radius / 8) + 1;
     for (let dz = -zoneRadius; dz <= zoneRadius; dz++) {
         for (let dx = -zoneRadius; dx <= zoneRadius; dx++) {
@@ -630,36 +634,62 @@ function _findObj(cx: number, cz: number, level: number, radius: number, predica
             if (!zone) continue;
             for (const obj of zone.getAllObjsSafe()) {
                 if (!predicate(obj)) continue;
-                const dist = Math.abs(obj.x - cx) + Math.abs(obj.z - cz);
-                if (dist <= radius * 2 && dist < bestDist) {
-                    bestDist = dist;
-                    best = obj;
+                if ((obj.receiver64 === Obj.NO_RECEIVER || obj.receiver64 === player.hash64)) {//<- added this
+                    const dist = Math.abs(obj.x - cx) + Math.abs(obj.z - cz);
+                    if (dist <= radius * 2 && dist < bestDist) {
+                        bestDist = dist;
+                        best = obj;
+                    }
                 }
             }
         }
     }
     return best;
 }
-
-export function findObjByPrefix(cx: number, cz: number, level: number, prefix: string, radius = 20): Obj | null {
-    return _findObj(cx, cz, level, radius, obj => {
+export function findObjByPrefix(
+    player: Player,
+    cx: number,
+    cz: number,
+    level: number,
+    prefix: string,
+    radius = 20
+): Obj | null {
+    return _findObj(player, cx, cz, level, radius, obj => {
         const t = ObjType.get(obj.type);
-        return !!t.debugname?.startsWith(prefix);
+        return !!(t.debugname?.startsWith(prefix));
     });
 }
-
-export function findObjNear(cx: number, cz: number, level: number, objTypeId: number, radius = 10): Obj | null {
-    return _findObj(cx, cz, level, radius, obj => obj.type === objTypeId);
+export function findObjNear(
+    player: Player,
+    cx: number,
+    cz: number,
+    level: number,
+    objTypeId: number,
+    radius = 10
+): Obj | null {
+    return _findObj(player, cx, cz, level, radius, obj => obj.type === objTypeId);
 }
-
-export function findObjByName(cx: number, cz: number, level: number, objName: string, radius = 10): Obj | null {
+export function findObjByName(
+    player: Player,
+    cx: number,
+    cz: number,
+    level: number,
+    objName: string,
+    radius = 10
+): Obj | null {
     const typeId = ObjType.getId(objName);
     if (typeId === -1) return null;
-    return findObjNear(cx, cz, level, typeId, radius);
+    return findObjNear(player, cx, cz, level, typeId, radius);
 }
 
-export function findAnyObj(cx: number, cz: number, level: number, radius = 15): Obj | null {
-    return _findObj(cx, cz, level, radius, () => true);
+export function findAnyObj(
+    player: Player,
+    cx: number,
+    cz: number,
+    level: number,
+    radius = 15
+): Obj | null {
+    return _findObj(player, cx, cz, level, radius, () => true);
 }
 
 /**

@@ -331,7 +331,7 @@ export class CombatTask extends BotTask {
             const inCombatArea = isNear(player, lx, lz, 20, ll);
 
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player.x, player.z, player.level, 15);
+                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -367,7 +367,7 @@ export class CombatTask extends BotTask {
             const [flx, flz] = this.step.location;
             const inCombatArea = isNear(player, flx, flz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player.x, player.z, player.level, 15);
+                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -393,7 +393,7 @@ export class CombatTask extends BotTask {
             const [lx, lz] = this.step.location;
             const inCombatArea = isNear(player, lx, lz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player.x, player.z, player.level, 15);
+                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -465,7 +465,7 @@ export class CombatTask extends BotTask {
             const [lx, lz] = this.step.location;
             const inCombatArea = isNear(player, lx, lz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player.x, player.z, player.level, 15);
+                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -535,7 +535,7 @@ export class CombatTask extends BotTask {
             const BLOCKLIST = [288]; // goblin mail
 
             // Find any ground object - picks up everything
-            let obj = findAnyObj(player.x, player.z, player.level, 15);
+            let obj = findAnyObj(player, player.x, player.z, player.level, 5);
 
             // Skip blocked items
             if (obj && BLOCKLIST.includes(obj.type)) {

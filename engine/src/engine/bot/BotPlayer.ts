@@ -10,7 +10,7 @@ import Player from '#/engine/entity/Player.js';
 import InvType from '#/cache/config/InvType.js';
 import { BotTask } from '#/engine/bot/tasks/Index.js';
 import { BotGoalPlanner } from '#/engine/bot/BotGoalPlanner.js';
-import { getBaseLevel, PlayerStat } from '#/engine/bot/BotAction.js';
+import { addXp, getBaseLevel, PlayerStat } from '#/engine/bot/BotAction.js';
 import { PlayerStatNameMap } from '#/engine/entity/PlayerStat.js';
 
 const RESCAN_TICKS = 600;
@@ -107,7 +107,7 @@ export class BotPlayer {
                 if (candidate && candidate.name !== this.currentTask.name) {
                     this.log(`Rescan: ${this.currentTask.name} → ${candidate.name}`);
                     this.currentTask.interrupt();
-                    this.currentTask = candidate;
+                    this._switchTask(candidate);
                     this.currentTask.reset();
                     this.planFailCount = 0;
                     return;
@@ -118,41 +118,48 @@ export class BotPlayer {
         // ── NORMAL TASK LOOP ─────────────────────────────────────
 
         if (!this.currentTask) {
-            this.currentTask = this._pickTask();
-            if (!this.currentTask) return;
+            const next = this._pickTask();
+            if (!next) return;
+            this._switchTask(next);
         }
 
-        if (this.currentTask.isComplete(this.player)) {
+        if (this.currentTask!.isComplete(this.player)) {
             this._recordComplete();
-            this.currentTask = this._pickTask();
-            if (!this.currentTask) return;
+            const next = this._pickTask();
+            if (!next) return;
+            this._switchTask(next);
         }
 
-        if (this.currentTask.interrupted) {
-            this.currentTask = this._pickTask();
-            if (!this.currentTask) return;
+        if (this.currentTask!.interrupted) {
+            const next = this._pickTask();
+            if (!next) return;
+            this._switchTask(next);
         }
 
-        if (!this.currentTask.shouldRun(this.player)) {
+        if (!this.currentTask!.shouldRun(this.player)) {
             this.planFailCount++;
-            this.log(`${this.currentTask.name} can't run (fail #${this.planFailCount})`);
+            this.log(`${this.currentTask!.name} can't run (fail #${this.planFailCount})`);
 
             if (this.planFailCount >= 5) {
                 this.planFailCount = 0;
                 this.rescanTimer = RESCAN_TICKS;
             }
 
-            this.currentTask = this._pickTask();
-            if (!this.currentTask) return;
+            const next = this._pickTask();
+            if (!next) return;
+            this._switchTask(next);
             return;
         }
 
         this.planFailCount = 0;
 
+        const activeTask = this.currentTask;
+        if (!activeTask) return;
+
         try {
-            this.currentTask.tick(this.player);
+            activeTask.tick(this.player);
         } catch (err) {
-            console.error(`[Bot:${this.name}] Task error in ${this.currentTask.name}:`, err);
+            console.error(`[Bot:${this.name}] Task error in ${activeTask.name}:`, err);
             this.currentTask = null;
         }
     }
@@ -202,6 +209,20 @@ export class BotPlayer {
         }
 
         return task;
+    }
+
+    /**
+     * Switches to a new task. Awards 5 Agility XP whenever the task name
+     * actually changes (i.e. a different skill/activity was picked).
+     *
+     * XP is passed as tenths (the engine's internal format): 50 = 5.0 displayed XP.
+     * (Level 2 threshold is 830 internally = 83.0 displayed XP.)
+     */
+    private _switchTask(next: BotTask): void {
+        if (this.currentTask && this.currentTask.name !== next.name) {
+            addXp(this.player, PlayerStat.AGILITY, 10); // 50 internal = 5.0 XP displayed
+        }
+        this.currentTask = next;
     }
 
     private _recordComplete(): void {
