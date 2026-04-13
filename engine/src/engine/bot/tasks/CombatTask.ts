@@ -10,6 +10,7 @@ import {
     openNearbyGate,
     addXp, setCombatStyle,
     botJitter, advanceBankWalk,
+    equipItem
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import {
@@ -130,10 +131,47 @@ export class CombatTask extends BotTask {
         return this.step.toolItemIds.every(id => hasItem(player, id));
     }
 
+    /**
+     * Checks if the bot has a better weapon for their combat style in inventory and equips it.
+     */
+    private _checkEquipment(player: Player): void {
+        const bronzeSwordId = Items.BRONZE_SWORD; // 1205
+        const ironSwordId = 1203;
+        const steelSwordId = 1207;
+        const mithrilSwordId = 1209;
+        const adamantSwordId = 1211;
+        const runeSwordId = 1213;
+        
+        // Attack level requirement mapping
+        const swords = [
+            { id: runeSwordId, req: 40 },
+            { id: adamantSwordId, req: 30 },
+            { id: mithrilSwordId, req: 20 },
+            { id: steelSwordId, req: 5 },
+            { id: ironSwordId, req: 1 },
+            { id: bronzeSwordId, req: 1 }
+        ];
+
+        const attackLevel = getBaseLevel(player, PlayerStat.ATTACK);
+        
+        for (const sword of swords) {
+            if (attackLevel >= sword.req && hasItem(player, sword.id)) {
+                // Attempt to equip
+                equipItem(player, sword.id);
+                return; // Only equip highest possible
+            }
+        }
+    }
+
     tick(player: Player): void {
         const now = Date.now();
 
         if (this.interrupted) return;
+
+        // Auto-Equipper Check (Limit check frequency to save CPU)
+        if (now % 20 === 0) {
+            this._checkEquipment(player);
+        }
 
         const banking =
             this.state === 'bank_walk' ||
