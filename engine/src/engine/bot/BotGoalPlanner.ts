@@ -30,6 +30,7 @@ import { FiremakingTask } from '#/engine/bot/tasks/FiremakingTask.js';
 import { CookingTask } from '#/engine/bot/tasks/CookingTask.js';
 import { SmithingTask } from '#/engine/bot/tasks/SmithingTask.js';
 import { ThievingTask } from '#/engine/bot/tasks/ThievingTask.js';
+import { CraftingTask } from '#/engine/bot/tasks/CraftingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -49,7 +50,8 @@ export const Personalities: Record<string, BotPersonality> = {
             SMITHING: 15,
             THIEVING: 10,
             PRAYER: 10,
-            FIREMAKING: 10
+            FIREMAKING: 10,
+            CRAFTING: 12
         }
     },
     FIGHTER: {
@@ -77,7 +79,8 @@ export const Personalities: Record<string, BotPersonality> = {
             PRAYER: 5,
             RANGED: 4,
             MAGIC: 4,
-            FIREMAKING: 25
+            FIREMAKING: 25,
+            CRAFTING: 6
         }
     }
 };
@@ -114,7 +117,7 @@ const SKILLS_WITH_CONTENT = new Set(
 // Shops close enough to Lumbridge spawn that bots can reach without getting stuck.
 // Bots will ONLY go to these shops automatically. Starter weapons/tools are given
 // via InitTask so bots never need to walk to Varrock or Port Sarim just to begin.
-const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMITARS']);
+const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMITARS', 'AL_KHARID_CRAFTING']);
 
 // ── Planner ───────────────────────────────────────────────────────────────────
 
@@ -184,6 +187,20 @@ export class BotGoalPlanner {
             console.log(`[Planner] ${player.username} SMITHING skipped: no smithTask (ores/bars?)`);
         }
 
+        // ── CRAFTING priority (Phase 2 only) ─────────────────────────────────
+        // Only runs when Mining >= 40 AND Smithing >= 40 — i.e. the gold pipeline
+        // is active and the bot should prioritise ringing gold bars into rings.
+        // Phase 1 (wool spinning) goes through the normal weighted rotation below
+        // so it doesn't starve every other skill.
+        if ((this.personality.weights['CRAFTING'] ?? 0) > 0) {
+            const mineLevel  = getBaseLevel(player, PlayerStat.MINING);
+            const smithLevel = getBaseLevel(player, PlayerStat.SMITHING);
+            if (mineLevel >= 40 && smithLevel >= 40) {
+                const craftTask = this._findCraftingTask(player);
+                if (craftTask) return craftTask;
+            }
+        }
+
         // Build candidate list ordered by weight (highest first after shuffle)
         const candidates = this._buildCandidates(player);
         if (candidates.length === 0) return new IdleTask(30);
@@ -201,6 +218,12 @@ export class BotGoalPlanner {
                 const cookTask2 = this._findCookingTask(player);
                 if (cookTask2) return cookTask2;
                 continue; // no matching fish found — try next skill
+            }
+
+            if (skillName === 'CRAFTING') {
+                const craftTask2 = this._findCraftingTask(player);
+                if (craftTask2) return craftTask2;
+                continue; // no viable crafting step right now — try next skill
             }
 
             const step = getProgressionStep(skillName, level);
@@ -381,6 +404,70 @@ export class BotGoalPlanner {
     }
 
     /**
+     * Returns the appropriate CraftingTask for the player's current state:
+     *
+     *   Phase 1 (craft_wool): while Mining < 40 OR Smithing < 40.
+     *     Requires shears in inventory.  If missing, returns a ShopTripTask.
+     *
+     *   Phase 2 (craft_ring): once Mining >= 40 AND Smithing >= 40.
+     *     Requires ring_mould in inventory and gold bars in bank/inv.
+     *     If ring_mould missing, returns a ShopTripTask.
+     *
+     * Returns null when neither phase can run right now.
+     */
+    private _findCraftingTask(player: Player): BotTask | null {
+        const mineLevel  = getBaseLevel(player, PlayerStat.MINING);
+        const smithLevel = getBaseLevel(player, PlayerStat.SMITHING);
+        const phase2Unlocked = mineLevel >= 40 && smithLevel >= 40;
+
+        const steps = SkillProgression['CRAFTING'];
+        if (!steps || steps.length === 0) return null;
+
+        if (!phase2Unlocked) {
+            // ── Phase 1: wool spinning ────────────────────────────────────────
+            const step = steps.find(s => s.action === 'craft_wool');
+            if (!step) return null;
+
+            if (!hasItem(player, Items.SHEARS)) {
+                // Shears are given as a starter item, but if somehow lost, buy from
+                // the Lumbridge General Store (1gp, always in NEARBY_SHOPS).
+                return new ShopTripTask('LUMBRIDGE_GENERAL', Items.SHEARS, 1, 1);
+            }
+
+            return new CraftingTask(step);
+        }
+
+        // ── Phase 2: gold rings ───────────────────────────────────────────────
+        const step = steps.find(s => s.action === 'craft_ring');
+        if (!step) return null;
+
+        if (!hasItem(player, Items.RING_MOULD)) {
+            // Buy ring mould from Al Kharid crafting shop if affordable
+            if (canAffordStep(player, step) && NEARBY_SHOPS.has('AL_KHARID_CRAFTING')) {
+                return new ShopTripTask('AL_KHARID_CRAFTING', Items.RING_MOULD, 1, 25);
+            }
+            return null;
+        }
+
+        // Need gold bars to be available
+        const bid = bankInvId();
+        const hasGoldInInv  = countItem(player, Items.GOLD_BAR) > 0;
+        let hasGoldInBank   = false;
+        if (bid !== -1) {
+            const bank = player.getInventory(bid);
+            if (bank) {
+                for (let i = 0; i < bank.capacity; i++) {
+                    if (bank.get(i)?.id === Items.GOLD_BAR) { hasGoldInBank = true; break; }
+                }
+            }
+        }
+
+        if (!hasGoldInInv && !hasGoldInBank) return null;
+
+        return new CraftingTask(step);
+    }
+
+    /**
      * Returns skill names in weighted-random order.
      * Skills the bot can't afford (and has no free fallback) sink to the bottom.
      */
@@ -475,7 +562,7 @@ export class BotGoalPlanner {
      * to better equipment via shop trips.
      */
     private _starterItems(): number[] {
-        return [Items.BRONZE_AXE, Items.BRONZE_SWORD, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER];
+        return [Items.BRONZE_AXE, Items.BRONZE_SWORD, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER, Items.SHEARS];
     }
 }
 

@@ -2,6 +2,9 @@ export const Items = {
     // Currency
     COINS: 995,
 
+    BALL_WOOL: 1759,
+    WOOL: 1737,
+
     // Axes  (all verified)
     BRONZE_AXE: 1351,
     IRON_AXE: 1349,
@@ -42,12 +45,14 @@ export const Items = {
     COAL: 453,
     MITHRIL_ORE: 447,
     ADAMANTITE_ORE: 449,
+    GOLD_ORE: 444,
 
     // Bars  (all verified)
     BRONZE_BAR: 2349,
     IRON_BAR: 2351,
     STEEL_BAR: 2353,
     MITHRIL_BAR: 2359,
+    GOLD_BAR: 2357,
     HAMMER: 2347,
 
     // Raw fish  (all verified)
@@ -101,6 +106,11 @@ export const Items = {
 
     // Food
     BREAD: 2309,
+
+    // Crafting tools & products
+    SHEARS: 1735,
+    RING_MOULD: 1592,
+    GOLD_RING: 1635,
 
     // Firemaking
     TINDERBOX: 590,
@@ -195,6 +205,7 @@ export const Locations = {
     MINE_VARROCK_EAST_VIA: [3302, 3342, 0] as [number, number, number], // ✅ varrock east via so dark wizards dont kill them
     MINE_VARROCK_WEST: [3177, 3368, 0] as [number, number, number], // ✅ tin + iron — open area
     MINE_DWARVEN: [3082, 3421, 0] as [number, number, number], // ✅ Barbarian Village surface mine — copper/tin/iron/coal, gate-free
+    MINE_KARAMJA: [2734, 3221, 0] as [number, number, number], // ✅ karmajagold
 
     // ── Fishing ───────────────────────────────────────────────────────────────
     FISH_DRAYNOR: [3088, 3228, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
@@ -220,6 +231,13 @@ export const Locations = {
     FALADOR_FURNACE: [2975, 3369, 0] as [number, number, number], // ✅ near Falador east bank
     VARROCK_ANVIL: [3188, 3422, 0] as [number, number, number], // ✅
     LUMBRIDGE_ALTAR: [3243, 3210, 0] as [number, number, number], // ✅
+
+    // ── Crafting ──────────────────────────────────────────────────────────────
+    LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ sheep field NE of castle
+    LUMBRIDGE_CASTLE_STAIRS: [3206, 3207, 0] as [number, number, number], // ✅ foot of castle stairs (ground floor)
+    LUMBRIDGE_CASTLE_APPROACH: [3215, 3218, 0] as [number, number, number], // ✅ outside south castle entrance — no doors blocking
+    LUMBRIDGE_POTTERS_WHEEL: [3209, 3213, 1] as [number, number, number], // ✅ 1 tile north of spinning wheel (3209,3212) — cardinally adjacent, reachedLoc passes immediately
+    AL_KHARID_CRAFTING_SHOP: [3285, 3183, 0] as [number, number, number], // ⛩ mould seller, inside Al Kharid
 
     // Thieving - NPC pickpocket targets
     THIEVE_LUMBRIDGE_MAN: [3192, 3248, 0] as [number, number, number], // ✅ Lumbridge man
@@ -252,7 +270,10 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
     // Lumbridge General Store — no axes, no fishing gear
     LUMBRIDGE_GENERAL: {
         location: Locations.LUMBRIDGE_GENERAL,
-        stock: [{ itemId: Items.TINDERBOX, cost: 13 }]
+        stock: [
+            { itemId: Items.TINDERBOX, cost: 13 },
+            { itemId: Items.SHEARS, cost: 1 }
+        ]
     },
 
     // Gerrant's Fishing Supplies — Port Sarim (ONLY fishing gear shop in F2P)
@@ -303,6 +324,15 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
             { itemId: Items.EARTH_RUNE, cost: 4 },
             { itemId: Items.FIRE_RUNE, cost: 4 },
             { itemId: Items.BODY_RUNE, cost: 4 }
+        ]
+    },
+
+    // Al Kharid Crafting Shop — shears + ring mould
+    AL_KHARID_CRAFTING: {
+        location: Locations.AL_KHARID_CRAFTING_SHOP,
+        stock: [
+            { itemId: Items.SHEARS, cost: 1 },
+            { itemId: Items.RING_MOULD, cost: 25 }
         ]
     },
 
@@ -490,7 +520,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         { minLevel: 1, maxLevel: 14, action: 'mine', location: Locations.MINE_VARROCK_WEST, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 175, ticksPerAction: 4, successRate: 0.65, itemGained: Items.TIN_ORE },
         {
             minLevel: 1,
-            maxLevel: 99,
+            maxLevel: 40,
             action: 'mine',
             location: Locations.MINE_VARROCK_EAST,
             via: Locations.MINE_VARROCK_EAST_VIA,
@@ -502,7 +532,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         {
             minLevel: 1,
-            maxLevel: 99,
+            maxLevel: 40,
             action: 'mine',
             location: Locations.MINE_VARROCK_EAST,
             via: Locations.MINE_VARROCK_EAST_VIA,
@@ -513,7 +543,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.TIN_ORE
         },
         // Level 15-29: iron — Barbarian Village (primary) or Varrock East (variety)
-        { minLevel: 15, maxLevel: 29, action: 'mine', location: Locations.MINE_VARROCK_WEST, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 350, ticksPerAction: 5, successRate: 0.55, itemGained: Items.IRON_ORE },
+        { minLevel: 15, maxLevel: 99, action: 'mine', location: Locations.MINE_VARROCK_WEST, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 350, ticksPerAction: 5, successRate: 0.55, itemGained: Items.IRON_ORE },
         {
             minLevel: 15,
             maxLevel: 29,
@@ -527,7 +557,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.IRON_ORE
         },
         // Level 30+: coal at Barbarian Village mine (surface accessible!)
-        { minLevel: 30, maxLevel: 99, action: 'mine', location: Locations.MINE_DWARVEN, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 500, ticksPerAction: 6, successRate: 0.45, itemGained: Items.COAL }
+        { minLevel: 30, maxLevel: 99, action: 'mine', location: Locations.MINE_DWARVEN, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 500, ticksPerAction: 6, successRate: 0.45, itemGained: Items.COAL },
+        { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE }
     ],
 
     // ── Firemaking ───────────────────────────────────────────────────────────
@@ -975,6 +1006,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.STEEL_BAR,
             extra: { alsoConsumes: Items.COAL, alsoConsumesCount: 2 }
         },
+        { minLevel: 40, maxLevel: 99, action: 'smelt', location: Locations.AL_KHARID_FURNACE, toolItemIds: [], xpPerAction: 22.5, ticksPerAction: 5, successRate: 0.5, itemConsumed: Items.GOLD_ORE, itemGained: Items.GOLD_BAR },
+        { minLevel: 40, maxLevel: 99, action: 'smelt', location: Locations.FALADOR_FURNACE, toolItemIds: [], xpPerAction: 22.5, ticksPerAction: 5, successRate: 0.5, itemConsumed: Items.GOLD_ORE, itemGained: Items.GOLD_BAR },
         // Anvil: Level 18-32, 5 bronze bars → bronze platebody
         {
             minLevel: 18,
@@ -1031,6 +1064,47 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         { minLevel: 25, maxLevel: 49, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_WOMAN, toolItemIds: [], xpPerAction: 450, ticksPerAction: 4, successRate: 0.9, itemGained: Items.COINS, extra: { npcName: 'woman' } },
         // Level 50-99: Varrock woman (best silver/tokens)
         { minLevel: 50, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_VARROCK_WOMAN, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.88, itemGained: Items.COINS, extra: { npcName: 'woman' } }
+    ],
+
+    // ── Crafting ─────────────────────────────────────────────────────────────
+    //
+    // Phase 1 (craft_wool): shear sheep → spin ball_wool into wool on the
+    //   Lumbridge castle 2nd-floor spinning wheel.  Runs until Mining AND
+    //   Smithing both reach level 40, then stops.  Handled exclusively via
+    //   BotGoalPlanner._findCraftingTask — not the standard weighted picker.
+    //
+    // Phase 2 (craft_ring): use gold bar + ring_mould at furnace → gold ring.
+    //   Unlocks once Mining >= 40 AND Smithing >= 40 (gold ore pipeline ready).
+    //
+    // XP (×10 internal format):
+    //   Spin wool  = 2.5 XP → 25 internal
+    //   Gold ring  = 15 XP  → 150 internal
+    CRAFTING: [
+        {
+            minLevel: 1,
+            maxLevel: 39,
+            action: 'craft_wool',
+            location: Locations.LUMBRIDGE_POTTERS_WHEEL, // level 1 — task teleJumps up from LUMBRIDGE_CASTLE_APPROACH
+            toolItemIds: [Items.SHEARS],
+            xpPerAction: 25, // 2.5 XP × 10
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.WOOL,
+            itemConsumed: Items.BALL_WOOL,
+            extra: { sheepLocation: Locations.LUMBRIDGE_SHEEP }
+        },
+        {
+            minLevel: 5,
+            maxLevel: 99,
+            action: 'craft_ring',
+            location: Locations.FALADOR_FURNACE,
+            toolItemIds: [Items.RING_MOULD],
+            xpPerAction: 150, // 15 XP × 10
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.GOLD_RING,
+            itemConsumed: Items.GOLD_BAR
+        }
     ],
 
     // ── Stubs ─────────────────────────────────────────────────────────────────

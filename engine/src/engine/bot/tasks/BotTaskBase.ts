@@ -17,7 +17,10 @@ import {
     interactLoc,
     interactLocOp,
     interactUseLocOp,
+    interactUseObjNpcOp,
+    botInteractUseObjNpc,
     findNpcByName,
+    findNpcByNameExcluding,
     findNpcByPrefix,
     findNpcBySuffix,
     findLocByPrefix,
@@ -219,7 +222,10 @@ export {
     getMissingPurchases,
     STARTING_COINS,
     openNearbyGate,
-    isAdjacentToLoc
+    isAdjacentToLoc,
+    interactUseObjNpcOp,
+    botInteractUseObjNpc,
+    findNpcByNameExcluding
 };
 
 // ── Shared banking helper ─────────────────────────────────────────────────────

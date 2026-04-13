@@ -60,6 +60,8 @@ import { Items } from '#/engine/bot/BotKnowledge.js';
 import UnsetMapFlag from '#/network/game/server/model/UnsetMapFlag.js';
 import Environment from '#/util/Environment.js';
 import Component from '#/cache/config/Component.js';
+import World from '#/engine/World.js';
+import * as rsbuf from '@2004scape/rsbuf';
 
 export { PlayerStat };
 
@@ -167,6 +169,18 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         arrivalRadius: 5,
         teleportDestX: 3047,
         teleportDestZ: 3235
+    },
+    {
+        // ── Lumbridge sheep pen ───────────────────────────────────────────────
+        // Fenced enclosure NE of Lumbridge castle.  East gate at ~[3197-3198, 3282].
+        // Bots walking directly to the interior hit the east fence unless they
+        // approach from the east side and open the gate.
+        name: 'SheepPen',
+        destInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
+        playerInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
+        approachX: 3213,
+        approachZ: 3261,
+        arrivalRadius: 4
     },
     {
         // ── Lumbridge cow pen ─────────────────────────────────────────────────
@@ -618,11 +632,7 @@ export function interactObjOp(player: Player, obj: Obj, op: 1 | 2 | 3 | 4 | 5): 
 
 //Ground items
 //Ground items
-function _findObj(
-    player: Player, cx: number, cz: number, level: number,
-    radius: number,
-    predicate: (obj:Obj) => boolean
-): Obj | null {
+function _findObj(player: Player, cx: number, cz: number, level: number, radius: number, predicate: (obj: Obj) => boolean): Obj | null {
     let best: Obj | null = null;
     let bestDist = Infinity;
     const zoneRadius = Math.ceil(radius / 8) + 1;
@@ -634,7 +644,8 @@ function _findObj(
             if (!zone) continue;
             for (const obj of zone.getAllObjsSafe()) {
                 if (!predicate(obj)) continue;
-                if ((obj.receiver64 === Obj.NO_RECEIVER || obj.receiver64 === player.hash64)) {//<- added this
+                if (obj.receiver64 === Obj.NO_RECEIVER || obj.receiver64 === player.hash64) {
+                    //<- added this
                     const dist = Math.abs(obj.x - cx) + Math.abs(obj.z - cz);
                     if (dist <= radius * 2 && dist < bestDist) {
                         bestDist = dist;
@@ -646,49 +657,22 @@ function _findObj(
     }
     return best;
 }
-export function findObjByPrefix(
-    player: Player,
-    cx: number,
-    cz: number,
-    level: number,
-    prefix: string,
-    radius = 20
-): Obj | null {
+export function findObjByPrefix(player: Player, cx: number, cz: number, level: number, prefix: string, radius = 20): Obj | null {
     return _findObj(player, cx, cz, level, radius, obj => {
         const t = ObjType.get(obj.type);
-        return !!(t.debugname?.startsWith(prefix));
+        return !!t.debugname?.startsWith(prefix);
     });
 }
-export function findObjNear(
-    player: Player,
-    cx: number,
-    cz: number,
-    level: number,
-    objTypeId: number,
-    radius = 10
-): Obj | null {
+export function findObjNear(player: Player, cx: number, cz: number, level: number, objTypeId: number, radius = 10): Obj | null {
     return _findObj(player, cx, cz, level, radius, obj => obj.type === objTypeId);
 }
-export function findObjByName(
-    player: Player,
-    cx: number,
-    cz: number,
-    level: number,
-    objName: string,
-    radius = 10
-): Obj | null {
+export function findObjByName(player: Player, cx: number, cz: number, level: number, objName: string, radius = 10): Obj | null {
     const typeId = ObjType.getId(objName);
     if (typeId === -1) return null;
     return findObjNear(player, cx, cz, level, typeId, radius);
 }
 
-export function findAnyObj(
-    player: Player,
-    cx: number,
-    cz: number,
-    level: number,
-    radius = 15
-): Obj | null {
+export function findAnyObj(player: Player, cx: number, cz: number, level: number, radius = 15): Obj | null {
     return _findObj(player, cx, cz, level, radius, () => true);
 }
 
@@ -727,6 +711,18 @@ export function findNpcByName(cx: number, cz: number, level: number, npcName: st
     const typeId = NpcType.getId(npcName);
     if (typeId === -1) return null;
     return findNpcNear(cx, cz, level, typeId, radius);
+}
+
+/**
+ * Like findNpcByName but skips a specific NPC (by nid) so the bot can cycle
+ * through multiple targets instead of always locking onto the same one.
+ * Falls back to any matching NPC if no alternative is found.
+ */
+export function findNpcByNameExcluding(cx: number, cz: number, level: number, npcName: string, excludeNid: number, radius = 10): Npc | null {
+    const typeId = NpcType.getId(npcName);
+    if (typeId === -1) return null;
+    const alt = findNpcFiltered(cx, cz, level, npc => npc.type === typeId && npc.nid !== excludeNid, radius);
+    return alt ?? findNpcNear(cx, cz, level, typeId, radius);
 }
 
 /**
@@ -933,6 +929,87 @@ export function getCombatLevel(player: Player): number {
     return player.combatLevel;
 }
 
+export function interactUseObjNpcOp(player: Player, npcu: Npc, item: number, slot: number): boolean {
+    const nid = npcu?.nid;
+
+    if (player.delayed) {
+        player.write(new UnsetMapFlag());
+        return false;
+    }
+
+    const inv = player.getInventory(InvType.INV);
+    if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, item)) {
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+
+    const npc = World.getNpc(nid);
+    if (!npc || npc.delayed) {
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+
+    if (!rsbuf.hasNpc(player.slot, npc.nid)) {
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+
+    player.clearPendingAction();
+    if (ObjType.get(item).members && !Environment.NODE_MEMBERS) {
+        player.messageGame("To use this item please login to a members' server.");
+        player.write(new UnsetMapFlag());
+        return false;
+    }
+
+    player.lastUseItem = item;
+    player.lastUseSlot = slot;
+
+    player.setInteraction(Interaction.ENGINE, npc, ServerTriggerType.APNPCU);
+    return true;
+}
+
+/**
+ * Bot-safe variant of interactUseObjNpcOp.
+ *
+ * Identical to interactUseObjNpcOp except the rsbuf.hasNpc() check is omitted.
+ * Bots are server-side entities with no client zone-send buffer, so hasNpc()
+ * always returns false for them and would silently block every interaction.
+ * All other guards (player.delayed, valid slot, npc exists, members check)
+ * are preserved.
+ */
+export function botInteractUseObjNpc(player: Player, npc: Npc, item: number, slot: number): boolean {
+    const inv = player.getInventory(InvType.INV);
+    if (!npc || !inv || !inv.validSlot(slot) || !inv.hasAt(slot, item)) {
+        //Add a console.log to check?
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+
+    const live = World.getNpc(npc.nid);
+    if (!live) {
+        //Add a console.log to check?
+        player.write(new UnsetMapFlag());
+        player.clearPendingAction();
+        return false;
+    }
+
+    player.clearPendingAction();
+    if (ObjType.get(item).members && !Environment.NODE_MEMBERS) {
+        player.messageGame("To use this item please login to a members' server.");
+        player.write(new UnsetMapFlag());
+        return false;
+    }
+
+    player.lastUseItem = item;
+    player.lastUseSlot = slot;
+    player.setInteraction(Interaction.ENGINE, live, ServerTriggerType.APNPCU);
+    return true;
+}
+
 /**
  * Compute the combat level of an NPC from its stat block.
  * Formula mirrors the RS2 visible combat level:
@@ -991,6 +1068,9 @@ const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
 /** Loc debug-name prefixes that represent closeable barriers (curtains, etc.). */
 const BARRIER_NAME_PREFIXES = ['loc_1528']; // Al Kharid palace curtain (closed state)
 
+/** Big door prefixes - large double doors that also need opening */
+const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
+
 /**
  * Scan within `radius` tiles for any closed door, gate, toll gate, or curtain.
  * Handles:
@@ -1009,6 +1089,12 @@ export function openNearbyGate(player: Player, radius = 30): boolean {
         // Explicit curtain check — matches closed Al Kharid palace curtains by type name
         // even if the op array format differs between server builds.
         if (BARRIER_NAME_PREFIXES.some(prefix => t.debugname?.startsWith(prefix))) {
+            return true;
+        }
+
+        // Check for big doors - large double doors that block walking
+        const hasBigDoorPrefix = BIG_DOOR_PREFIXES.some(prefix => t.debugname?.toLowerCase().includes(prefix));
+        if (hasBigDoorPrefix) {
             return true;
         }
 

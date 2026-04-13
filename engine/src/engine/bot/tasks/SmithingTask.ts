@@ -368,14 +368,14 @@ export class SmithingTask extends BotTask {
                 for (let i = 0; i < bank.capacity; i++) {
                     const item = bank.get(i);
                     if (!item) continue;
-                    if (item.id === Items.COPPER_ORE || item.id === Items.TIN_ORE || item.id === Items.IRON_ORE || item.id === Items.COAL) {
+                    if (item.id === Items.COPPER_ORE || item.id === Items.TIN_ORE || item.id === Items.IRON_ORE || item.id === Items.COAL || item.id === Items.GOLD_ORE) {
                         return true;
                     }
                 }
             }
         }
 
-        return countItem(player, Items.COPPER_ORE) > 0 || countItem(player, Items.TIN_ORE) > 0 || countItem(player, Items.IRON_ORE) > 0 || countItem(player, Items.COAL) > 0;
+        return countItem(player, Items.COPPER_ORE) > 0 || countItem(player, Items.TIN_ORE) > 0 || countItem(player, Items.IRON_ORE) > 0 || countItem(player, Items.COAL) > 0 || countItem(player, Items.GOLD_ORE) > 0;
     }
 
     private _hasBarsInBankOrInv(player: Player): boolean {
@@ -386,23 +386,23 @@ export class SmithingTask extends BotTask {
                 for (let i = 0; i < bank.capacity; i++) {
                     const item = bank.get(i);
                     if (!item) continue;
-                    if (item.id === Items.BRONZE_BAR || item.id === Items.IRON_BAR || item.id === Items.STEEL_BAR) {
+                    if (item.id === Items.BRONZE_BAR || item.id === Items.IRON_BAR || item.id === Items.STEEL_BAR || item.id === Items.GOLD_BAR) {
                         return true;
                     }
                 }
             }
         }
 
-        return countItem(player, Items.BRONZE_BAR) > 0 || countItem(player, Items.IRON_BAR) > 0 || countItem(player, Items.STEEL_BAR) > 0;
+        return countItem(player, Items.BRONZE_BAR) > 0 || countItem(player, Items.IRON_BAR) > 0 || countItem(player, Items.STEEL_BAR) > 0 || countItem(player, Items.GOLD_BAR) > 0;
     }
 
     private _hasOresInInventory(player: Player): boolean {
-        return countItem(player, Items.COPPER_ORE) > 0 || countItem(player, Items.TIN_ORE) > 0 || countItem(player, Items.IRON_ORE) > 0 || countItem(player, Items.COAL) > 0;
+        return countItem(player, Items.COPPER_ORE) > 0 || countItem(player, Items.TIN_ORE) > 0 || countItem(player, Items.IRON_ORE) > 0 || countItem(player, Items.COAL) > 0 || countItem(player, Items.GOLD_ORE) > 0;
     }
 
     private _hasBarsInInventory(player: Player): boolean {
-        this.debug(player, `Checking bars in inventory: bronze=${countItem(player, Items.BRONZE_BAR)}, iron=${countItem(player, Items.IRON_BAR)}, steel=${countItem(player, Items.STEEL_BAR)}`);
-        return countItem(player, Items.BRONZE_BAR) > 0 || countItem(player, Items.IRON_BAR) > 0 || countItem(player, Items.STEEL_BAR) > 0;
+        this.debug(player, `Checking bars in inventory: bronze=${countItem(player, Items.BRONZE_BAR)}, iron=${countItem(player, Items.IRON_BAR)}, steel=${countItem(player, Items.STEEL_BAR)}, gold=${countItem(player, Items.GOLD_BAR)}`);
+        return countItem(player, Items.BRONZE_BAR) > 0 || countItem(player, Items.IRON_BAR) > 0 || countItem(player, Items.STEEL_BAR) > 0 || countItem(player, Items.GOLD_BAR) > 0;
     }
 
     private _withdrawOres(player: Player): boolean {
@@ -415,7 +415,7 @@ export class SmithingTask extends BotTask {
 
         let withdrawn = false;
 
-        const oreItemIds = [Items.COPPER_ORE, Items.TIN_ORE, Items.IRON_ORE, Items.COAL];
+        const oreItemIds = [Items.COPPER_ORE, Items.TIN_ORE, Items.IRON_ORE, Items.COAL, Items.GOLD_ORE];
         for (const oreId of oreItemIds) {
             for (let i = 0; i < bank.capacity; i++) {
                 const item = bank.get(i);
@@ -450,7 +450,9 @@ export class SmithingTask extends BotTask {
         let barIds: number[];
 
         if (level >= 48) {
-            barIds = [Items.STEEL_BAR, Items.IRON_BAR, Items.BRONZE_BAR];
+            barIds = [Items.STEEL_BAR, Items.IRON_BAR, Items.BRONZE_BAR, Items.GOLD_BAR];
+        } else if (level >= 40) {
+            barIds = [Items.GOLD_BAR, Items.IRON_BAR, Items.BRONZE_BAR];
         } else if (level >= 33) {
             barIds = [Items.IRON_BAR, Items.BRONZE_BAR];
         } else {
@@ -478,7 +480,7 @@ export class SmithingTask extends BotTask {
             }
         }
 
-        const invBars = countItem(player, Items.BRONZE_BAR) + countItem(player, Items.IRON_BAR) + countItem(player, Items.STEEL_BAR);
+        const invBars = countItem(player, Items.BRONZE_BAR) + countItem(player, Items.IRON_BAR) + countItem(player, Items.STEEL_BAR) + countItem(player, Items.GOLD_BAR);
         this.debug(player, `Withdrew bars: total=${invBars}`);
         return withdrawn || invBars > 0;
     }
@@ -491,7 +493,7 @@ export class SmithingTask extends BotTask {
         const inv = player.getInventory(InvType.INV);
         if (!bank || !inv) return;
 
-        const itemsToKeep: Set<number> = new Set([Items.COPPER_ORE, Items.TIN_ORE, Items.IRON_ORE, Items.COAL, Items.BRONZE_BAR, Items.IRON_BAR, Items.STEEL_BAR, Items.COINS, Items.HAMMER]);
+        const itemsToKeep: Set<number> = new Set([Items.COPPER_ORE, Items.TIN_ORE, Items.IRON_ORE, Items.COAL, Items.GOLD_ORE, Items.BRONZE_BAR, Items.IRON_BAR, Items.STEEL_BAR, Items.GOLD_BAR, Items.COINS, Items.HAMMER]);
 
         let deposited = 0;
 
