@@ -165,6 +165,8 @@ export abstract class BotTask {
 
 // Re-export everything tasks need so they only import from this one file
 export type { SkillStep } from '#/engine/bot/BotKnowledge.js';
+import { equipItem } from '../BotAction.js';
+
 export {
     Player, Npc, Loc, InvType, Inventory,
     walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
@@ -174,7 +176,7 @@ export {
     addXp, setCombatStyle,
     Items, Shops, Locations, getProgressionStep,
     getMissingPurchases, STARTING_COINS,
-    openNearbyGate, isAdjacentToLoc,
+    openNearbyGate, isAdjacentToLoc, equipItem
 };
 
 // ── Shared banking helper ─────────────────────────────────────────────────────

@@ -72,8 +72,45 @@ export class WoodcuttingTask extends BotTask {
         return true;
     }
 
+    /**
+     * Checks if the bot has a better hatchet in inventory and equips it.
+     */
+    private _checkEquipment(player: Player): void {
+        const runeAxeId = 1359;
+        const adamantAxeId = 1357;
+        const mithrilAxeId = 1355;
+        const steelAxeId = 1353;
+        const ironAxeId = 1349;
+        const bronzeAxeId = Items.BRONZE_AXE;
+        
+        // Woodcutting level requirement mapping
+        const axes = [
+            { id: runeAxeId, req: 41 },
+            { id: adamantAxeId, req: 31 },
+            { id: mithrilAxeId, req: 21 },
+            { id: steelAxeId, req: 11 },
+            { id: ironAxeId, req: 1 },
+            { id: bronzeAxeId, req: 1 }
+        ];
+
+        const wcLevel = getBaseLevel(player, PlayerStat.WOODCUTTING);
+        
+        for (const axe of axes) {
+            if (wcLevel >= axe.req && hasItem(player, axe.id)) {
+                equipItem(player, axe.id);
+                return; 
+            }
+        }
+    }
+
     tick(player: Player): void {
         if (this.interrupted) return;
+
+        // Auto-Equipper Check
+        if (Date.now() % 20 === 0) {
+            this._checkEquipment(player);
+        }
+
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) { this.interrupt(); return; }
         if (this.cooldown > 0) { this.cooldown--; return; }

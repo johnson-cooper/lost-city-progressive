@@ -42,8 +42,44 @@ export class MiningTask extends BotTask {
         return this.step.toolItemIds.every(id => hasItem(player, id));
     }
 
+    /**
+     * Checks if the bot has a better pickaxe in inventory and equips it.
+     */
+    private _checkEquipment(player: Player): void {
+        const runePickId = 1275;
+        const adamantPickId = 1271;
+        const mithrilPickId = 1273;
+        const steelPickId = 1269;
+        const ironPickId = 1267;
+        const bronzePickId = Items.BRONZE_PICKAXE;
+        
+        // Mining level requirement mapping
+        const pickaxes = [
+            { id: runePickId, req: 41 },
+            { id: adamantPickId, req: 31 },
+            { id: mithrilPickId, req: 21 },
+            { id: steelPickId, req: 11 },
+            { id: ironPickId, req: 1 },
+            { id: bronzePickId, req: 1 }
+        ];
+
+        const mineLevel = getBaseLevel(player, PlayerStat.MINING);
+        
+        for (const pick of pickaxes) {
+            if (mineLevel >= pick.req && hasItem(player, pick.id)) {
+                equipItem(player, pick.id);
+                return; 
+            }
+        }
+    }
+
     tick(player: Player): void {
         if (this.interrupted) return;
+
+        // Auto-Equipper Check
+        if (Date.now() % 20 === 0) {
+            this._checkEquipment(player);
+        }
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) { this.interrupt(); return; }

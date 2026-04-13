@@ -28,6 +28,7 @@ import { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
 import { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
 import { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
 import { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
+import { CookingTask }    from '#/engine/bot/tasks/CookingTask.js';
 import { FiremakingTask } from '#/engine/bot/tasks/FiremakingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
@@ -182,6 +183,16 @@ export class BotGoalPlanner {
                         }
                     }
 
+                    // 🔥 fallback to fishing if no raw fish to cook
+                    if (skillName === 'COOKING') {
+                        const fishLevel = getBaseLevel(player, PlayerStat.FISHING);
+                        const fishStep = getProgressionStep('FISHING', fishLevel);
+
+                        if (fishStep) {
+                            return new FishingTask(fishStep);
+                        }
+                    }
+
                     continue;
                 }
 
@@ -197,8 +208,9 @@ export class BotGoalPlanner {
                             if (step.action === 'mine')    return new MiningTask(step);
                             if (step.action === 'fish')    return new FishingTask(step);
                             if (step.action === 'firemaking')    return new FiremakingTask(step);
+                            if (step.action === 'cook')    return new CookingTask(step);
                             
-                            // Other skills (cook, smith, etc.) not yet implemented
+                            // Other skills (smith, etc.) not yet implemented
                             continue;
                         }
 
@@ -321,6 +333,8 @@ export class BotGoalPlanner {
             Items.BRONZE_PICKAXE,
             Items.SMALL_FISHING_NET,
             Items.TINDERBOX,
+            // Starter raw fish for cooking
+            Items.RAW_SHRIMP,
         ];
     }
 }

@@ -110,6 +110,7 @@ export function getLevelByExp(exp: number) {
 export function isAddressingBot(message: string, bot: Player): boolean {
     const msg = message.toLowerCase();
 
+
     const names = [bot.username, bot.displayName].filter(Boolean) as string[];
 
     for (const name of names) {
@@ -2381,9 +2382,72 @@ export default class Player extends PathingEntity {
 
 
 
+  checkSkillLevelIntent(msg: string): string | null {
+    if (!msg.includes("level") && !msg.includes("lvl")) {
+        return null;
+    }
+
+    if (msg.includes("total")) {
+        let total = 0;
+        for (let stat = 0; stat < this.baseLevels.length; stat++) {
+            total += this.baseLevels[stat];
+        }
+        return `My total level is ${total}.`;
+    }
+
+    const skillAbbreviations: Record<string, string> = {
+        "wc": "WOODCUTTING",
+        "hp": "HITPOINTS",
+        "rc": "RUNECRAFT",
+        "herb": "HERBLORE",
+        "mage": "MAGIC",
+        "str": "STRENGTH",
+        "att": "ATTACK",
+        "def": "DEFENCE",
+        "pray": "PRAYER",
+        "fish": "FISHING",
+        "cook": "COOKING",
+        "fletch": "FLETCHING",
+        "fm": "FIREMAKING",
+        "craft": "CRAFTING",
+        "smith": "SMITHING",
+        "mine": "MINING",
+        "agil": "AGILITY",
+        "thiev": "THIEVING"
+    };
+
+    const words = msg.replace(/[?!.]/g, "").split(" ");
+    for (const word of words) {
+        let statKey = null;
+
+        if (skillAbbreviations[word]) {
+            statKey = skillAbbreviations[word];
+        } else {
+            const upperWord = word.toUpperCase();
+            if (PlayerStatMap.has(upperWord)) {
+                statKey = upperWord;
+            }
+        }
+
+        if (statKey) {
+            const stat = PlayerStatMap.get(statKey);
+            if (stat !== undefined && stat < this.baseLevels.length) {
+                return `My ${statKey.toLowerCase()} level is ${this.baseLevels[stat]}.`;
+            }
+        }
+    }
+
+    return null;
+  }
+
   processIntent(message: string): string {
     const data = loadChatResponses();
     const msg = message.toLowerCase();
+
+    const skillResponse = this.checkSkillLevelIntent(msg);
+    if (skillResponse) {
+        return skillResponse;
+    }
 
     // Greetings
     if (data.greetings.patterns.some(p => msg.includes(p))) {
