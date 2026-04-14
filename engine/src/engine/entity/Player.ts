@@ -2446,6 +2446,46 @@ botChatCheck(name: string, mes: string, bot: Player) {
 
         const addressed = isAddressingBot(mes, bot);
 
+        const msgLower = mes.toLowerCase();
+        const isAskingLevel = msgLower.includes('level') || msgLower.includes('lvl');
+        const isEngaged = memory.lastSpeakerId === name && Date.now() - (memory.lastInteractionTime ?? 0) < 15000;
+
+        if ((addressed || isEngaged) && isAskingLevel) {
+            const skillKeywords: Record<number, string[]> = {
+                [PlayerStat.ATTACK]: ['attack', 'att'],
+                [PlayerStat.DEFENCE]: ['defence', 'def'],
+                [PlayerStat.STRENGTH]: ['strength', 'str'],
+                [PlayerStat.HITPOINTS]: ['hitpoints', 'hp'],
+                [PlayerStat.RANGED]: ['ranged', 'range'],
+                [PlayerStat.PRAYER]: ['prayer', 'pray'],
+                [PlayerStat.MAGIC]: ['magic', 'mage'],
+                [PlayerStat.COOKING]: ['cooking', 'cook'],
+                [PlayerStat.WOODCUTTING]: ['woodcutting', 'woodcut', 'wc'],
+                [PlayerStat.FLETCHING]: ['fletching', 'fletch'],
+                [PlayerStat.FISHING]: ['fishing', 'fish'],
+                [PlayerStat.FIREMAKING]: ['firemaking', 'fm'],
+                [PlayerStat.CRAFTING]: ['crafting', 'craft'],
+                [PlayerStat.SMITHING]: ['smithing', 'smith'],
+                [PlayerStat.MINING]: ['mining', 'mine'],
+                [PlayerStat.HERBLORE]: ['herblore', 'herb'],
+                [PlayerStat.AGILITY]: ['agility', 'agil'],
+                [PlayerStat.THIEVING]: ['thieving', 'thief'],
+                [PlayerStat.RUNECRAFT]: ['runecrafting', 'runecraft', 'rc']
+            };
+
+            for (const [statStr, keywords] of Object.entries(skillKeywords)) {
+                if (keywords.some(kw => msgLower.match(new RegExp(`\\b${kw}\\b`)))) {
+                    const statId = parseInt(statStr, 10);
+                    bot.say(bot.baseLevels[statId].toString());
+                    memory.lastSpeakerId = name;
+                    memory.lastMessage = mes;
+                    memory.lastInteractionTime = Date.now();
+                    memory.state = 'awaiting_response';
+                    return;
+                }
+            }
+        }
+
         // 🟢 First contact (name mentioned)
         if (addressed) {
             memory.lastSpeakerId = name;
