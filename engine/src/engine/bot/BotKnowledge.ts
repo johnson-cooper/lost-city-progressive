@@ -146,8 +146,55 @@ export const Items = {
     WATER_RUNE: 555,
     EARTH_RUNE: 557,
     FIRE_RUNE: 554,
-    BODY_RUNE: 559
+    BODY_RUNE: 559,
+
+    // Talismans (combat drops — bank, never sell)
+    AIR_TALISMAN: 1438,
+
+    // Grimy herbs (combat drops, e.g. from chaos druids)
+    GRIMY_GUAM: 199,
+    GRIMY_MARRENTILL: 201,
+    GRIMY_TARROMIN: 203,
+    GRIMY_HARRALANDER: 205,
+    GRIMY_RANARR: 207,
+    GRIMY_IRIT: 209,
+    GRIMY_AVANTOE: 211,
+    GRIMY_KWUARM: 213,
+    GRIMY_CADANTINE: 215,
+    GRIMY_DWARF_WEED: 217,
+    GRIMY_TORSTOL: 219,
+
+    // Clean herbs
+    CLEAN_GUAM: 249,
+    CLEAN_MARRENTILL: 251,
+    CLEAN_TARROMIN: 253,
+    CLEAN_HARRALANDER: 255,
+    CLEAN_RANARR: 257,
+    CLEAN_IRIT: 259,
+    CLEAN_AVANTOE: 261,
+    CLEAN_KWUARM: 263,
+    CLEAN_CADANTINE: 265,
+    CLEAN_DWARF_WEED: 267,
+    CLEAN_TORSTOL: 269
 } as const;
+
+/**
+ * Maps grimy herb ID → [clean herb ID, herblore XP × 10].
+ * XP values match RS2 (e.g. guam = 2.5 XP stored as 25).
+ */
+export const GRIMY_HERB_MAP: Record<number, [number, number]> = {
+    199: [249,  25],  // guam         2.5 XP
+    201: [251,  38],  // marrentill   3.8 XP
+    203: [253,  50],  // tarromin     5.0 XP
+    205: [255,  63],  // harralander  6.3 XP
+    207: [257,  75],  // ranarr       7.5 XP
+    209: [259,  88],  // irit         8.8 XP
+    211: [261, 100],  // avantoe     10.0 XP
+    213: [263, 113],  // kwuarm      11.3 XP
+    215: [265, 125],  // cadantine   12.5 XP
+    217: [267, 138],  // dwarf weed  13.8 XP
+    219: [269, 150],  // torstol     15.0 XP
+};
 
 export const Objects = {
     FIRE: 2732

@@ -39,7 +39,7 @@ import {
     openNearbyGate,
     isAdjacentToLoc
 } from '#/engine/bot/BotAction.js';
-import { Items, Shops, Locations, getProgressionStep } from '#/engine/bot/BotKnowledge.js';
+import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
@@ -420,5 +420,26 @@ export class ProgressWatchdog {
 
     reset(): void {
         this.stallTicks = 0;
+    }
+}
+
+/**
+ * Cleans any grimy herbs in the player's inventory and awards Herblore XP.
+ * Call this just before banking so cleaned herbs are banked instead of grimy ones.
+ */
+export function cleanGrimyHerbs(player: Player): void {
+    const inv = player.getInventory(InvType.INV);
+    if (!inv) return;
+    for (let slot = 0; slot < inv.capacity; slot++) {
+        const item = inv.get(slot);
+        if (!item) continue;
+        const entry = GRIMY_HERB_MAP[item.id];
+        if (!entry) continue;
+        const [cleanId, xp] = entry;
+        const removed = inv.remove(item.id, item.count);
+        if (removed.completed > 0) {
+            inv.add(cleanId, removed.completed);
+            addXp(player, PlayerStat.HERBLORE, xp * removed.completed);
+        }
     }
 }

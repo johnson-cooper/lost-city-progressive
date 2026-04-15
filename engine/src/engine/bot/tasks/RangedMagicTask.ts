@@ -52,7 +52,8 @@ import {
     setAutocastWindStrike,
     openNearbyGate,
     botJitter,
-    advanceBankWalk
+    advanceBankWalk,
+    cleanGrimyHerbs
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { findNpcFiltered, npcMatchesName, interactHeldOp, _wornContains, _equipLoot } from '#/engine/bot/BotAction.js';
@@ -416,6 +417,7 @@ export class RangedMagicTask extends BotTask {
 
         if (this.state === 'bank_deposit') {
             _equipLoot(player);
+            cleanGrimyHerbs(player);
             this._depositLoot(player);
             this._withdrawAmmo(player);
             this.state = 'check_equip';

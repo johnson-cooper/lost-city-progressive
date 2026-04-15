@@ -36,6 +36,9 @@ import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
 const THIEVE_COOLDOWN_MIN = 8;
 const THIEVE_COOLDOWN_MAX = 12;
 const THIEF_STUN_DAMAGE = 3;
+/** Absolute danger floor — interrupt immediately at or below this HP regardless of state or cooldown. */
+const HP_DANGER_THRESHOLD = 5;
+/** Soft threshold — stop pickpocketing and bank/heal when HP drops this low. */
 const HP_SAFE_THRESHOLD = 15;
 const HEAL_IF_HP_BELOW = 20;
 const MAX_TICKETS = 5;
@@ -71,8 +74,13 @@ export class ThievingTask extends BotTask {
         // Must have level to start
         if (level < 1) return false;
 
-        // Don't start if HP too low
+        // Don't restart while HP is still in the danger zone or hasn't recovered
+        // above the safe threshold — give the planner time to pick a healing task.
         const hp = player.stats[PlayerStat.HITPOINTS];
+        if (hp <= HP_DANGER_THRESHOLD) {
+            this.debug(player, `not starting: HP critically low (${hp})`);
+            return false;
+        }
         if (hp < HP_SAFE_THRESHOLD) {
             this.debug(player, `not starting: HP too low (${hp})`);
             return false;
@@ -91,6 +99,18 @@ export class ThievingTask extends BotTask {
             return;
         }
 
+        // ── DANGER HP CHECK — runs every tick, even during cooldown ──────────
+        // If HP hits the absolute floor, interrupt immediately so the planner
+        // can switch to a safer task before the bot takes one more hit and dies.
+        {
+            const hp = player.stats[PlayerStat.HITPOINTS];
+            if (hp <= HP_DANGER_THRESHOLD) {
+                this.debug(player, `DANGER: HP critically low (${hp}/${HP_DANGER_THRESHOLD}); switching task`);
+                this.interrupt();
+                return;
+            }
+        }
+
         const banking = this.state === 'bank_walk' || this.state === 'bank_done' || this.state === 'eat';
         if (this.watchdog.check(player, banking)) {
             this.debug(player, 'Watchdog triggered; interrupting task');
@@ -103,13 +123,13 @@ export class ThievingTask extends BotTask {
             return;
         }
 
-        // ── HP check: stop if low HP ────────────────────────────────────────
+        // ── Soft HP check: stop pickpocketing and bank/heal if HP is low ────
         if (this.state !== 'flee' && this.state !== 'bank_walk' && this.state !== 'bank_done' && this.state !== 'eat') {
             const hp = player.stats[PlayerStat.HITPOINTS];
             if (hp < HP_SAFE_THRESHOLD) {
-                this.debug(player, `HP too low (${hp}); stopping task`);
-                this.done = true;
-                this.interrupt();
+                this.debug(player, `HP low (${hp}); banking to recover`);
+                this.state = 'bank_walk';
+                this.currentNpc = null;
                 return;
             }
         }

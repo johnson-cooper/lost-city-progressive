@@ -26,12 +26,13 @@ import {
     addXp,
     setCombatStyle,
     botJitter,
-    advanceBankWalk
+    advanceBankWalk,
+    cleanGrimyHerbs
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { findObjByName, findObjByPrefix, findObjNear, findAnyObj, interactHeldOp, pickupGroundItem, removeItem, findNpcFiltered, npcMatchesName, getNpcCombatLevel, findAggressorNpc, interactIF_UseOp, interactObjOp, _equipLoot } from '#/engine/bot/BotAction.js';
 import NpcType from '#/cache/config/NpcType.js';
-import { Interfaces } from '#/engine/bot/BotKnowledge.js';
+import { Interfaces, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 import ObjType from '#/cache/config/ObjType.js';
 
 // ── Shared NPC claim registry ─────────────────────────────────────────────────
@@ -328,6 +329,7 @@ export class CombatTask extends BotTask {
 
         if (this.state === 'bank_deposit') {
             _equipLoot(player);
+            cleanGrimyHerbs(player);
             this._depositGold(player);
             this._depositLoot(player);
             this._rerollStep(player); // re-randomise location for the next run
@@ -864,12 +866,14 @@ export class CombatTask extends BotTask {
 
         const protectedItems = new Set(this.step.toolItemIds);
 
-        // Check if any item can be sold (not a tool item and not coins)
+        // Check if any item can be sold (not a tool item, not coins, not a banked herb/talisman)
         for (let slot = 0; slot < inv.capacity; slot++) {
             const item = inv.get(slot);
             if (!item) continue;
             if (protectedItems.has(item.id)) continue;
             if (item.id === Items.COINS) continue;
+            if (GRIMY_HERB_MAP[item.id] !== undefined) continue; // grimy herb → bank
+            if (item.id === Items.AIR_TALISMAN) continue;        // talisman → bank
             return true;
         }
 
@@ -889,6 +893,8 @@ export class CombatTask extends BotTask {
 
             if (protectedItems.has(item.id)) continue;
             if (item.id === Items.COINS) continue; //<- also not needed anymore.
+            if (GRIMY_HERB_MAP[item.id] !== undefined) continue; // grimy herb → bank
+            if (item.id === Items.AIR_TALISMAN) continue;        // talisman → bank
 
             if (interactIF_UseOp(player, Interfaces.SHOP_SIDE_INV, item.id, slot, 4)) {
                 //info: Op 4 is sell 10 (Op1 value, op2 sell 1, op3 sell 5, op4 sell 10)(for SHOP_SIDE) Interfaces.SHOP_INV for buy

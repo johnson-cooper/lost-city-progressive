@@ -11,6 +11,7 @@ import {
     openNearbyGate, advanceBankWalk,
     PlayerStat,
 } from '#/engine/bot/tasks/BotTaskBase.js';
+import { GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 
 // ── InitTask ──────────────────────────────────────────────────────────────────
 
@@ -250,6 +251,13 @@ export class IdleTask extends BotTask {
 
 // ── SellTask — sell resources at Lumbridge General Store ──────────────────────
 
+// Items never sold at shops — always banked.
+const BANK_ONLY_IDS: ReadonlySet<number> = new Set([
+    ...Object.keys(GRIMY_HERB_MAP).map(Number),          // grimy herbs
+    ...Object.values(GRIMY_HERB_MAP).map(([id]) => id),  // clean herbs
+    Items.AIR_TALISMAN,                                   // talismans
+]);
+
 const SELL_PRICES: Record<number, number> = {
     [Items.LOGS]:        3,
     [Items.OAK_LOGS]:    6,
@@ -352,6 +360,7 @@ export class SellTask extends BotTask {
             if (!item) continue;
             if (this.keepItems.includes(item.id)) continue;
             if (item.id === Items.COINS) continue;
+            if (BANK_ONLY_IDS.has(item.id)) continue;
             coins += item.count * (SELL_PRICES[item.id] ?? 1);
             inv.remove(item.id, item.count);
         }
