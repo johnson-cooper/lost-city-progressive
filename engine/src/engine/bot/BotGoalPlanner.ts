@@ -36,6 +36,7 @@ import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
 import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
 import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
+import { BakerStallThiefTask } from '#/engine/bot/tasks/BakerStallThiefTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -54,6 +55,7 @@ export const Personalities: Record<string, BotPersonality> = {
             COOKING: 15,
             SMITHING: 15,
             THIEVING: 15,
+            AGILITY: 10,
             PRAYER: 10,
             FIREMAKING: 9,   // 35% share of the fletch/FM pair (9:17 ≈ 35:65)
             CRAFTING: 12,
@@ -88,6 +90,7 @@ export const Personalities: Record<string, BotPersonality> = {
             RANGED: 4,
             MAGIC: 4,
             FIREMAKING: 13,  // 35% share of the fletch/FM pair (13:24 ≈ 35:65)
+            AGILITY: 8,
             CRAFTING: 6,
             FLETCHING: 24,   // 65% share of the fletch/FM pair
             RUNECRAFT: 8,    // unlocks once a talisman drops
@@ -258,6 +261,7 @@ export class BotGoalPlanner {
                 continue;
             }
 
+
             const step = getProgressionStep(skillName, level);
             if (!step) continue;
 
@@ -317,6 +321,7 @@ export class BotGoalPlanner {
                 if (step.action === 'firemaking') return new FiremakingTask(step);
                 if (step.action === 'smelt' || step.action === 'smith') return new SmithingTask(step);
                 if (step.action === 'thieve') return new ThievingTask(step);
+                if (step.action === 'thieve_stall') return new BakerStallThiefTask();
                 if (step.action === 'pick_flax') return new FlaxPickingTask(step);
                 if (step.action === 'herblore_attack') {
                     // Require guams (chaos druid drops) — no guams, no herblore.
@@ -334,7 +339,7 @@ export class BotGoalPlanner {
                     if (guamCount < 5) continue; // not enough guams yet
                     return new HerbloreTask(step);
                 }
-                if (step.action.startsWith('fletch_')) {
+                if (step.action.startsWith('fletch_') || step.action.startsWith('string_')) {
                     // Don't start with fewer than 50 logs — let the bot accumulate
                     // a worthwhile batch from woodcutting first.
                     if (step.itemConsumed) {
@@ -498,16 +503,24 @@ export class BotGoalPlanner {
 
         if (!phase2Unlocked) {
             // ── Phase 1: wool spinning ────────────────────────────────────────
-            const step = steps.find(s => s.action === 'craft_wool');
-            if (!step) return null;
+            const woolStep = steps.find(s => s.action === 'craft_wool');
+            const flaxStep = steps.find(s => s.action === 'spin_flax');
+            const level = getBaseLevel(player, PlayerStat.CRAFTING);
 
-            if (!hasItem(player, Items.SHEARS)) {
-                // Shears are given as a starter item, but if somehow lost, buy from
-                // the Lumbridge General Store (1gp, always in NEARBY_SHOPS).
-                return new ShopTripTask('LUMBRIDGE_GENERAL', Items.SHEARS, 1, 1);
+            // Prioritize flax if we have it and level >= 10
+            if (flaxStep && level >= 10 && (hasItem(player, Items.FLAX) || this._hasItemInBank(player, Items.FLAX))) {
+                return new CraftingTask(flaxStep);
             }
 
-            return new CraftingTask(step);
+            if (woolStep) {
+                if (!hasItem(player, Items.SHEARS)) {
+                    // Shears are given as a starter item, but if somehow lost, buy from
+                    // the Lumbridge General Store (1gp, always in NEARBY_SHOPS).
+                    return new ShopTripTask('LUMBRIDGE_GENERAL', Items.SHEARS, 1, 1);
+                }
+
+                return new CraftingTask(woolStep);
+            }
         }
 
         // ── Phase 2: gold rings ───────────────────────────────────────────────
@@ -700,13 +713,16 @@ export class BotGoalPlanner {
 
     /** True if knife is in inventory or bank — used to avoid a shop trip when it just needs withdrawing. */
     private _hasKnifeAccessible(player: Player): boolean {
-        if (hasItem(player, Items.KNIFE)) return true;
+        return this._hasItemInBank(player, Items.KNIFE) || hasItem(player, Items.KNIFE);
+    }
+
+    private _hasItemInBank(player: Player, itemId: number): boolean {
         const bid = bankInvId();
         if (bid === -1) return false;
         const bank = player.getInventory(bid);
         if (!bank) return false;
         for (let i = 0; i < bank.capacity; i++) {
-            if (bank.get(i)?.id === Items.KNIFE) return true;
+            if (bank.get(i)?.id === itemId) return true;
         }
         return false;
     }
