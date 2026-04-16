@@ -1330,13 +1330,11 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // Pickpocket man/woman in Lumbridge/Varrock until 99
     THIEVING: [
         // Level 1-9: Lumbridge man
-        { minLevel: 1, maxLevel: 9, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 200, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
-        // Level 10-24: Varrock man (more profitable)
-        { minLevel: 10, maxLevel: 24, action: 'thieve', location: Locations.THIEVE_VARROCK_MAN, toolItemIds: [], xpPerAction: 350, ticksPerAction: 4, successRate: 0.8, itemGained: Items.COINS, extra: { npcName: 'man' } },
+        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 200, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
+      
         // Level 25-49: Lumbridge woman (higher success rate)
-        { minLevel: 25, maxLevel: 49, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_WOMAN, toolItemIds: [], xpPerAction: 450, ticksPerAction: 4, successRate: 0.9, itemGained: Items.COINS, extra: { npcName: 'woman' } },
+        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_WOMAN, toolItemIds: [], xpPerAction: 450, ticksPerAction: 4, successRate: 0.9, itemGained: Items.COINS, extra: { npcName: 'woman' } },
         // Level 50-99: Varrock woman (best silver/tokens)
-        { minLevel: 50, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_VARROCK_WOMAN, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.88, itemGained: Items.COINS, extra: { npcName: 'woman' } }
     ],
 
     // ── Crafting ─────────────────────────────────────────────────────────────
