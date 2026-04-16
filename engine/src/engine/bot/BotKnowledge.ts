@@ -122,6 +122,8 @@ export const Items = {
     UNSTRUNG_WILLOW_SHORTBOW: 60,
     UNSTRUNG_WILLOW_LONGBOW: 58,
 
+    FLAX: 1779,
+
     // Firemaking
     TINDERBOX: 590,
 
@@ -247,6 +249,7 @@ export const Locations = {
     VARROCK_EAST_BANK: [3253, 3420, 0] as [number, number, number], // ✅
     AL_KHARID_BANK: [3269, 3163, 0] as [number, number, number], // ⛩ inside Al Kharid (2 tiles past south door)
     FALADOR_EAST_BANK: [3013, 3355, 0] as [number, number, number], // ✅
+    SEERS_BANK: [2725, 3493, 0] as [number, number, number], // ✅
 
     // ── Shops ─────────────────────────────────────────────────────────────────
     BOB_AXES: [3231, 3203, 0] as [number, number, number], // ✅ Bob's Axes, Lumbridge
@@ -315,6 +318,7 @@ export const Locations = {
 
     // ── Crafting ──────────────────────────────────────────────────────────────
     LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ sheep field NE of castle
+    FLAX_FIELD: [2743, 3444, 0] as [number, number, number], // ✅
     LUMBRIDGE_CASTLE_STAIRS: [3206, 3207, 0] as [number, number, number], // ✅ foot of castle stairs (ground floor)
     LUMBRIDGE_CASTLE_APPROACH: [3215, 3218, 0] as [number, number, number], // ✅ outside south castle entrance — no doors blocking
     LUMBRIDGE_POTTERS_WHEEL: [3209, 3213, 1] as [number, number, number], // ✅ 1 tile north of spinning wheel (3209,3212) — cardinally adjacent, reachedLoc passes immediately
@@ -1347,6 +1351,17 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.GOLD_RING,
             itemConsumed: Items.GOLD_BAR
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'pick_flax',
+            location: Locations.FLAX_FIELD,
+            toolItemIds: [],
+            xpPerAction: 0,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.FLAX
         }
     ],
 

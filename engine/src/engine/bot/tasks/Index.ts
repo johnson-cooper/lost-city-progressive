@@ -17,3 +17,4 @@ export { SmithingTask } from '#/engine/bot/tasks/SmithingTask.js';
 export { CraftingTask } from '#/engine/bot/tasks/CraftingTask.js';
 export { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 export { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
+export { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';

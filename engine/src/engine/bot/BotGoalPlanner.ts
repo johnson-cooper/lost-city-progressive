@@ -34,6 +34,7 @@ import { CraftingTask } from '#/engine/bot/tasks/CraftingTask.js';
 import { RangedMagicTask, MIN_COINS_TO_SHOP as RM_MIN_COINS } from '#/engine/bot/tasks/RangedMagicTask.js';
 import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
+import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -312,6 +313,7 @@ export class BotGoalPlanner {
                 if (step.action === 'firemaking') return new FiremakingTask(step);
                 if (step.action === 'smelt' || step.action === 'smith') return new SmithingTask(step);
                 if (step.action === 'thieve') return new ThievingTask(step);
+                if (step.action === 'pick_flax') return new FlaxPickingTask(step);
                 if (step.action.startsWith('fletch_')) {
                     // Don't start with fewer than 50 logs — let the bot accumulate
                     // a worthwhile batch from woodcutting first.
