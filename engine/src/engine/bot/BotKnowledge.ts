@@ -203,7 +203,15 @@ export const Items = {
     CLEAN_KWUARM: 263,
     CLEAN_CADANTINE: 265,
     CLEAN_DWARF_WEED: 267,
-    CLEAN_TORSTOL: 269
+    CLEAN_TORSTOL: 269,
+
+    // Herblore — vials, additives, and potions
+    VIAL_EMPTY: 229,      // empty glass vial (bought from Aemad / dropped by druids)
+    VIAL_OF_WATER: 227,   // vial filled at any watersource loc
+    EYE_OF_NEWT: 221,     // secondary ingredient for attack potion (Betty / Port Sarim)
+    UNFINISHED_GUAM: 91,  // guamvial — guam_leaf + vial_of_water
+    ATTACK_POTION: 2428,  // 4dose1attack (full dose, e.g. from Entrana drop)
+    ATTACK_POTION_3: 121  // 3dose1attack — freshly brewed unf_guam + eye_of_newt
 } as const;
 
 /**
@@ -290,7 +298,7 @@ export const Locations = {
     FISH_KARAMJA: [2924, 3173, 0] as [number, number, number], // ⛩ lobster + swordfish (pot/harpoon) — boat-routed via Port Sarim
     FISH_ALKHARID: [3277, 3142, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
     // ── Combat ────────────────────────────────────────────────────────────────
-    CHICKENS_LUMBRIDGE: [3232, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
+    CHICKENS_LUMBRIDGE: [3237, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
     CHICKENS_LUMBRIDGE2: [3188, 3278, 0] as [number, number, number], // ✅ level 1 chickens, no walls
     GOBLINS_LUMBRIDGE: [3258, 3236, 0] as [number, number, number], // ✅ level 2/5 goblins, road north of castle
     COWS_LUMBRIDGE: [3255, 3276, 0] as [number, number, number], // ⛩ level 2 cows, cowpen gateway
@@ -319,6 +327,7 @@ export const Locations = {
     // ── Crafting ──────────────────────────────────────────────────────────────
     LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ sheep field NE of castle
     FLAX_FIELD: [2743, 3444, 0] as [number, number, number], // ✅
+    LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ inside sheep pen NE of castle (within SheepPen GATEWAY_REGION)
     LUMBRIDGE_CASTLE_STAIRS: [3206, 3207, 0] as [number, number, number], // ✅ foot of castle stairs (ground floor)
     LUMBRIDGE_CASTLE_APPROACH: [3215, 3218, 0] as [number, number, number], // ✅ outside south castle entrance — no doors blocking
     LUMBRIDGE_POTTERS_WHEEL: [3209, 3213, 1] as [number, number, number], // ✅ 1 tile north of spinning wheel (3209,3212) — cardinally adjacent, reachedLoc passes immediately
@@ -329,6 +338,12 @@ export const Locations = {
     THIEVE_LUMBRIDGE_WOMAN: [3194, 3250, 0] as [number, number, number], // ✅ Lumbridge woman
     THIEVE_VARROCK_MAN: [3212, 3435, 0] as [number, number, number], // ✅ Varrock man
     THIEVE_VARROCK_WOMAN: [3214, 3437, 0] as [number, number, number], // ✅ Varrock woman
+
+    // ── Herblore supply runs ──────────────────────────────────────────────────
+    // All three sites are reached via teleJump from the bank.
+    AEMAD_SUPPLIES:    [2683, 3283, 0] as [number, number, number], // ✅ Aemad's Adventuring Supplies, East Ardougne market
+    FALADOR_FOUNTAIN:  [2997, 3373, 0] as [number, number, number], // ✅ Fountain near Falador west bank (category=watersource)
+    PORT_SARIM_HERBS:  [3013, 3257, 0] as [number, number, number], // ✅ Betty's Magic Emporium, Port Sarim
 
     // ── Runecrafting (all teleJump-only — inside special altar zones) ─────────
     ESSENCE_MINE: [2898, 4817, 0] as [number, number, number], // 🚪 Rune essence mine (exact rock cluster location)
@@ -439,6 +454,22 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
     VARROCK_STAFFS: {
         location: Locations.VARROCK_STAFFS,
         stock: [{ itemId: Items.STAFF_OF_AIR, cost: 1000 }]
+    },
+
+    // Aemad's Adventuring Supplies — East Ardougne (vials for herblore)
+    AEMAD_SUPPLIES: {
+        location: Locations.AEMAD_SUPPLIES,
+        stock: [
+            { itemId: Items.VIAL_EMPTY, cost: 2 }
+        ]
+    },
+
+    // Betty's Magic Emporium — Port Sarim (eye_of_newt secondary ingredient)
+    PORT_SARIM_HERBS: {
+        location: Locations.PORT_SARIM_HERBS,
+        stock: [
+            { itemId: Items.EYE_OF_NEWT, cost: 3 }
+        ]
     },
 
     // Zeke's Superior Scimitars — Al Kharid (ONLY place in F2P)
@@ -1362,6 +1393,31 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 3,
             successRate: 1.0,
             itemGained: Items.FLAX
+        }
+    ],
+
+    // ── Herblore ─────────────────────────────────────────────────────────────
+    //
+    // Level 1+: attack potions
+    //   Supply run: buy vials (Aemad, Ardougne) → fill vials (Falador fountain)
+    //              → buy eye_of_newt (Betty, Port Sarim) → bank to mix.
+    //   Step 1: vial_of_water + guam_leaf → unf_guam_potion  (0 XP)
+    //   Step 2: unf_guam_potion + eye_of_newt → attack_potion_3  (25 XP = 250 ×10)
+    //
+    // XP: 25.0 per attack potion = 250 internal (×10 format).
+    // itemConsumed = guam_leaf; task withdraws guams from bank and buys the rest.
+    HERBLORE: [
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'herblore_attack',
+            location: Locations.AEMAD_SUPPLIES,   // placeholder — task uses teleJump
+            toolItemIds: [],                       // no persistent tool needed
+            xpPerAction: 250,                      // 25.0 XP per attack potion × 10
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_GUAM,        // consumed per batch
+            itemGained:   Items.ATTACK_POTION_3    // 3-dose attack potion (freshly brewed)
         }
     ],
 

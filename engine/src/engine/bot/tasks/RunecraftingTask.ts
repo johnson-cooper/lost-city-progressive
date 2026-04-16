@@ -48,6 +48,7 @@ import {
     ProgressWatchdog,
     advanceBankWalk,
     addXp,
+    botTeleport,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 
 // ── Altar definitions — highest level first for progression lookup ─────────────
@@ -217,7 +218,7 @@ export class RunecraftingTask extends BotTask {
         // ── TELEPORT TO ESSENCE MINE ──────────────────────────────────────────
         if (this.state === 'mine_teleport') {
             const [mx, mz, ml] = Locations.ESSENCE_MINE;
-            player.teleJump(mx, mz, ml);
+            botTeleport(player, mx, mz, ml);
             this.currentRock      = null;
             this.lastEssenceCount = countItem(player, Items.RUNE_ESSENCE);
             this.interactTicks    = 0;
@@ -247,7 +248,7 @@ export class RunecraftingTask extends BotTask {
                 // Snap back to mine cluster if we drifted
                 const [mx, mz] = Locations.ESSENCE_MINE;
                 if (!isNear(player, mx, mz, 3)) {
-                    player.teleJump(mx, mz, player.level);
+                    botTeleport(player, mx, mz, player.level);
                 }
                 if (this.scanFailTicks >= 6) {
                     // No rocks found at all — server may have no locs, go manual
@@ -264,7 +265,7 @@ export class RunecraftingTask extends BotTask {
             if (!isNear(player, rock.x, rock.z, 1)) {
                 this.approachTicks++;
                 // Use teleJump — walkTo is a no-op in the instanced mine area
-                player.teleJump(rock.x, rock.z, player.level);
+                botTeleport(player, rock.x, rock.z, player.level);
                 this.cooldown = 1;
                 if (this.approachTicks > 10) {
                     // Rock seems unreachable, pick another
@@ -363,7 +364,7 @@ export class RunecraftingTask extends BotTask {
         if (this.state === 'altar_teleport') {
             if (!this.currentAltar) { this.state = 'check_altar'; return; }
             const [ax, az, al] = this.currentAltar.location;
-            player.teleJump(ax, az, al);
+            botTeleport(player, ax, az, al);
             this.craftInteracted = false;
             this.state = 'craft';
             this._log(player, `teleported to ${this.currentAltar.name} altar`, 'altar_tp');

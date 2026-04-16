@@ -27,10 +27,26 @@ import {
     setCombatStyle,
     botJitter,
     advanceBankWalk,
-    cleanGrimyHerbs
+    cleanGrimyHerbs,
+    botTeleport
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
-import { findObjByName, findObjByPrefix, findObjNear, findAnyObj, interactHeldOp, pickupGroundItem, removeItem, findNpcFiltered, npcMatchesName, getNpcCombatLevel, findAggressorNpc, interactIF_UseOp, interactObjOp, _equipLoot } from '#/engine/bot/BotAction.js';
+import {
+    findObjByName,
+    findObjByPrefix,
+    findObjNear,
+    findLootObj,
+    interactHeldOp,
+    pickupGroundItem,
+    removeItem,
+    findNpcFiltered,
+    npcMatchesName,
+    getNpcCombatLevel,
+    findAggressorNpc,
+    interactIF_UseOp,
+    interactObjOp,
+    _equipLoot
+} from '#/engine/bot/BotAction.js';
 import NpcType from '#/cache/config/NpcType.js';
 import { Interfaces, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 import ObjType from '#/cache/config/ObjType.js';
@@ -273,7 +289,7 @@ export class CombatTask extends BotTask {
         // pathfinder can take over.
         if ((this.state === 'bank_walk' || this.state === 'shop_walk') && player.z > 6000) {
             const [ex, ez, el] = Locations.TAVERLY_DUNGEON_ENTRANCE;
-            player.teleJump(ex, ez, el);
+            botTeleport(player, ex, ez, el);
             return;
         }
 
@@ -357,7 +373,7 @@ export class CombatTask extends BotTask {
             const inCombatArea = isNear(player, lx, lz, 20, ll);
 
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
+                const lootObj = findLootObj(player, player.x, player.z, player.level, 1);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -378,7 +394,7 @@ export class CombatTask extends BotTask {
                     }
                     // At entrance — teleJump to dungeon floor just inside
                     const [fx, fz, fl] = Locations.TAVERLY_DUNGEON_FLOOR;
-                    player.teleJump(fx, fz, fl);
+                    botTeleport(player, fx, fz, fl);
                     return;
                 }
 
@@ -410,7 +426,7 @@ export class CombatTask extends BotTask {
             const [flx, flz] = this.step.location;
             const inCombatArea = isNear(player, flx, flz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
+                const lootObj = findLootObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -436,7 +452,7 @@ export class CombatTask extends BotTask {
             const [lx, lz] = this.step.location;
             const inCombatArea = isNear(player, lx, lz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
+                const lootObj = findLootObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -508,7 +524,7 @@ export class CombatTask extends BotTask {
             const [lx, lz] = this.step.location;
             const inCombatArea = isNear(player, lx, lz, 20);
             if (inCombatArea && this.hasFoughtInArea) {
-                const lootObj = findAnyObj(player, player.x, player.z, player.level, 5);
+                const lootObj = findLootObj(player, player.x, player.z, player.level, 5);
                 if (lootObj) {
                     this.state = 'loot';
                     return;
@@ -578,7 +594,7 @@ export class CombatTask extends BotTask {
             const BLOCKLIST = [288]; // goblin mail
 
             // Find any ground object - picks up everything
-            let obj = findAnyObj(player, player.x, player.z, player.level, 5);
+            let obj = findLootObj(player, player.x, player.z, player.level, 5);
 
             // Skip blocked items
             if (obj && BLOCKLIST.includes(obj.type)) {
@@ -637,7 +653,19 @@ export class CombatTask extends BotTask {
 
             if (this.interactTicks >= this.noAttackTimeoutTicks) {
                 if (this.currentNpc && this._isNpcAlive(player, this.currentNpc)) {
-                    // NPC still alive but the engine lost the interaction — re-engage.
+                    // NPC is alive but we haven't landed a hit — a gate or door may be
+                    // blocking the approach.  Check for one close-range (12 tiles) before
+                    // re-engaging.  openNearbyGate only matches CLOSED doors, so an
+                    // already-open gate is transparently skipped and we fall through to
+                    // the normal re-engage below.
+                    if (openNearbyGate(player, 12)) {
+                        this._log(player, 'gate blocking approach to NPC — opened', 'gate_block_npc');
+                        this.interactTicks = 0;
+                        this.cooldown = 3;
+                        return;
+                    }
+
+                    // No gate in the way — NPC still alive but interaction dropped, re-engage.
                     this._log(player, 're-engage NPC', 'reengage');
                     setCombatStyle(player, TRAIN_CYCLE[this.trainIndex].style);
                     interactNpcOp(player, this.currentNpc, 2);
@@ -873,7 +901,7 @@ export class CombatTask extends BotTask {
             if (protectedItems.has(item.id)) continue;
             if (item.id === Items.COINS) continue;
             if (GRIMY_HERB_MAP[item.id] !== undefined) continue; // grimy herb → bank
-            if (item.id === Items.AIR_TALISMAN) continue;        // talisman → bank
+            if (item.id === Items.AIR_TALISMAN) continue; // talisman → bank
             return true;
         }
 
@@ -894,7 +922,7 @@ export class CombatTask extends BotTask {
             if (protectedItems.has(item.id)) continue;
             if (item.id === Items.COINS) continue; //<- also not needed anymore.
             if (GRIMY_HERB_MAP[item.id] !== undefined) continue; // grimy herb → bank
-            if (item.id === Items.AIR_TALISMAN) continue;        // talisman → bank
+            if (item.id === Items.AIR_TALISMAN) continue; // talisman → bank
 
             if (interactIF_UseOp(player, Interfaces.SHOP_SIDE_INV, item.id, slot, 4)) {
                 //info: Op 4 is sell 10 (Op1 value, op2 sell 1, op3 sell 5, op4 sell 10)(for SHOP_SIDE) Interfaces.SHOP_INV for buy
@@ -930,8 +958,6 @@ export class CombatTask extends BotTask {
             }
         }
     }
-
-    
 
     private _depositLoot(player: Player): void {
         const inv = player.getInventory(InvType.INV);

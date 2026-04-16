@@ -37,7 +37,8 @@ import {
     setCombatStyle,
     setAutocastWindStrike,
     openNearbyGate,
-    isAdjacentToLoc
+    isAdjacentToLoc,
+    botTeleport
 } from '#/engine/bot/BotAction.js';
 import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
@@ -74,19 +75,20 @@ export function bankInvId(): number {
 
 /**
  * Teleport bot to Lumbridge spawn — used when stuck with no path forward.
- * Uses teleJump which sets tele=true so the client sees the position change.
+ * Plays the magic teleport animation so other players see the cast effect.
  */
 export function teleportToSafety(player: Player): void {
     const [x, z, level] = SAFE_SPAWN;
-    player.teleJump(x, z, level);
+    botTeleport(player, x, z, level);
 }
 
 /**
  * Teleport bot directly to (x, z) on the same floor.
  * Used when pathfinding consistently fails and the bot must skip to its destination.
+ * Plays the magic teleport animation so other players see the cast effect.
  */
 export function teleportNear(player: Player, x: number, z: number): void {
-    player.teleJump(x, z, player.level);
+    botTeleport(player, x, z, player.level);
 }
 
 /**
@@ -227,7 +229,8 @@ export {
     isAdjacentToLoc,
     interactUseObjNpcOp,
     botInteractUseObjNpc,
-    findNpcByNameExcluding
+    findNpcByNameExcluding,
+    botTeleport
 };
 
 // ── Shared banking helper ─────────────────────────────────────────────────────

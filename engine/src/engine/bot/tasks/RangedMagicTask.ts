@@ -53,7 +53,8 @@ import {
     openNearbyGate,
     botJitter,
     advanceBankWalk,
-    cleanGrimyHerbs
+    cleanGrimyHerbs,
+    botTeleport
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { findNpcFiltered, npcMatchesName, interactHeldOp, _wornContains, _equipLoot } from '#/engine/bot/BotAction.js';
@@ -189,7 +190,7 @@ export class RangedMagicTask extends BotTask {
         // If bot is underground and needs to bank/shop, surface first.
         if ((this.state === 'bank_walk' || this.state === 'shop_walk') && player.z > 6000) {
             const [ex, ez, el] = Locations.TAVERLY_DUNGEON_ENTRANCE;
-            player.teleJump(ex, ez, el);
+            botTeleport(player, ex, ez, el);
             return;
         }
 
@@ -309,7 +310,7 @@ export class RangedMagicTask extends BotTask {
                 // All done shopping — check if should teleport to combat location
                 const [lx, lz, ll] = this.step.location;
                 if (this._shouldTeleportAfterShop(player, lx, lz)) {
-                    player.teleJump(lx, lz, ll);
+                    botTeleport(player, lx, lz, ll);
                     this._log(player, `teleporting to combat at ${lx},${lz}`, 'shop_teleport');
                 }
                 this.state = 'check_equip';
@@ -439,7 +440,7 @@ export class RangedMagicTask extends BotTask {
                         return;
                     }
                     const [fx, fz, fl] = Locations.TAVERLY_DUNGEON_FLOOR;
-                    player.teleJump(fx, fz, fl);
+                    botTeleport(player, fx, fz, fl);
                     return;
                 }
 

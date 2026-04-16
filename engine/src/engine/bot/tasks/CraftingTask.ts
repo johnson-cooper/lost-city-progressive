@@ -42,7 +42,8 @@ import {
     ProgressWatchdog,
     openNearbyGate,
     teleportNear,
-    advanceBankWalk
+    advanceBankWalk,
+    botTeleport
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 
@@ -243,7 +244,7 @@ export class CraftingTask extends BotTask {
                     return;
                 }
                 const [wx, wz, wl] = Locations.LUMBRIDGE_POTTERS_WHEEL;
-                player.teleJump(wx, wz, wl);
+                botTeleport(player, wx, wz, wl);
                 this.p1State = 'spin';
                 this.failTicks = 0;
                 return;
@@ -319,7 +320,7 @@ export class CraftingTask extends BotTask {
                 // Land outside the castle so the bot can walk freely to the bank
                 // without navigating back through the castle door.
                 const [ax, az, al] = Locations.LUMBRIDGE_CASTLE_APPROACH;
-                player.teleJump(ax, az, al);
+                botTeleport(player, ax, az, al);
                 this.p1State = 'bank_walk';
                 return;
             }

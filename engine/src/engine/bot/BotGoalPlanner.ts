@@ -35,6 +35,7 @@ import { RangedMagicTask, MIN_COINS_TO_SHOP as RM_MIN_COINS } from '#/engine/bot
 import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
 import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
+import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -54,10 +55,11 @@ export const Personalities: Record<string, BotPersonality> = {
             SMITHING: 15,
             THIEVING: 15,
             PRAYER: 10,
-            FIREMAKING: 9,  // 35% share of the fletch/FM pair (9:17 ≈ 35:65)
+            FIREMAKING: 9,   // 35% share of the fletch/FM pair (9:17 ≈ 35:65)
             CRAFTING: 12,
-            FLETCHING: 17, // 65% share of the fletch/FM pair
-            RUNECRAFT: 5   // unlocks once a talisman drops
+            FLETCHING: 17,   // 65% share of the fletch/FM pair
+            RUNECRAFT: 5,    // unlocks once a talisman drops
+            HERBLORE: 8      // requires guams (chaos druid drops) + coins for vials/newts
         }
     },
     FIGHTER: {
@@ -85,10 +87,11 @@ export const Personalities: Record<string, BotPersonality> = {
             PRAYER: 5,
             RANGED: 4,
             MAGIC: 4,
-            FIREMAKING: 13, // 35% share of the fletch/FM pair (13:24 ≈ 35:65)
+            FIREMAKING: 13,  // 35% share of the fletch/FM pair (13:24 ≈ 35:65)
             CRAFTING: 6,
-            FLETCHING: 24, // 65% share of the fletch/FM pair
-            RUNECRAFT: 8   // unlocks once a talisman drops
+            FLETCHING: 24,   // 65% share of the fletch/FM pair
+            RUNECRAFT: 8,    // unlocks once a talisman drops
+            HERBLORE: 6      // requires guams (chaos druid drops) + coins
         }
     }
 };
@@ -112,7 +115,8 @@ const SKILL_STAT: Record<string, PlayerStat> = {
     MINING: PlayerStat.MINING,
     AGILITY: PlayerStat.AGILITY,
     THIEVING: PlayerStat.THIEVING,
-    RUNECRAFT: PlayerStat.RUNECRAFT
+    RUNECRAFT: PlayerStat.RUNECRAFT,
+    HERBLORE: PlayerStat.HERBLORE
 };
 
 // Only skills with content implemented in BotKnowledge.ts
@@ -314,6 +318,22 @@ export class BotGoalPlanner {
                 if (step.action === 'smelt' || step.action === 'smith') return new SmithingTask(step);
                 if (step.action === 'thieve') return new ThievingTask(step);
                 if (step.action === 'pick_flax') return new FlaxPickingTask(step);
+                if (step.action === 'herblore_attack') {
+                    // Require guams (chaos druid drops) — no guams, no herblore.
+                    const herblBid = bankInvId();
+                    let guamCount = countItem(player, step.itemConsumed!);
+                    if (herblBid !== -1) {
+                        const bankInv = player.getInventory(herblBid);
+                        if (bankInv) {
+                            for (let i = 0; i < bankInv.capacity; i++) {
+                                const it = bankInv.get(i);
+                                if (it && it.id === step.itemConsumed) guamCount += it.count;
+                            }
+                        }
+                    }
+                    if (guamCount < 5) continue; // not enough guams yet
+                    return new HerbloreTask(step);
+                }
                 if (step.action.startsWith('fletch_')) {
                     // Don't start with fewer than 50 logs — let the bot accumulate
                     // a worthwhile batch from woodcutting first.

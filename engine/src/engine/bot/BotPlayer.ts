@@ -10,7 +10,7 @@ import Player from '#/engine/entity/Player.js';
 import InvType from '#/cache/config/InvType.js';
 import { BotTask } from '#/engine/bot/tasks/Index.js';
 import { BotGoalPlanner } from '#/engine/bot/BotGoalPlanner.js';
-import { addXp, getBaseLevel, PlayerStat } from '#/engine/bot/BotAction.js';
+import { addXp, getBaseLevel, PlayerStat, openNearbyGate } from '#/engine/bot/BotAction.js';
 import { PlayerStatNameMap } from '#/engine/entity/PlayerStat.js';
 
 const RESCAN_TICKS = 600;
@@ -49,20 +49,34 @@ export class BotPlayer {
     private ticksAlive = 0;
     private rescanTimer = 0;
     private planFailCount = 0;
+    /** Counts ticks between universal gate sweeps (fires every 5 ticks). */
+    private gateCheckTimer = 0;
 
-    // ✅ NEW: sub-task system (for bury bones, eating, etc.)
+    // ── Sub-task system (for bury bones, eating, etc.) ───────────────────────
     private subTask: BotTask | null = null;
+
+    // ── Deferred teleport ─────────────────────────────────────────────────────
+    // botTeleport() stores the destination here and sets player.delayed for 2
+    // ticks so the magic cast animation plays at the SOURCE tile before the
+    // position jumps.  Mirrors the real [proc,player_teleport_normal] sequence:
+    //   anim(human_castteleport) → p_delay(2) → p_telejump → anim(null)
+    private pendingTeleport: { x: number; z: number; level: number } | null = null;
 
     constructor(player: Player, planner: BotGoalPlanner) {
         this.player = player;
         this.planner = planner;
         this.name = player.username;
 
-        // ✅ link player → bot (so tasks can access this)
+        // link player → bot (so tasks/BotAction can access this)
         (player as any)._bot = this;
     }
 
-    // ✅ NEW: allow tasks to inject sub-tasks
+    /** Called by botTeleport() to queue a deferred position jump. */
+    setPendingTeleport(x: number, z: number, level: number): void {
+        this.pendingTeleport = { x, z, level };
+    }
+
+    // ── Sub-task API ─────────────────────────────────────────────────────────
     setSubTask(task: BotTask): void {
         task.reset();
         this.subTask = task;
@@ -77,6 +91,24 @@ export class BotPlayer {
 
         if (this.ticksAlive === 1) {
             this.log(`Online at (${this.player.x}, ${this.player.z}, ${this.player.level}) slot=${this.player.slot}`);
+        }
+
+        // ── DEFERRED TELEPORT ────────────────────────────────────────────────
+        // botTeleport() plays the cast animation and sets player.delayed for 2
+        // ticks, then stores the destination here.  While delayed we hold the
+        // bot idle so the animation visibly plays at the source tile.  Once the
+        // engine clears player.delayed we fire teleJump and reset the animation.
+        if (this.pendingTeleport !== null) {
+            if (this.player.delayed) {
+                // Still in the 2-tick cast window — let the animation play.
+                return;
+            }
+            // Delay expired — jump to the destination and clear the cast anim.
+            const { x, z, level } = this.pendingTeleport;
+            this.pendingTeleport = null;
+            this.player.playAnimation(-1, 0); // anim(null) — stops the cast loop
+            this.player.teleJump(x, z, level);
+            return; // let the task pick up normally next tick
         }
 
         if (chance(0.003)) this._say(pick(IDLE_PHRASES));
@@ -155,6 +187,20 @@ export class BotPlayer {
 
         const activeTask = this.currentTask;
         if (!activeTask) return;
+
+        // ── UNIVERSAL GATE SWEEP ─────────────────────────────────────────────
+        // Every 5 ticks, open any closed door or gate within 10 tiles regardless
+        // of which task is running or which state it is in.  This covers the
+        // "targeting an NPC behind a fence" case where walkTo is not being called
+        // (e.g. a combat bot re-engaging its target every 12 ticks while a gate
+        // sits between them unopened).  Skip if the player is already mid-script
+        // (delayed) or already has a pending interaction (e.g. attacking an NPC).
+        if (++this.gateCheckTimer >= 5) {
+            this.gateCheckTimer = 0;
+            if (!this.player.delayed && !this.player.hasInteraction()) {
+                openNearbyGate(this.player, 10);
+            }
+        }
 
         try {
             activeTask.tick(this.player);
