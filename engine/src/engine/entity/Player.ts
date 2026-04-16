@@ -153,19 +153,40 @@ function loadChatResponses(): ChatResponses {
     return chatResponses;
 }
 
-function pickRandom(arr: string[], name?: string): string {
-    const raw = arr[Math.floor(Math.random() * arr.length)];
-    return name ? raw.replace(/\{name\}/g, name) : raw;
-}
 
 interface BotMemory {
+    // 🧍 Conversation ownership
     lastSpeakerId?: string;
     lastMessage?: string;
     lastInteractionTime?: number;
-    state?: 'idle' | 'awaiting_response' | 'processing';
-    context?: string[]; // small chat history
-}
 
+    // 🔄 Conversation state
+    state?: 'idle' | 'engaged' | 'ending';
+
+    // 💬 Context & history
+    context: string[];               // recent messages (chat history)
+    topic?: string;                 // current detected topic
+
+    // 🔁 Anti-repetition system
+    lastReplies: string[];          // recently used replies
+    repetitions: number;            // number of exchanges in this convo
+    maxRepetitions: number;         // limit before ending
+
+    // 😊 Personality / mood system
+    mood?: 'neutral' | 'happy' | 'annoyed' | 'bored';
+    personality?: {
+        friendliness: number;       // 0 → 1
+        sarcasm: number;            // 0 → 1
+        energy: number;             // 0 → 1
+    };
+
+    // ⏱️ Flow control
+    lastIntent?: string;            // last matched intent
+    cooldownUntil?: number;         // prevents spam replies
+
+    // 🎯 Engagement tracking
+    engagementScore?: number;       // increases if convo is active
+}
 
 
 export function getExpByLevel(level: number) {
@@ -2381,38 +2402,8 @@ export default class Player extends PathingEntity {
 
 
 
-  processIntent(message: string): string {
-    const data = loadChatResponses();
-    const msg = message.toLowerCase();
+ memory?: BotMemory;
 
-    // Greetings
-    if (data.greetings.patterns.some(p => msg.includes(p))) {
-        return pickRandom(data.greetings.replies);
-    }
-
-    // Help
-    if (data.help.patterns.some(p => msg.includes(p))) {
-        return pickRandom(data.help.replies);
-    }
-
-    // Named intents
-    for (const intent of data.intents) {
-        if (intent.patterns.some(p => msg.includes(p))) {
-            return pickRandom(intent.replies, this.displayName);
-        }
-    }
-
-    // Fallback
-    return pickRandom(data.fallback);
-}
-
-getGreeting(): string {
-    const data = loadChatResponses();
-    return pickRandom(data.greetingReplies, this.displayName);
-}
-
-     memory?: BotMemory;
-    is_bot:boolean = false;
     /**
      * AI Chat (For bots)
      * @param name
@@ -2421,53 +2412,406 @@ getGreeting(): string {
     sendMessageToNearbyBots(name: string, mes: string) {
         if (!mes?.length) return;
         for (const bot of World.players) {
-            this.botChatCheck(name, mes, bot);
+            setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000); //1-2s
         }
         //Both lists
         for (const bot of World.newPlayers) {
-            this.botChatCheck(name, mes, bot);
+            setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000);
         }
     }
-botChatCheck(name: string, mes: string, bot: Player) {
+
+    botChatCheck(name: string, mes: string, bot: Player) {
         if (!bot) return;
         if (bot.uid === -1) return;
-        if (isClientConnected(bot)) return; //Means we're a bot
-        if (!bot.is_bot) return; //Double make sure we're a bot
+        if (isClientConnected(bot)) return;
+        if (!bot.is_bot) return;
+
         const distanceToX = Math.abs(bot.x - this.x);
         const distanceToZ = Math.abs(bot.z - this.z);
-        if (Math.max(distanceToX, distanceToZ) > 10) {
-            return;
-        }
+        if (Math.max(distanceToX, distanceToZ) > 14) return;
 
-        const memory = bot.memory ??= {
+        const memory = (bot.memory ??= {
             state: 'idle',
-            context: []
-        };
+            context: [],
+            lastReplies: [],
+            repetitions: 0,
+            maxRepetitions: 10,
+            mood: 'neutral'
+        });
 
+        if (memory.state === 'idle' && memory.lastSpeakerId) return;
+
+        const now = Date.now();
         const addressed = isAddressingBot(mes, bot);
 
-        // 🟢 First contact (name mentioned)
         if (addressed) {
             memory.lastSpeakerId = name;
-            memory.lastMessage = mes;
-            memory.lastInteractionTime = Date.now();
-            memory.state = 'awaiting_response';
+            memory.lastInteractionTime = now;
+            memory.state = 'engaged';
+            memory.context = [];
+            memory.repetitions = 0;
 
-            bot.say(this.getGreeting());
+            const cleaned = this.cleanMessage(mes);
+
+            const greeting = this.getGreeting(memory, bot);
+
+            // 🔥 detect whether message actually contains meaningful intent
+            const hasIntentCandidate =
+                cleaned.length > 3 &&
+                !this.matchesAny(cleaned, loadChatResponses().greetings.patterns);
+
+            let response: string | null = null;
+
+            if (hasIntentCandidate) {
+                response = this.processIntent(mes, memory, bot);
+            }
+
+            const isGreeting = this.matchesAny(
+                cleaned,
+                loadChatResponses().greetings.patterns
+            );
+            if (
+                response && (
+                    response.includes("I don't quite understand, could you rephrase?") ||
+                    response.includes('Hmm? What do you mean?') ||
+                    response.includes("Not sure I follow ':)") ||
+                    response.includes("You've lost me a bit there") ||
+                    response.includes("Eh? Didn't catch that") ||
+                    response.includes('Can you say that another way?') ||
+                    response.includes("You chatting or asking something? ':D")
+                )
+            ) {
+                response = null;
+            }
+            // 🔒 STRICT SINGLE OUTPUT RULE
+            let combined: string;
+
+            if (!response || isGreeting) {
+                combined = greeting;
+            } else {
+                combined = `${greeting.replace(/$/, ',')} ${response}`;
+            }
+
+            this.delayedSay(bot, combined);
             return;
         }
 
-        // 🟡 Continue conversation if already engaged
-        if (
-            memory.lastSpeakerId === name &&
-            Date.now() - (memory.lastInteractionTime ?? 0) < 15000 // 15s timeout
-        ) {
-            memory.context?.push(mes);
+        // 🟡 CONTINUE CONVERSATION
+        if (memory.lastSpeakerId === name && now - (memory.lastInteractionTime ?? 0) < 30000) {
+            memory.context.push(mes);
             memory.lastMessage = mes;
-            memory.lastInteractionTime = Date.now();
+            memory.lastInteractionTime = now;
+            memory.repetitions++;
 
-            const response = this.processIntent(mes);
-            bot.say(response);
+            // 🔴 End conversation if too long
+            if (memory.repetitions > memory.maxRepetitions) {
+                memory.state = 'idle';
+                return this.delayedSay(bot, "Alright, I'm off for now.");
+            }
+
+            const response = this.processIntent(mes, memory, bot);
+            if (!response) return;
+
+            this.delayedSay(bot, response);
         }
     }
+
+    processIntent(message: string, memory: BotMemory, bot: Player): string {
+        if (memory.context.length > 6) {
+            memory.topic = undefined;
+            memory.repetitions = 0;
+        }
+        const data = loadChatResponses();
+        const msg = this.cleanMessage(message);
+
+        if (!bot) return '';
+
+        const signals = {
+            yes: this.isYes(msg),
+            no: this.isNo(msg),
+            laugh: this.isLaugh(msg)
+        };
+
+        let response: string | null = null;
+
+        // 🔴 GOODBYE
+        if (this.matchesAny(msg, ['bye', 'goodbye', 'see you', 'cya', 'later', 'see ya'])) {
+            memory.state = 'idle';
+            memory.lastSpeakerId = undefined;
+
+            response = this.pickSmart([
+                'See you later, {name}!',
+                'Bye {name}!',
+                'Catch you later!',
+                'Alright, see you soon :)'
+            ], memory, bot);
+
+            return this.applySignals(response, signals, memory, bot);
+        }
+
+        // 🟢 Priority intents (questions)
+        if (this.matchesAny(msg, ['how are you', 'how r u', 'you ok', 'you alright', 'u alright', 'are you well'])) {
+            response = this.pickSmart(
+                data.intents.find(i => i.id === 'how')?.replies ?? [],
+                memory,
+                bot
+            );
+        }
+
+        else if (this.matchesAny(msg, ['what are you doing', 'what you doing', 'wyd'])) {
+            response = this.pickSmart(
+                data.intents.find(i => i.id === 'doing')?.replies ?? [],
+                memory,
+                bot
+            );
+        }
+
+        // Greetings
+        else if (this.matchesAny(msg, data.greetings.patterns)) {
+            response = this.pickSmart(data.greetings.replies, memory, bot);
+        }
+
+        // Help
+        else if (this.matchesAny(msg, data.help.patterns)) {
+            memory.topic = 'help';
+            memory.repetitions = 0;
+            response = this.pickSmart(data.help.replies, memory, bot);
+        }
+
+        // 🧠 SMART INTENT MATCHING
+        else {
+            let bestIntent: any = null;
+            let bestScore = 0;
+
+            const words = msg.split(/\s+/);
+
+            for (const intent of data.intents) {
+                let score = 0;
+
+                for (const pattern of intent.patterns) {
+                    const p = pattern.toLowerCase();
+
+                    if (msg === p) {
+                        score += 5;
+                    }
+                    else if (msg.includes(p)) {
+                        score += 3;
+                    }
+                    else if (words.includes(p)) {
+                        score += 2;
+                    }
+                }
+
+                // bonus for multi-pattern intents
+                if (score > 0 && intent.patterns.length > 1) {
+                    score += 1;
+                }
+
+                // 🔥 weaker, safer topic memory boost
+                if (memory.topic === intent.id && score > 0) {
+                    score += 1;
+                }
+
+                // ❌ removed repetition penalty from here (was unstable)
+
+                if (score > bestScore) {
+                    bestScore = score;
+                    bestIntent = intent;
+                }
+            }
+
+            // 🔥 CRITICAL FIX: confidence gate
+            if (bestIntent && bestScore >= 3) {
+                memory.topic = bestIntent.id;
+                memory.repetitions = 0;
+
+                response = this.pickSmart(bestIntent.replies, memory, bot);
+            }
+        }
+
+        // 🧠 Fallback
+        if (!response) {
+            if (memory.lastMessage === msg) {
+                response = this.pickSmart([
+                    'You just said that lol',
+                    'Haha yeah I heard you',
+                    'Alright I get it lol'
+                ], memory, bot);
+            }
+
+            // ❌ FIX: removed context-length confusion trigger
+            else {
+                response = this.pickSmart(data.fallback, memory, bot);
+            }
+        }
+
+        memory.repetitions = (memory.repetitions ?? 0) + 1;
+
+        return this.applySignals(response, signals, memory, bot);
+    }
+
+    cleanMessage(msg: string): string {
+        return msg
+            .toLowerCase()
+
+            // ✅ remove bot name (NEW, safe improvement)
+            .replace(/\bbot\b/g, '')
+
+            // convert shorthand
+            .replace(/\bu\b/g, 'you')
+            .replace(/\br\b/g, 'are')
+            .replace(/\bw\b/g, 'with')
+
+            // remove punctuation
+            .replace(/[^\w\s:()]/g, '')
+
+            .replace(/\s+/g, ' ')
+            .trim();
+    }
+
+    pickSmart(replies: any[], memory: BotMemory, bot: Player): string {
+        const normalized = replies.map(r => this.normalizeReply(r));
+
+        // safer anti-repeat system (prevents empty pool bug)
+        let pool = normalized;
+
+        const antiRepeat = normalized.filter(
+            r => !memory.lastReplies.includes(r.text)
+        );
+
+        if (antiRepeat.length >= 2) {
+            pool = antiRepeat;
+        }
+
+        const totalWeight = pool.reduce((sum, r) => sum + (r.weight ?? 1), 0);
+        let rand = Math.random() * totalWeight;
+
+        for (const r of pool) {
+            rand -= (r.weight ?? 1);
+
+            if (rand <= 0) {
+                memory.lastReplies.push(r.text);
+
+                if (memory.lastReplies.length > 5) {
+                    memory.lastReplies.shift();
+                }
+
+                return this.formatReply(r, memory, bot);
+            }
+        }
+
+        return this.formatReply(pool[0], memory, bot);
+    }
+
+    normalizeReply(reply: any): { text: string; weight?: number; mood?: string } {
+        if (typeof reply === 'string') {
+            return { text: reply, weight: 1 };
+        }
+        return reply;
+    }
+
+    formatReply(reply: any, memory: BotMemory, bot: Player): string {
+        const normalized = this.normalizeReply(reply);
+        if(!bot) return '';
+        let text = normalized.text || '';
+
+        text = text.replace('{name}', memory.lastSpeakerId ?? 'mate');
+        text = text.replace('{myname}', bot.displayName);
+        text = text.replace('{total}', ''+bot.baseLevels[0]);
+        text = text.replace('{attack}', ''+bot.baseLevels[0]);
+        text = text.replace('{defence}', ''+bot.baseLevels[1]);
+        text = text.replace('{strength}', ''+bot.baseLevels[2]);
+        text = text.replace('{hitpoints}', ''+bot.baseLevels[3]);
+        text = text.replace('{ranged}', ''+bot.baseLevels[4]);
+        text = text.replace('{prayer}', ''+bot.baseLevels[5]);
+        text = text.replace('{magic}', ''+bot.baseLevels[6]);
+        text = text.replace('{cooking}', ''+bot.baseLevels[7]);
+        text = text.replace('{woodcutting}', ''+bot.baseLevels[8]);
+        text = text.replace('{fletching}', ''+bot.baseLevels[9]);
+        text = text.replace('{fishing}', ''+bot.baseLevels[10]);
+        text = text.replace('{firemaking}', ''+bot.baseLevels[11]);
+        text = text.replace('{crafting}', ''+bot.baseLevels[12]);
+        text = text.replace('{smithing}', ''+bot.baseLevels[13]);
+        text = text.replace('{mining}', ''+bot.baseLevels[14]);
+        text = text.replace('{herblore}', ''+bot.baseLevels[15]);
+        text = text.replace('{agility}', ''+bot.baseLevels[16]);
+        text = text.replace('{thieving}', ''+bot.baseLevels[17]);
+        text = text.replace('{slayer}', ''+bot.baseLevels[18]);
+        text = text.replace('{stat19}', ''+bot.baseLevels[19]);
+        text = text.replace('{runecraft}', ''+bot.baseLevels[20]);
+
+        if (Math.random() < 0.2) {
+            text += [' :)', ' :D', ' lol', ''][Math.floor(Math.random() * 4)];
+        }
+
+        return text;
+    }
+
+    delayedSay(bot: Player, text: string) {
+        const delay = 300 + Math.random() * 1000;
+        setTimeout(() => bot.say(text), delay);
+    }
+
+    matchesAny(msg: string, patterns: string[]): boolean {
+        return patterns.some(p => {
+            const pattern = p.toLowerCase();
+
+            // exact match
+            if (msg === pattern) return true;
+
+            // contains match
+            if (msg.includes(pattern)) return true;
+
+            // word-level match (important)
+            const words = msg.split(' ');
+            return words.includes(pattern);
+        });
+    }
+
+    applySignals(base: string, signals: any, memory: BotMemory, bot: Player): string {
+        // small chance to react
+        if (signals.laugh && Math.random() < 0.4) {
+            return this.pickSmart(['Haha :D', 'Lol', ':D'], memory, bot) + ' ' + base;
+        }
+
+        if (signals.yes && Math.random() < 0.3) {
+            return this.pickSmart(['Alright', 'Nice', 'Fair'], memory, bot) + ', ' + base;
+        }
+
+        if (signals.no && Math.random() < 0.3) {
+            return this.pickSmart(['Oh fair enough', 'Alright then'], memory, bot) + ', ' + base;
+        }
+
+        return base;
+    }
+
+    splitWords(msg: string): string[] {
+        return msg.split(/\s+/);
+    }
+
+    isYes(msg: string): boolean {
+        const words = this.splitWords(msg);
+        return words.some(w => ['yes', 'yeah', 'yep', 'y'].includes(w));
+    }
+
+    isNo(msg: string): boolean {
+        const words = this.splitWords(msg);
+        return words.some(w => ['no', 'nah', 'nope', 'n'].includes(w));
+    }
+
+    isLaugh(msg: string): boolean {
+        return ['lol', 'haha', 'lmao', 'rofl', ':d', 'xd', 'x[)'].some(w => msg.includes(w));
+    }
+
+    getGreeting(memory: BotMemory, bot: Player): string {
+        const data = loadChatResponses();
+        return this.pickSmart(data.greetingReplies, memory, bot);
+    }
+    is_bot:boolean = false;
+    /**
+     * AI Chat (For bots)
+     * @param name
+     * @param mes
+     */
+   
 }

@@ -11,17 +11,36 @@ import Loc from '#/engine/entity/Loc.js';
 import InvType from '#/cache/config/InvType.js';
 import { Inventory } from '#/engine/Inventory.js';
 import {
-    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
-    findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
-    hasItem, countItem, addItem, removeItem, isInventoryFull,
-    getBaseLevel, PlayerStat, hasWaypoints,
-    addXp, setCombatStyle,
-    openNearbyGate, isAdjacentToLoc,
+    walkTo,
+    interactNpc,
+    interactNpcOp,
+    interactLoc,
+    interactLocOp,
+    interactUseLocOp,
+    interactUseObjNpcOp,
+    botInteractUseObjNpc,
+    findNpcByName,
+    findNpcByNameExcluding,
+    findNpcByPrefix,
+    findNpcBySuffix,
+    findLocByPrefix,
+    findLocByName,
+    hasItem,
+    countItem,
+    addItem,
+    removeItem,
+    isInventoryFull,
+    getBaseLevel,
+    PlayerStat,
+    hasWaypoints,
+    addXp,
+    setCombatStyle,
+    setAutocastWindStrike,
+    openNearbyGate,
+    isAdjacentToLoc,
+    botTeleport
 } from '#/engine/bot/BotAction.js';
-import {
-    Items, Shops, Locations,
-    getProgressionStep,
-} from '#/engine/bot/BotKnowledge.js';
+import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
@@ -42,31 +61,34 @@ export function randInt(min: number, max: number): number {
 }
 
 export function isNear(player: Player, x: number, z: number, dist: number, level = 0): boolean {
-    return player.level === level &&
-           Math.abs(player.x - x) <= dist &&
-           Math.abs(player.z - z) <= dist;
+    return player.level === level && Math.abs(player.x - x) <= dist && Math.abs(player.z - z) <= dist;
 }
 
 /** Returns the bank inventory ID, or -1 if not loaded. */
 export function bankInvId(): number {
-    try { return InvType.getId('bank'); } catch { return -1; }
+    try {
+        return InvType.getId('bank');
+    } catch {
+        return -1;
+    }
 }
 
 /**
  * Teleport bot to Lumbridge spawn — used when stuck with no path forward.
- * Uses teleJump which sets tele=true so the client sees the position change.
+ * Plays the magic teleport animation so other players see the cast effect.
  */
 export function teleportToSafety(player: Player): void {
     const [x, z, level] = SAFE_SPAWN;
-    player.teleJump(x, z, level);
+    botTeleport(player, x, z, level);
 }
 
 /**
  * Teleport bot directly to (x, z) on the same floor.
  * Used when pathfinding consistently fails and the bot must skip to its destination.
+ * Plays the magic teleport animation so other players see the cast effect.
  */
 export function teleportNear(player: Player, x: number, z: number): void {
-    player.teleJump(x, z, player.level);
+    botTeleport(player, x, z, player.level);
 }
 
 /**
@@ -86,14 +108,7 @@ export function teleportNear(player: Player, x: number, z: number): void {
  * climb stairs.  Al Kharid bank is included; the GATEWAY_REGIONS routing in
  * walkTo handles the gate automatically.
  */
-const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
-    Locations.DRAYNOR_BANK,
-    Locations.VARROCK_WEST_BANK,
-    Locations.VARROCK_EAST_BANK,
-    Locations.AL_KHARID_BANK,
-    Locations.FALADOR_EAST_BANK,
-    
-];
+const BOT_BANKS: ReadonlyArray<[number, number, number]> = [Locations.DRAYNOR_BANK, Locations.VARROCK_WEST_BANK, Locations.VARROCK_EAST_BANK, Locations.AL_KHARID_BANK, Locations.FALADOR_EAST_BANK];
 
 /**
  * Returns the [x, z, level] tuple of the bank closest to the player's
@@ -101,11 +116,14 @@ const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
  * per banking state entry rather than hard-coding a single bank.
  */
 export function nearestBank(player: Player): [number, number, number] {
-    let best     = BOT_BANKS[0];
+    let best = BOT_BANKS[0];
     let bestDist = Number.MAX_SAFE_INTEGER;
     for (const bank of BOT_BANKS) {
         const dist = Math.max(Math.abs(player.x - bank[0]), Math.abs(player.z - bank[1]));
-        if (dist < bestDist) { bestDist = dist; best = bank; }
+        if (dist < bestDist) {
+            bestDist = dist;
+            best = bank;
+        }
     }
     return best;
 }
@@ -118,17 +136,17 @@ export function nearestBank(player: Player): [number, number, number] {
  * Keeping them here as a constant avoids re-allocating the array every tick.
  */
 const JITTER_SEEDS: ReadonlyArray<[mx: number, mz: number, bx: number, bz: number]> = [
-    [ 7, 13,  3,  7],
-    [11, 17,  5, 11],
-    [19, 23,  7, 13],
+    [7, 13, 3, 7],
+    [11, 17, 5, 11],
+    [19, 23, 7, 13],
     [29, 31, 11, 17],
-    [37, 41, 13, 19],
+    [37, 41, 13, 19]
 ];
 
 export function botJitter(player: Player, x: number, z: number, radius = 5): [number, number] {
-    const slot  = (player as any).slot ?? 0;
+    const slot = (player as any).slot ?? 0;
     const level = player.level;
-    const span  = radius * 2 + 1;
+    const span = radius * 2 + 1;
 
     // Try each deterministic seed in order until we land on a walkable tile.
     // Using the slot as the hash input keeps the result stable across ticks
@@ -145,36 +163,74 @@ export function botJitter(player: Player, x: number, z: number, radius = 5): [nu
     return [x, z];
 }
 
-
 // ── Abstract base ─────────────────────────────────────────────────────────────
 
 export abstract class BotTask {
     readonly name: string;
     interrupted = false;
     protected cooldown = 0;
+    protected rescanTimer = 0;
 
-    protected constructor(name: string) { this.name = name; }
+    protected constructor(name: string) {
+        this.name = name;
+    }
 
     abstract shouldRun(player: Player): boolean;
     abstract tick(player: Player): void;
     abstract isComplete(player: Player): boolean;
 
-    interrupt(): void { this.interrupted = true; }
-    reset(): void     { this.interrupted = false; this.cooldown = 0; }
+    interrupt(): void {
+        this.interrupted = true;
+    }
+    reset(): void {
+        this.interrupted = false;
+        this.cooldown = 0;
+        this.rescanTimer = 0;
+    }
 }
 
 // Re-export everything tasks need so they only import from this one file
 export type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 export {
-    Player, Npc, Loc, InvType, Inventory,
-    walkTo, interactNpc, interactNpcOp, interactLoc, interactLocOp,
-    findNpcByName, findNpcByPrefix, findNpcBySuffix, findLocByPrefix, findLocByName,
-    hasItem, countItem, addItem, removeItem, isInventoryFull,
-    getBaseLevel, PlayerStat, hasWaypoints,
-    addXp, setCombatStyle,
-    Items, Shops, Locations, getProgressionStep,
-    getMissingPurchases, STARTING_COINS,
-    openNearbyGate, isAdjacentToLoc,
+    Player,
+    Npc,
+    Loc,
+    InvType,
+    Inventory,
+    walkTo,
+    interactNpc,
+    interactNpcOp,
+    interactLoc,
+    interactLocOp,
+    interactUseLocOp,
+    findNpcByName,
+    findNpcByPrefix,
+    findNpcBySuffix,
+    findLocByPrefix,
+    findLocByName,
+    hasItem,
+    countItem,
+    addItem,
+    removeItem,
+    isInventoryFull,
+    getBaseLevel,
+    PlayerStat,
+    hasWaypoints,
+    addXp,
+    setCombatStyle,
+    setAutocastWindStrike,
+    Items,
+    Shops,
+    Locations,
+    getProgressionStep,
+    getMissingPurchases,
+    STARTING_COINS,
+    openNearbyGate,
+    isAdjacentToLoc,
+    interactUseObjNpcOp,
+    botInteractUseObjNpc,
+    findNpcByNameExcluding,
+    botTeleport
 };
 
 // ── Shared banking helper ─────────────────────────────────────────────────────
@@ -196,10 +252,7 @@ export {
  *   'ready'  — interaction queued (or fallback triggered), set cooldown + state
  *   'direct' — fallback: skip interaction, deposit immediately
  */
-export function advanceBankWalk(
-    player: Player,
-    stuckDetector: StuckDetector,
-): 'walk' | 'ready' | 'direct' {
+export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): 'walk' | 'ready' | 'direct' {
     const [bx, bz] = nearestBank(player);
 
     if (!isNear(player, bx, bz, 3)) {
@@ -232,9 +285,7 @@ export function advanceBankWalk(
 
     // ── Fallback: banker NPC ──────────────────────────────────────────────────
     // Al Kharid bankers have debug names starting with 'kharidbanker', not 'banker'.
-    const banker =
-        findNpcByPrefix(player.x, player.z, player.level, 'banker', 10) ??
-        findNpcByPrefix(player.x, player.z, player.level, 'kharidbanker', 10);
+    const banker = findNpcByPrefix(player.x, player.z, player.level, 'banker', 10) ?? findNpcByPrefix(player.x, player.z, player.level, 'kharidbanker', 10);
     if (banker) {
         if (!isNear(player, banker.x, banker.z, 3)) {
             walkTo(player, banker.x, banker.z);
@@ -307,7 +358,9 @@ export class StuckDetector {
     }
 
     /** True after escapeLimit+ failed escapes — teleport rather than detour. */
-    get desperatelyStuck(): boolean { return this.escapeCount >= this.escapeLimit; }
+    get desperatelyStuck(): boolean {
+        return this.escapeCount >= this.escapeLimit;
+    }
 
     reset(): void {
         this.ticks = 0;
@@ -370,5 +423,26 @@ export class ProgressWatchdog {
 
     reset(): void {
         this.stallTicks = 0;
+    }
+}
+
+/**
+ * Cleans any grimy herbs in the player's inventory and awards Herblore XP.
+ * Call this just before banking so cleaned herbs are banked instead of grimy ones.
+ */
+export function cleanGrimyHerbs(player: Player): void {
+    const inv = player.getInventory(InvType.INV);
+    if (!inv) return;
+    for (let slot = 0; slot < inv.capacity; slot++) {
+        const item = inv.get(slot);
+        if (!item) continue;
+        const entry = GRIMY_HERB_MAP[item.id];
+        if (!entry) continue;
+        const [cleanId, xp] = entry;
+        const removed = inv.remove(item.id, item.count);
+        if (removed.completed > 0) {
+            inv.add(cleanId, removed.completed);
+            addXp(player, PlayerStat.HERBLORE, xp * removed.completed);
+        }
     }
 }

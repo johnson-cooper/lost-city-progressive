@@ -17,11 +17,11 @@ import type GameMap from '#/engine/GameMap.js';
 
 // World interface — only the fields bot code actually needs
 export interface BotWorldHandle {
-    gameMap:      GameMap;
-    newPlayers:   Set<any>;
-    shutdown:     boolean;
+    gameMap: GameMap;
+    newPlayers: Set<any>;
+    shutdown: boolean;
     shutdownSoon: boolean;
-    removeObj: (obj: Obj) => void;
+    removeObj: (obj: Obj, duration: number) => void;
 }
 
 let _world: BotWorldHandle | null = null;

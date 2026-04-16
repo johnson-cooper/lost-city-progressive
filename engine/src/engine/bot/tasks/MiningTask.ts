@@ -3,15 +3,31 @@
  */
 
 import {
-    BotTask, Player, Loc, InvType,
-    walkTo, interactLoc,
+    BotTask,
+    Player,
+    Loc,
+    InvType,
+    walkTo,
+    interactLoc,
     findLocByPrefix,
-    hasItem, isInventoryFull, isNear,
-    getBaseLevel, PlayerStat,
-    Items, Locations, getProgressionStep,
-    teleportToSafety, teleportNear, randInt, bankInvId,
-    INTERACT_TIMEOUT, StuckDetector, ProgressWatchdog,
-    openNearbyGate, botJitter, advanceBankWalk,
+    hasItem,
+    isInventoryFull,
+    isNear,
+    getBaseLevel,
+    PlayerStat,
+    Items,
+    Locations,
+    getProgressionStep,
+    teleportToSafety,
+    teleportNear,
+    randInt,
+    bankInvId,
+    INTERACT_TIMEOUT,
+    StuckDetector,
+    ProgressWatchdog,
+    openNearbyGate,
+    botJitter,
+    advanceBankWalk
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
@@ -29,6 +45,7 @@ export class MiningTask extends BotTask {
     private readonly FLEE_TICKS = 12;
 
     private currentRock: Loc | null = null;
+    private viaLocation?: [number, number, number];
 
     private readonly stuck = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog();
@@ -36,6 +53,7 @@ export class MiningTask extends BotTask {
     constructor(step: SkillStep) {
         super('Mine');
         this.step = step;
+        this.viaLocation = step.via;
     }
 
     shouldRun(player: Player): boolean {
@@ -46,7 +64,10 @@ export class MiningTask extends BotTask {
         if (this.interrupted) return;
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
-        if (this.watchdog.check(player, banking)) { this.interrupt(); return; }
+        if (this.watchdog.check(player, banking)) {
+            this.interrupt();
+            return;
+        }
 
         if (this.cooldown > 0) {
             this.cooldown--;
@@ -118,18 +139,27 @@ export class MiningTask extends BotTask {
             if (!isNear(player, lx, lz, 15, ll)) {
                 // Via waypoint: route through intermediate coord before destination.
                 // Used to steer around obstacles (e.g. Draynor Mansion for Barbarian
-                // Village mine).  Only apply when the bot hasn't yet passed it.
-                const via = this.step.via;
-                if (via && player.level === via[2] && player.z < via[1] && !isNear(player, via[0], via[1], 5)) {
-                    const [jx, jz] = botJitter(player, via[0], via[1], 3);
-                    this._stuckWalk(player, jx, jz);
-                    return;
+                // Village mine). Only apply when the bot hasn't reached the via yet.
+                const via = this.viaLocation;
+                if (via) {
+                    const viaX = via[0];
+                    const viaZ = via[1];
+                    if (!isNear(player, viaX, viaZ, 5)) {
+                        const [jx, jz] = botJitter(player, viaX, viaZ, 3);
+                        this._stuckWalk(player, jx, jz);
+                        return;
+                    }
+                    // Reached via waypoint - clear it and proceed to rock
+                    this.viaLocation = undefined;
                 }
+
                 const [jx, jz] = botJitter(player, lx, lz, 5);
                 this._stuckWalk(player, jx, jz);
                 return;
             }
 
+            // Reached mining area - clear via if not already cleared
+            this.viaLocation = undefined;
             this.state = 'approach';
             return;
         }
@@ -215,6 +245,7 @@ export class MiningTask extends BotTask {
         this.lastXp = 0;
         this.fleeTicks = 0;
         this.currentRock = null;
+        this.viaLocation = this.step.via;
         this.stuck.reset();
         this.watchdog.reset();
     }
@@ -224,26 +255,48 @@ export class MiningTask extends BotTask {
     /** Pick a fresh random step matching the bot's current level and owned tools. */
     private _rerollStep(player: Player): void {
         const level = getBaseLevel(player, PlayerStat.MINING);
-        const newStep = getProgressionStep(
-            'MINING', level,
-            ids => ids.every(id => hasItem(player, id)),
-        );
+        const newStep = getProgressionStep('MINING', level, ids => ids.every(id => hasItem(player, id)));
         if (newStep) this.step = newStep;
     }
 
     // ── Rock search ────────────────────────────────────────────────────────
 
     private _findRock(player: Player): Loc | null {
-        const ore = this.step.itemGained;
+        const prefixes = this._getAvailableOrePrefixes(player);
 
-        const prefix =
-            ore === Items.TIN_ORE ? 'tinrock' :
-            ore === Items.IRON_ORE ? 'ironrock' :
-            ore === Items.COAL ? 'coalrock' :
-            ore === Items.MITHRIL_ORE ? 'mithrilrock' :
-            'copperrock';
+        if (prefixes.length === 0) return null;
 
-        return findLocByPrefix(player.x, player.z, player.level, prefix, 15, 'empty');
+        const allRocks: Loc[] = [];
+        for (const prefix of prefixes) {
+            const rock = findLocByPrefix(player.x, player.z, player.level, prefix, 15, 'empty');
+            if (rock) allRocks.push(rock);
+        }
+
+        if (allRocks.length === 0) return null;
+
+        return allRocks[Math.floor(Math.random() * allRocks.length)];
+    }
+
+    private _getAvailableOrePrefixes(player: Player): string[] {
+        const prefixes: string[] = [];
+
+        // Get player's actual mining level using base level
+        const miningLevel = player.baseLevels[PlayerStat.MINING];
+
+        // Level 1-14: copper and tin available
+        if (miningLevel <= 14) {
+            prefixes.push('copperrock', 'tinrock');
+        }
+        // Level 15-29: iron available
+        else if (miningLevel <= 29) {
+            prefixes.push('ironrock');
+        }
+        // Level 30+: coal (and iron for some mines)
+        else {
+            prefixes.push('coalrock', 'ironrock');
+        }
+
+        return prefixes;
     }
 
     // ── Banking ─────────────────────────────────────────────────────────────
@@ -267,7 +320,7 @@ export class MiningTask extends BotTask {
             const moved = inv.remove(item.id, item.count);
             if (moved.completed > 0) bank.add(item.id, moved.completed);
         }
-         console.log(`[MG:${player.username}] Deposited ORES into the bank.`);
+        console.log(`[MG:${player.username}] Deposited ORES into the bank.`);
     }
 
     // ── Stuck handling (WC-style upgrade) ──────────────────────────────────
@@ -289,17 +342,9 @@ export class MiningTask extends BotTask {
         const dx = lx - player.x;
         const dz = lz - player.z;
 
-        const escX =
-            player.x +
-            (Math.abs(dz) > Math.abs(dx)
-                ? randInt(-10, 10)
-                : dz > 0 ? 10 : -10);
+        const escX = player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : dz > 0 ? 10 : -10);
 
-        const escZ =
-            player.z +
-            (Math.abs(dx) > Math.abs(dz)
-                ? randInt(-10, 10)
-                : dx > 0 ? 10 : -10);
+        const escZ = player.z + (Math.abs(dx) > Math.abs(dz) ? randInt(-10, 10) : dx > 0 ? 10 : -10);
 
         walkTo(player, escX, escZ);
     }

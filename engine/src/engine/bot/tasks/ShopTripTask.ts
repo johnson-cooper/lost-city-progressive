@@ -12,7 +12,7 @@
 import {
     BotTask, Player,
     walkTo, interactNpcOp, findNpcByName,
-    hasItem, countItem, addItem, removeItem, isNear,
+    hasItem, countItem, addItem, removeItem, isNear, isInventoryFull,
     Items, Shops,
     teleportToSafety, teleportNear, randInt, StuckDetector,
     openNearbyGate,
@@ -53,6 +53,10 @@ export class ShopTripTask extends BotTask {
         if (this.state === 'done') return false;
         // No point walking to shop if we can't afford anything
         if (countItem(player, Items.COINS) < this.costEach) return false;
+        // Can't receive the purchased item if the inventory is already full —
+        // the bot must bank first. Returning false here lets the planner re-route
+        // to a gathering task whose bank_walk state will clear space.
+        if (isInventoryFull(player)) return false;
         return true;
     }
 
@@ -130,7 +134,13 @@ export class ShopTripTask extends BotTask {
         const canBuy = Math.min(this.quantity, Math.floor(coins / this.costEach));
         if (canBuy <= 0) return 0;
         removeItem(player, Items.COINS, canBuy * this.costEach);
-        addItem(player, this.itemId, canBuy);
+        const added = addItem(player, this.itemId, canBuy);
+        if (!added) {
+            // Inventory full — refund coins so we don't silently lose them.
+            // shouldRun() will now return false until the bot banks to free space.
+            addItem(player, Items.COINS, canBuy * this.costEach);
+            return 0;
+        }
         return canBuy;
     }
 

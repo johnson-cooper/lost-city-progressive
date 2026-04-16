@@ -7,9 +7,14 @@
 
 export { BotTask, teleportToSafety, randInt, isNear, bankInvId, INTERACT_TIMEOUT } from '#/engine/bot/tasks/BotTaskBase.js';
 export { InitTask, WalkTask, BankTask, BuryBonesTask, IdleTask, SellTask } from '#/engine/bot/tasks/UtilTasks.js';
-export { ShopTripTask }   from '#/engine/bot/tasks/ShopTripTask.js';
+export { ShopTripTask } from '#/engine/bot/tasks/ShopTripTask.js';
 export { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
-export { MiningTask }     from '#/engine/bot/tasks/MiningTask.js';
-export { FishingTask }    from '#/engine/bot/tasks/FishingTask.js';
-export { CombatTask }     from '#/engine/bot/tasks/CombatTask.js';
-export { FiremakingTask }     from '#/engine/bot/tasks/FiremakingTask.js';
+export { MiningTask } from '#/engine/bot/tasks/MiningTask.js';
+export { FishingTask } from '#/engine/bot/tasks/FishingTask.js';
+export { CombatTask } from '#/engine/bot/tasks/CombatTask.js';
+export { FiremakingTask } from '#/engine/bot/tasks/FiremakingTask.js';
+export { SmithingTask } from '#/engine/bot/tasks/SmithingTask.js';
+export { CraftingTask } from '#/engine/bot/tasks/CraftingTask.js';
+export { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
+export { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
+export { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
