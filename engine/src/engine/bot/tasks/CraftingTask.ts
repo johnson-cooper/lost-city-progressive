@@ -57,7 +57,7 @@ const FAIL_LIMIT = 6;
 
 // ── CraftingTask ──────────────────────────────────────────────────────────────
 
-type Phase1State = 'shear_walk' | 'shear' | 'climb' | 'spin' | 'descend' | 'bank_walk' | 'bank';
+type Phase1State = 'shear_walk' | 'shear' | 'climb' | 'spin' | 'spin_flax' | 'descend' | 'bank_walk' | 'bank';
 type Phase2State = 'bank_walk' | 'withdraw' | 'furnace_walk' | 'craft' | 'bank_return';
 
 export class CraftingTask extends BotTask {
@@ -256,7 +256,7 @@ export class CraftingTask extends BotTask {
                 // The spinning wheel script consumes Items.WOOL and produces Items.BALL_WOOL.
                 const woolCount = countItem(player, Items.WOOL);
                 if (woolCount === 0) {
-                    this.p1State = 'descend';
+                    this.p1State = 'spin_flax';
                     return;
                 }
 
@@ -301,6 +301,60 @@ export class CraftingTask extends BotTask {
                 if (ok) {
                     // Manual XP tracking to drive ProgressWatchdog
                     // (RuneScript handles actual stat_advance server-side)
+                    player.stats[PlayerStat.CRAFTING] += this.step.xpPerAction;
+                    this.watchdog.notifyActivity();
+                    this.failTicks = 0;
+                    this.cooldown = randInt(3, 6);
+                } else {
+                    this.failTicks++;
+                    if (this.failTicks >= FAIL_LIMIT) {
+                        this.p1State = 'descend';
+                        this.failTicks = 0;
+                    }
+                }
+                return;
+            }
+
+            case 'spin_flax': {
+                const flaxCount = countItem(player, Items.FLAX);
+                if (flaxCount === 0) {
+                    this.p1State = 'descend';
+                    return;
+                }
+
+                const [wx, wz, wl] = Locations.LUMBRIDGE_POTTERS_WHEEL;
+                if (!isNear(player, wx, wz, 1, wl)) {
+                    walkTo(player, wx, wz);
+                    return;
+                }
+
+                const wheel = findLocByName(player.x, player.z, player.level, 'spinning_wheel', 20) ?? findLocByPrefix(player.x, player.z, player.level, 'spinning', 25);
+
+                if (!wheel) {
+                    this.failTicks++;
+                    if (this.failTicks >= FAIL_LIMIT) {
+                        this.p1State = 'descend';
+                        this.failTicks = 0;
+                    }
+                    return;
+                }
+
+                const inv = player.getInventory(InvType.INV);
+                if (!inv) return;
+                let flaxSlot = -1;
+                for (let i = 0; i < inv.capacity; i++) {
+                    if (inv.get(i)?.id === Items.FLAX) {
+                        flaxSlot = i;
+                        break;
+                    }
+                }
+                if (flaxSlot === -1) {
+                    this.p1State = 'descend';
+                    return;
+                }
+
+                const ok = interactUseLocOp(player, wheel, Items.FLAX, flaxSlot);
+                if (ok) {
                     player.stats[PlayerStat.CRAFTING] += this.step.xpPerAction;
                     this.watchdog.notifyActivity();
                     this.failTicks = 0;
@@ -492,7 +546,7 @@ export class CraftingTask extends BotTask {
         return countItem(player, Items.GOLD_BAR) > 0;
     }
 
-    /** Deposit ball_of_wool (and any leftover raw wool); keep shears and coins. */
+    /** Deposit ball_of_wool (and any leftover raw wool/flax/bowstrings); keep shears and coins. */
     private _depositWool(player: Player): void {
         const bid = bankInvId();
         if (bid === -1) return;
@@ -500,7 +554,7 @@ export class CraftingTask extends BotTask {
         const inv = player.getInventory(InvType.INV);
         if (!bank || !inv) return;
 
-        const keepIds = new Set<number>([Items.SHEARS, Items.COINS]);
+        const keepIds = new Set<number>([Items.SHEARS, Items.COINS, Items.FLAX]);
         for (let slot = 0; slot < inv.capacity; slot++) {
             const item = inv.get(slot);
             if (!item || keepIds.has(item.id)) continue;
