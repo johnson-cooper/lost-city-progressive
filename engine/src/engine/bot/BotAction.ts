@@ -53,6 +53,7 @@ import VarPlayerType from '#/cache/config/VarPlayerType.js';
 import Obj from '#/engine/entity/Obj.js';
 import ObjType from '#/cache/config/ObjType.js';
 import ScriptRunner from '#/engine/script/ScriptRunner.js';
+import { EntityLifeCycle } from '#/engine/entity/EntityLifeCycle.js';
 import ScriptProvider from '#/engine/script/ScriptProvider.js';
 import CategoryType from '#/cache/config/CategoryType.js';
 import { Inventory } from '#/engine/Inventory.js';
@@ -291,6 +292,11 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
             player.queueWaypoints(path);
             return;
         }
+        // Path is completely blocked — a door or gate is likely in the way.
+        // Try opening one within 6 tiles before falling back to the compass sweep.
+        // openNearbyGate only matches CLOSED doors (locs with Open/Walk-through ops
+        // but without Close ops), so an already-open gate is never double-interacted.
+        if (openNearbyGate(player, 6)) return;
     } else {
         // Long distance — try midpoints at the direct heading then sweep outward
         // so the pathfinder can find a clear intermediate tile around any obstacle
@@ -355,6 +361,14 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
  * moveSpeed is INSTANT, permanently blocking headless player movement.
  */
 export function walkTo(player: Player, destX: number, destZ: number): void {
+    // If a gate/door interaction is already pending (queued by openNearbyGate on
+    // the previous tick), preserve it rather than wiping it here.  The engine's
+    // processInteraction will walk the bot to the gate and fire APLOC1; calling
+    // clearPendingAction before that happens is the root cause of the "sometimes
+    // opens, sometimes doesn't" inconsistency — the interaction races against the
+    // next bot tick and only survives when the engine processes it first.
+    if (_hasGateInteractionPending(player)) return;
+
     // Cancel any active engine interaction (setInteraction target) before setting
     // new waypoints.  Without this, processInteraction() re-routes the player back
     // toward the old target every tick, overriding the walkTo waypoints and causing
@@ -412,6 +426,16 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
             return;
         }
     }
+
+    // ── Proactive door/gate check ────────────────────────────────────────────
+    // Scan up to 10 tiles TOWARD the destination for any closed door or gate.
+    // openGateToward filters by direction (positive dot product with the heading)
+    // so only gates between the player and the destination are opened — unrelated
+    // doors behind or beside the bot are ignored.  Radius is capped at dist+2 so
+    // the bot never opens a gate beyond its own destination.
+    // The interaction is preserved across ticks by the _hasGateInteractionPending
+    // guard at the top of this function.
+    if (openGateToward(player, destX, destZ)) return;
 
     // ── Normal pathfinding ──────────────────────────────────────────────────
     _pathTowards(player, destX, destZ);
@@ -598,7 +622,6 @@ export function interactIfButtonByName(player: Player, comName: string): boolean
     return interactIfButton(player, comId);
 }
 
-
 export function interactIfButton(player: Player, comId: number): boolean {
     const com = Component.get(comId);
     if (typeof com === 'undefined' || !player.isComponentVisible(com)) {
@@ -755,8 +778,18 @@ export function findObjByName(player: Player, cx: number, cz: number, level: num
     return findObjNear(player, cx, cz, level, typeId, radius);
 }
 
-export function findAnyObj(player: Player, cx: number, cz: number, level: number, radius = 15): Obj | null {
+export function findAnyObj(player: Player, cx: number, cz: number, level: number, radius = 1): Obj | null {
     return _findObj(player, cx, cz, level, radius, () => true);
+}
+
+/**
+ * Find lootable ground objects (monster drops, items that will despawn).
+ * Excludes static/world items that have FOREVER lifecycle.
+ */
+export function findLootObj(player: Player, cx: number, cz: number, level: number, radius = 1): Obj | null {
+    return _findObj(player, cx, cz, level, radius, obj => {
+        return obj.lifecycle === EntityLifeCycle.DESPAWN;
+    });
 }
 
 /**
@@ -1150,7 +1183,7 @@ export function _wornContains(player: Player, itemId: number): boolean {
     for (let slot = 0; slot < equip.capacity; slot++) {
         const item = equip.get(slot);
         if (!item) continue;
-        if(item.id === itemId) return true;
+        if (item.id === itemId) return true;
     }
 
     return false;
@@ -1193,8 +1226,7 @@ export function _isUpgrade(newItem: ObjType, currentItem: ObjType | null): boole
 
 export function _equipLoot(player: Player): void {
     const inv = player.getInventory(InvType.INV);
-    if (!inv)
-        return;
+    if (!inv) return;
 
     for (let slot = 0; slot < inv.capacity; slot++) {
         const item = inv.get(slot);
@@ -1206,39 +1238,50 @@ export function _equipLoot(player: Player): void {
         const equipped = _getEquippedItem(player, wearSlot);
         const equippedType = equipped ? ObjType.get(equipped.id) : null;
 
-        if (wearSlot === 3) { // weapon (attack req)
+        if (wearSlot === 3) {
+            // weapon (attack req)
             if (_getTier(oType.name) === 6 && player.baseLevels[0] < 60) continue;
-            if (_getTier(oType.name) === 5 && (!oType.name?.toLowerCase().includes('giant') && player.baseLevels[0] < 40)) continue; //<- remove giant for something else?
+            if (_getTier(oType.name) === 5 && !oType.name?.toLowerCase().includes('giant') && player.baseLevels[0] < 40) continue; //<- remove giant for something else?
             if (_getTier(oType.name) === 4 && player.baseLevels[0] < 30) continue;
             if (_getTier(oType.name) === 3 && player.baseLevels[0] < 20) continue;
             if (_getTier(oType.name) === 2 && player.baseLevels[0] < 10) continue;
             if (_getTier(oType.name) === 1 && player.baseLevels[0] < 5) continue;
-        } else if (wearSlot === 0 //hat
+        } else if (
+            wearSlot === 0 || //hat
             //|| wearSlot === 8 //head <- this isn't a real slot
-            || wearSlot === 4 //torso <- These all require defence
-            || wearSlot === 7 //legs
-            || wearSlot === 5) { //shield
+            wearSlot === 4 || //torso <- These all require defence
+            wearSlot === 7 || //legs
+            wearSlot === 5
+        ) {
+            //shield
             if (_getTier(oType.name) === 6 && player.baseLevels[1] < 60) continue;
             if (_getTier(oType.name) === 5 && player.baseLevels[1] < 40) continue;
             if (_getTier(oType.name) === 4 && player.baseLevels[1] < 30) continue;
             if (_getTier(oType.name) === 3 && player.baseLevels[1] < 20) continue;
             if (_getTier(oType.name) === 2 && player.baseLevels[1] < 10) continue;
             if (_getTier(oType.name) === 1 && player.baseLevels[1] < 5) continue;
-        } else if (wearSlot === 1) { //Cape
+        } else if (wearSlot === 1) {
+            //Cape
             //We can add different tier systems in each of these.
-        } else if (wearSlot === 2) { //Amulet
+        } else if (wearSlot === 2) {
+            //Amulet
             //For example, tier 1 could be a strength / magic amulet
             //Tier 2 could be a power amulet
             //Tier 3 a glory
-        } else if (wearSlot === 9) { //Hands
+        } else if (wearSlot === 9) {
+            //Hands
             //Not sure if theres much options for 04
-        } else if (wearSlot === 10) { //Feet
+        } else if (wearSlot === 10) {
+            //Feet
             //Same ->
-        } else if (wearSlot === 12) { //Ring
+        } else if (wearSlot === 12) {
+            //Ring
             //Same ->
-        } else if (wearSlot === 13) { //Ammo
+        } else if (wearSlot === 13) {
+            //Ammo
             //Bronze - Rune can be tiered
-        } else { //Invalid slot continue;
+        } else {
+            //Invalid slot continue;
             continue;
         }
 
@@ -1256,19 +1299,19 @@ export function _equipLoot(player: Player): void {
 export function setVarp(player: Player, varpName: string, varpId: number, varpValue: number) {
     const varp = VarPlayerType.get(varpId);
     const varpN = VarPlayerType.getByName(varpName);
-    if(varp) {
-        if(varpN) {
-            if(varpId != varpN.id) {
+    if (varp) {
+        if (varpN) {
+            if (varpId != varpN.id) {
                 //varpId doesn't match use name preferably
                 player.setVar(varpN.id, varpValue);
                 return;
             }
         } else {
-            console.log('Warning: can\'t find varp name: ' + varpName);
+            console.log("Warning: can't find varp name: " + varpName);
         }
         player.setVar(varp.id, varpValue);
     } else {
-        console.log('Error: can\'t find varp id: ' + varpId);
+        console.log("Error: can't find varp id: " + varpId);
     }
 }
 
@@ -1302,6 +1345,45 @@ const BARRIER_NAME_PREFIXES = ['loc_1528']; // Al Kharid palace curtain (closed 
 const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
 
 /**
+ * Directly executes the OPLOC1 script for a gate/door Loc.
+ *
+ * This bypasses processInteraction, which fails for Locs because:
+ *   - pathToPathingTarget() is a no-op for non-PathingEntity targets (Locs)
+ *   - tryInteract(false) fires first and hits the "default approach" branch,
+ *     setting apRange=-1 and returning false without moving the player
+ *   - With no waypoints and no steps taken, "I can't reach that!" fires and
+ *     clears the interaction before tryInteract(true) ever gets a chance to run
+ *
+ * This replicates exactly what tryInteract(true) does when inOperableDistance:
+ *   getOpTrigger() → ScriptProvider.getByTrigger(targetOp + 7, ...) i.e. OPLOC1
+ *   executeScript(ScriptRunner.init(script, player, gate), true)
+ *
+ * Returns true if an OPLOC1 script was found and executed.
+ */
+function _executeGateScript(player: Player, gate: Loc): boolean {
+    const locType = LocType.get(gate.type);
+    const script = ScriptProvider.getByTrigger(ServerTriggerType.OPLOC1, gate.type, locType.category);
+    if (!script) return false;
+    player.clearPendingAction();
+    player.executeScript(ScriptRunner.init(script, player, gate), true);
+    return true;
+}
+
+/**
+ * Walks toward a gate/door using plain waypoints (botWalkPath / botFindPath).
+ * Does NOT call _pathTowards — that function calls openNearbyGate internally
+ * which would create mutual recursion.
+ */
+function _walkToGate(player: Player, gate: Loc): void {
+    let path = botWalkPath(player.level, player.x, player.z, gate.x, gate.z);
+    if (path.length === 0) path = botFindPath(player.level, player.x, player.z, gate.x, gate.z);
+    if (path.length > 0) {
+        player.clearPendingAction();
+        player.queueWaypoints(path);
+    }
+}
+
+/**
  * Scan within `radius` tiles for any closed door, gate, toll gate, or curtain.
  * Handles:
  *   - Standard "Open" ops (doors, gates)
@@ -1309,35 +1391,107 @@ const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
  *   - Walk-through / pass-through doors
  *   - Al Kharid palace curtains (loc_1528 — op1="Open", blockwalk=yes while closed)
  *
- * Returns true if an obstruction was found and an Open/Pay interaction was
- * queued.  Call from walk/scan states when the bot appears blocked.
+ * Behaviour:
+ *   - If already adjacent to the gate: directly executes the OPLOC1 script,
+ *     bypassing the broken processInteraction path (see _executeGateScript).
+ *   - If not yet adjacent: queues plain walk-waypoints toward the gate.
+ *     Next call (BotPlayer universal sweep fires every 5 ticks) will execute.
+ *
+ * Returns true if an obstruction was found (interaction queued or walk started).
  */
 export function openNearbyGate(player: Player, radius = 30): boolean {
-    const blocker = _findLoc(player.x, player.z, player.level, radius, loc => {
-        const t = LocType.get(loc.type);
+    const gate = _findLoc(player.x, player.z, player.level, radius, _isClosedGate);
+    if (!gate) return false;
 
-        // Explicit curtain check — matches closed Al Kharid palace curtains by type name
-        // even if the op array format differs between server builds.
-        if (BARRIER_NAME_PREFIXES.some(prefix => t.debugname?.startsWith(prefix))) {
-            return true;
-        }
+    if (isAdjacentToLoc(player, gate)) {
+        // Adjacent — fire the OPLOC1 script directly.
+        if (_executeGateScript(player, gate)) return true;
+        // No OPLOC1 script found (unusual) — fall back to setInteraction.
+        interactLoc(player, gate as any);
+        return true;
+    }
 
-        // Check for big doors - large double doors that block walking
-        const hasBigDoorPrefix = BIG_DOOR_PREFIXES.some(prefix => t.debugname?.toLowerCase().includes(prefix));
-        if (hasBigDoorPrefix) {
-            return true;
-        }
+    // Not adjacent — walk toward the gate tile with plain waypoints.
+    // _pathTowards is intentionally NOT used here to avoid mutual recursion
+    // (_pathTowards calls openNearbyGate when the path is fully blocked).
+    _walkToGate(player, gate);
+    return true;
+}
 
-        const ops = (t.op ?? []).filter((o): o is string => typeof o === 'string').map(o => o.toLowerCase());
+/**
+ * Returns true if the player already has a pending gate/door interaction
+ * queued (APLOC1 on a loc whose ops include an open keyword or that matches
+ * a known barrier name prefix).
+ *
+ * walkTo calls this before clearPendingAction to avoid cancelling a gate
+ * interaction that was set on the previous tick before the engine could
+ * execute it — the root cause of the "sometimes opens, sometimes doesn't"
+ * inconsistency.
+ */
+function _hasGateInteractionPending(player: Player): boolean {
+    const target = player.target;
+    if (!target || !(target instanceof Loc)) return false;
+    if (player.targetOp !== ServerTriggerType.APLOC1) return false;
+    const t = LocType.get((target as Loc).type);
+    // Explicit barrier types (e.g. Al Kharid curtains)
+    if (BARRIER_NAME_PREFIXES.some(p => t.debugname?.startsWith(p))) return true;
+    const ops = (t.op ?? []).filter((o): o is string => typeof o === 'string').map(o => o.toLowerCase());
+    return ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
+}
 
-        const hasOpenOp = ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
-        const hasCloseOp = ops.some(op => GATE_CLOSE_KEYWORDS.some(kw => op === kw));
+/** Internal: returns true if `loc` passes the closed-gate predicate. */
+function _isClosedGate(loc: Loc): boolean {
+    const t = LocType.get(loc.type);
+    if (BARRIER_NAME_PREFIXES.some(p => t.debugname?.startsWith(p))) return true;
+    if (BIG_DOOR_PREFIXES.some(p => t.debugname?.toLowerCase().includes(p))) return true;
+    const ops = (t.op ?? []).filter((o): o is string => typeof o === 'string').map(o => o.toLowerCase());
+    const hasOpenOp = ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
+    const hasCloseOp = ops.some(op => GATE_CLOSE_KEYWORDS.some(kw => op === kw));
+    return hasOpenOp && !hasCloseOp;
+}
 
-        return hasOpenOp && !hasCloseOp;
+/**
+ * Directional variant of openNearbyGate.
+ *
+ * Scans up to `radius` tiles (default 10) for any closed door or gate that
+ * lies roughly BETWEEN the player and (destX, destZ) — defined as a positive
+ * dot product between the player→gate vector and the player→destination
+ * heading.  Gates that are directly behind or perpendicular to the heading
+ * are ignored, preventing the bot from opening unrelated doors while walking.
+ *
+ * Used by walkTo so that every movement call automatically clears gates along
+ * the route rather than only reacting after the bot gets stuck.
+ *
+ * Returns true if a qualifying gate was found and an Open interaction was queued.
+ */
+export function openGateToward(player: Player, destX: number, destZ: number, radius = 10): boolean {
+    const dx = destX - player.x;
+    const dz = destZ - player.z;
+    const dist = Math.sqrt(dx * dx + dz * dz);
+    if (dist < 1) return false;
+
+    const headX = dx / dist;
+    const headZ = dz / dist;
+    // Cap scan radius at (dist + 2) so we don't open gates beyond the destination.
+    const scanRadius = Math.min(radius, dist + 2);
+
+    const gate = _findLoc(player.x, player.z, player.level, scanRadius, loc => {
+        if (!_isClosedGate(loc)) return false;
+        // Directional filter: gate must be in the forward hemisphere (dot > 0).
+        const dot = (loc.x - player.x) * headX + (loc.z - player.z) * headZ;
+        return dot > 0;
     });
 
-    if (!blocker) return false;
+    if (!gate) return false;
 
-    interactLoc(player, blocker as any);
+    if (isAdjacentToLoc(player, gate)) {
+        // Adjacent — fire the OPLOC1 script directly (same fix as openNearbyGate).
+        if (_executeGateScript(player, gate)) return true;
+        interactLoc(player, gate as any);
+        return true;
+    }
+
+    // Not adjacent — walk toward the gate tile with plain waypoints.
+    _walkToGate(player, gate);
     return true;
 }

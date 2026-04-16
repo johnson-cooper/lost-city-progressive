@@ -295,7 +295,7 @@ export const Locations = {
     FISH_KARAMJA: [2924, 3173, 0] as [number, number, number], // ⛩ lobster + swordfish (pot/harpoon) — boat-routed via Port Sarim
     FISH_ALKHARID: [3277, 3142, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
     // ── Combat ────────────────────────────────────────────────────────────────
-    CHICKENS_LUMBRIDGE: [3232, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
+    CHICKENS_LUMBRIDGE: [3237, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
     CHICKENS_LUMBRIDGE2: [3188, 3278, 0] as [number, number, number], // ✅ level 1 chickens, no walls
     GOBLINS_LUMBRIDGE: [3258, 3236, 0] as [number, number, number], // ✅ level 2/5 goblins, road north of castle
     COWS_LUMBRIDGE: [3255, 3276, 0] as [number, number, number], // ⛩ level 2 cows, cowpen gateway
@@ -322,7 +322,7 @@ export const Locations = {
     LUMBRIDGE_ALTAR: [3243, 3210, 0] as [number, number, number], // ✅
 
     // ── Crafting ──────────────────────────────────────────────────────────────
-    LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ sheep field NE of castle
+    LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ inside sheep pen NE of castle (within SheepPen GATEWAY_REGION)
     LUMBRIDGE_CASTLE_STAIRS: [3206, 3207, 0] as [number, number, number], // ✅ foot of castle stairs (ground floor)
     LUMBRIDGE_CASTLE_APPROACH: [3215, 3218, 0] as [number, number, number], // ✅ outside south castle entrance — no doors blocking
     LUMBRIDGE_POTTERS_WHEEL: [3209, 3213, 1] as [number, number, number], // ✅ 1 tile north of spinning wheel (3209,3212) — cardinally adjacent, reachedLoc passes immediately

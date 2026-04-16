@@ -10,7 +10,7 @@ import Player from '#/engine/entity/Player.js';
 import InvType from '#/cache/config/InvType.js';
 import { BotTask } from '#/engine/bot/tasks/Index.js';
 import { BotGoalPlanner } from '#/engine/bot/BotGoalPlanner.js';
-import { addXp, getBaseLevel, PlayerStat } from '#/engine/bot/BotAction.js';
+import { addXp, getBaseLevel, PlayerStat, openNearbyGate } from '#/engine/bot/BotAction.js';
 import { PlayerStatNameMap } from '#/engine/entity/PlayerStat.js';
 
 const RESCAN_TICKS = 600;
@@ -49,6 +49,8 @@ export class BotPlayer {
     private ticksAlive = 0;
     private rescanTimer = 0;
     private planFailCount = 0;
+    /** Counts ticks between universal gate sweeps (fires every 5 ticks). */
+    private gateCheckTimer = 0;
 
     // ✅ NEW: sub-task system (for bury bones, eating, etc.)
     private subTask: BotTask | null = null;
@@ -155,6 +157,20 @@ export class BotPlayer {
 
         const activeTask = this.currentTask;
         if (!activeTask) return;
+
+        // ── UNIVERSAL GATE SWEEP ─────────────────────────────────────────────
+        // Every 5 ticks, open any closed door or gate within 10 tiles regardless
+        // of which task is running or which state it is in.  This covers the
+        // "targeting an NPC behind a fence" case where walkTo is not being called
+        // (e.g. a combat bot re-engaging its target every 12 ticks while a gate
+        // sits between them unopened).  Skip if the player is already mid-script
+        // (delayed) or already has a pending interaction (e.g. attacking an NPC).
+        if (++this.gateCheckTimer >= 5) {
+            this.gateCheckTimer = 0;
+            if (!this.player.delayed && !this.player.hasInteraction()) {
+                openNearbyGate(this.player, 10);
+            }
+        }
 
         try {
             activeTask.tick(this.player);

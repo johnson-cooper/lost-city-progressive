@@ -224,6 +224,7 @@ export {
     getMissingPurchases,
     STARTING_COINS,
     openNearbyGate,
+    openGateToward,
     isAdjacentToLoc,
     interactUseObjNpcOp,
     botInteractUseObjNpc,
