@@ -191,6 +191,18 @@ export class StallThievingTask extends BotTask {
             } else if (this.stallId === 2560) { // Silk
                  safeX = stall.x;
                  safeZ = stall.z + 1;
+            } else if (this.stallId === 2563) { // Fur
+                 safeX = stall.x - 1;
+                 safeZ = stall.z;
+            } else if (this.stallId === 2562) { // Silver
+                 safeX = stall.x;
+                 safeZ = stall.z - 1;
+            } else if (this.stallId === 2564) { // Spice
+                 safeX = stall.x + 1;
+                 safeZ = stall.z;
+            } else if (this.stallId === 2565) { // Gem
+                 safeX = stall.x;
+                 safeZ = stall.z + 1;
             }
 
             if (!isNear(player, safeX, safeZ, 1)) {

@@ -214,8 +214,9 @@ export class BotGoalPlanner {
             const hasCowHide = hasItem(player, Items.COW_HIDE) || this._hasItemInBank(player, Items.COW_HIDE);
 
             const hasGems = [Items.UNCUT_SAPPHIRE, Items.UNCUT_EMERALD, Items.UNCUT_RUBY, Items.UNCUT_DIAMOND].some(id => hasItem(player, id) || this._hasItemInBank(player, id));
+            const hasClay = hasItem(player, Items.CLAY) || this._hasItemInBank(player, Items.CLAY) || hasItem(player, Items.SOFT_CLAY) || this._hasItemInBank(player, Items.SOFT_CLAY);
 
-            if ((mineLevel >= 40 && smithLevel >= 40) || hasLeather || hasCowHide || hasGems) {
+            if ((mineLevel >= 40 && smithLevel >= 40) || hasLeather || hasCowHide || hasGems || hasClay) {
                 const craftTask = this._findCraftingTask(player);
                 if (craftTask) return craftTask;
             }
@@ -500,6 +501,8 @@ export class BotGoalPlanner {
      *
      *   Gem cutting: Available if bot has uncut gems.
      *
+     *   Pottery: Available if bot has clay or soft clay.
+     *
      * Returns null when neither phase can run right now.
      */
     private _findCraftingTask(player: Player): BotTask | null {
@@ -519,6 +522,29 @@ export class BotGoalPlanner {
             if ((hasItem(player, uncutId) || this._hasItemInBank(player, uncutId)) && (hasItem(player, Items.CHISEL) || this._hasItemInBank(player, Items.CHISEL))) {
                 return new CraftingTask(gemStep);
             }
+        }
+
+        // ── Pottery ───────────────────────────────────────────────────────────
+        const potteryStep = steps.find(s => (s.action === 'soften_clay' || s.action === 'craft_pot') && level >= s.minLevel && level <= s.maxLevel);
+        if (potteryStep) {
+             if (potteryStep.action === 'soften_clay') {
+                 const hasClay = hasItem(player, Items.CLAY) || this._hasItemInBank(player, Items.CLAY);
+                 const hasWater = hasItem(player, Items.BUCKET_OF_WATER) || this._hasItemInBank(player, Items.BUCKET_OF_WATER) || hasItem(player, Items.JUG_OF_WATER) || this._hasItemInBank(player, Items.JUG_OF_WATER);
+                 const hasBuckets = hasItem(player, Items.BUCKET) || this._hasItemInBank(player, Items.BUCKET);
+
+                 if (hasClay && (hasWater || hasBuckets)) {
+                     if (!hasWater && hasBuckets) {
+                          return new WaterFillingTask(Items.BUCKET, Items.BUCKET_OF_WATER);
+                     }
+                     return new CraftingTask(potteryStep);
+                 }
+             }
+
+             if (potteryStep.action === 'craft_pot') {
+                 if (hasItem(player, Items.SOFT_CLAY) || this._hasItemInBank(player, Items.SOFT_CLAY)) {
+                     return new CraftingTask(potteryStep);
+                 }
+             }
         }
 
         // ── Leatherworking ────────────────────────────────────────────────────
@@ -740,7 +766,7 @@ export class BotGoalPlanner {
      * to better equipment via shop trips.
      */
     private _starterItems(): number[] {
-        return [Items.BRONZE_AXE, Items.KNIFE, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER, Items.SHEARS, Items.NEEDLE, Items.THREAD, Items.CHISEL];
+        return [Items.BRONZE_AXE, Items.KNIFE, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER, Items.SHEARS, Items.NEEDLE, Items.THREAD, Items.CHISEL, Items.BUCKET];
     }
 
     /** True if knife is in inventory or bank — used to avoid a shop trip when it just needs withdrawing. */

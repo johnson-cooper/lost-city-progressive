@@ -280,6 +280,12 @@ export class MiningTask extends BotTask {
     private _getAvailableOrePrefixes(player: Player): string[] {
         const prefixes: string[] = [];
 
+        // Special case: if we are at Rimmington mine, always prioritize clay if that's what we are there for
+        if (this.step.location === Locations.MINE_RIMMINGTON) {
+            prefixes.push('clayrock');
+            return prefixes;
+        }
+
         // Get player's actual mining level using base level
         const miningLevel = player.baseLevels[PlayerStat.MINING];
 
