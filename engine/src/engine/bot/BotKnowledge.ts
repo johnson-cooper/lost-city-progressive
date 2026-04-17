@@ -57,6 +57,8 @@ export const Items = {
     IRON_BAR: 2351,
     STEEL_BAR: 2353,
     MITHRIL_BAR: 2359,
+    ADAMANT_BAR: 2361,
+    RUNE_BAR: 2363,
     GOLD_BAR: 2357,
     HAMMER: 2347,
 
@@ -1471,6 +1473,32 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.STEEL_BAR,
             itemGained: Items.STEEL_PLATEBODY,
             extra: { barCount: 5 }
+        },
+        {
+            minLevel: 83,
+            maxLevel: 99,
+            action: 'smith',
+            location: Locations.VARROCK_ANVIL,
+            toolItemIds: [Items.HAMMER],
+            xpPerAction: 1560,
+            ticksPerAction: 6,
+            successRate: 1.0,
+            itemConsumed: Items.ADAMANT_BAR,
+            itemGained: 1123, // adamant_platebody
+            extra: { barCount: 5 }
+        },
+        {
+            minLevel: 98,
+            maxLevel: 99,
+            action: 'smith',
+            location: Locations.VARROCK_ANVIL,
+            toolItemIds: [Items.HAMMER],
+            xpPerAction: 1875,
+            ticksPerAction: 6,
+            successRate: 1.0,
+            itemConsumed: Items.RUNE_BAR,
+            itemGained: 1127, // rune_platebody
+            extra: { barCount: 5 }
         }
     ],
 
@@ -1710,6 +1738,44 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.DIAMOND,
             itemConsumed: Items.UNCUT_DIAMOND
+        },
+        {
+            minLevel: 41,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 650,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.STUDDED_BODY,
+            itemConsumed: Items.LEATHER_BODY,
+            extra: { secondConsumed: Items.STUDS }
+        },
+        {
+            minLevel: 44,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 650,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.STUDDED_CHAPS,
+            itemConsumed: Items.LEATHER_CHAPS,
+            extra: { secondConsumed: Items.STUDS }
+        },
+        {
+            minLevel: 57,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 620,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: 1135, // dragon_body
+            itemConsumed: 1745 // dragon_leather
         }
     ],
 
