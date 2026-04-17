@@ -48,6 +48,8 @@ export const Items = {
     MITHRIL_ORE: 447,
     ADAMANTITE_ORE: 449,
     GOLD_ORE: 444,
+    CLAY: 434,
+    SOFT_CLAY: 1761,
 
     // Bars  (all verified)
     BRONZE_BAR: 2349,
@@ -206,6 +208,11 @@ export const Items = {
     RUBY: 1605,
     DIAMOND: 1603,
     CHISEL: 1755,
+    BUCKET: 1925,
+    BUCKET_OF_WATER: 1929,
+    JUG: 1935,
+    JUG_OF_WATER: 1937,
+    POT: 1931,
 
     // Higher runes
     COSMIC_RUNE: 564,
@@ -344,6 +351,7 @@ export const Locations = {
     MINE_VARROCK_WEST: [3177, 3368, 0] as [number, number, number], // ✅ tin + iron — open area
     MINE_DWARVEN: [3082, 3421, 0] as [number, number, number], // ✅ Barbarian Village surface mine — copper/tin/iron/coal, gate-free
     MINE_KARAMJA: [2734, 3221, 0] as [number, number, number], // ✅ karmajagold
+    MINE_RIMMINGTON: [2977, 3233, 0] as [number, number, number], // ✅ clay
 
     // ── Fishing ───────────────────────────────────────────────────────────────
     FISH_DRAYNOR: [3088, 3228, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
@@ -776,7 +784,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // Level 30+: coal at Barbarian Village mine (surface accessible!)
         { minLevel: 30, maxLevel: 99, action: 'mine', location: Locations.MINE_DWARVEN, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 500, ticksPerAction: 6, successRate: 0.45, itemGained: Items.COAL },
-        { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE }
+        { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE },
+        { minLevel: 1, maxLevel: 99, action: 'mine', location: Locations.MINE_RIMMINGTON, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 50, ticksPerAction: 4, successRate: 0.8, itemGained: Items.CLAY }
     ],
 
     // ── Firemaking ───────────────────────────────────────────────────────────
@@ -1615,6 +1624,31 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.UNCUT_RUBY
         },
         {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'soften_clay',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 0,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.SOFT_CLAY,
+            itemConsumed: Items.CLAY,
+            extra: { waterItem: Items.BUCKET_OF_WATER }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'craft_pot',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 63,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.POT,
+            itemConsumed: Items.SOFT_CLAY
+        },
+        {
             minLevel: 43,
             maxLevel: 99,
             action: 'cut_diamond',
@@ -1903,20 +1937,18 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     ],
 
     // Runecrafting — progression is handled inside RunecraftingTask itself.
-    // A single placeholder step here keeps RUNECRAFT in SKILLS_WITH_CONTENT
-    // so the goal planner includes it in the weighted rotation.
+    // Explicit steps help the planner visualize the tiers.
     RUNECRAFT: [
-        {
-            minLevel: 1,
-            maxLevel: 99,
-            action: 'runecraft',
-            location: Locations.AIR_ALTAR, // placeholder; actual altar chosen by task
-            toolItemIds: [], // talisman is a combat drop, not purchased
-            xpPerAction: 50, // 5.0 XP base (air); actual XP computed per altar
-            ticksPerAction: 10,
-            successRate: 1.0,
-            itemGained: Items.AIR_RUNE // placeholder
-        }
+        { minLevel: 1, maxLevel: 1, action: 'runecraft', location: Locations.AIR_ALTAR, toolItemIds: [], xpPerAction: 50, ticksPerAction: 10, successRate: 1.0, itemGained: Items.AIR_RUNE },
+        { minLevel: 2, maxLevel: 4, action: 'runecraft', location: Locations.MIND_ALTAR, toolItemIds: [], xpPerAction: 55, ticksPerAction: 10, successRate: 1.0, itemGained: Items.MIND_RUNE },
+        { minLevel: 5, maxLevel: 8, action: 'runecraft', location: Locations.WATER_ALTAR, toolItemIds: [], xpPerAction: 60, ticksPerAction: 10, successRate: 1.0, itemGained: Items.WATER_RUNE },
+        { minLevel: 9, maxLevel: 13, action: 'runecraft', location: Locations.EARTH_ALTAR, toolItemIds: [], xpPerAction: 65, ticksPerAction: 10, successRate: 1.0, itemGained: Items.EARTH_RUNE },
+        { minLevel: 14, maxLevel: 19, action: 'runecraft', location: Locations.FIRE_ALTAR, toolItemIds: [], xpPerAction: 70, ticksPerAction: 10, successRate: 1.0, itemGained: Items.FIRE_RUNE },
+        { minLevel: 20, maxLevel: 26, action: 'runecraft', location: Locations.BODY_ALTAR, toolItemIds: [], xpPerAction: 75, ticksPerAction: 10, successRate: 1.0, itemGained: Items.BODY_RUNE },
+        { minLevel: 27, maxLevel: 34, action: 'runecraft', location: Locations.COSMIC_ALTAR, toolItemIds: [], xpPerAction: 80, ticksPerAction: 10, successRate: 1.0, itemGained: Items.COSMIC_RUNE },
+        { minLevel: 35, maxLevel: 43, action: 'runecraft', location: Locations.CHAOS_ALTAR, toolItemIds: [], xpPerAction: 85, ticksPerAction: 10, successRate: 1.0, itemGained: Items.CHAOS_RUNE },
+        { minLevel: 44, maxLevel: 53, action: 'runecraft', location: Locations.NATURE_ALTAR, toolItemIds: [], xpPerAction: 90, ticksPerAction: 10, successRate: 1.0, itemGained: Items.NATURE_RUNE },
+        { minLevel: 54, maxLevel: 99, action: 'runecraft', location: Locations.LAW_ALTAR, toolItemIds: [], xpPerAction: 95, ticksPerAction: 10, successRate: 1.0, itemGained: Items.LAW_RUNE }
     ]
 };
 

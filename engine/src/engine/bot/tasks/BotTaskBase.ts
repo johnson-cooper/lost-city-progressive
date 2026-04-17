@@ -36,6 +36,7 @@ import {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOpU,
     openNearbyGate,
     isAdjacentToLoc,
     botTeleport
@@ -219,6 +220,7 @@ export {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOpU,
     Items,
     Shops,
     Locations,
