@@ -36,7 +36,7 @@ import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
 import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
 import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
-import { BakerStallThiefTask } from '#/engine/bot/tasks/BakerStallThiefTask.js';
+import { StallThievingTask } from '#/engine/bot/tasks/StallThievingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -210,7 +210,12 @@ export class BotGoalPlanner {
         if ((this.personality.weights['CRAFTING'] ?? 0) > 0) {
             const mineLevel = getBaseLevel(player, PlayerStat.MINING);
             const smithLevel = getBaseLevel(player, PlayerStat.SMITHING);
-            if (mineLevel >= 40 && smithLevel >= 40) {
+            const hasLeather = hasItem(player, Items.LEATHER) || this._hasItemInBank(player, Items.LEATHER) || hasItem(player, Items.HARD_LEATHER) || this._hasItemInBank(player, Items.HARD_LEATHER);
+            const hasCowHide = hasItem(player, Items.COW_HIDE) || this._hasItemInBank(player, Items.COW_HIDE);
+
+            const hasGems = [Items.UNCUT_SAPPHIRE, Items.UNCUT_EMERALD, Items.UNCUT_RUBY, Items.UNCUT_DIAMOND].some(id => hasItem(player, id) || this._hasItemInBank(player, id));
+
+            if ((mineLevel >= 40 && smithLevel >= 40) || hasLeather || hasCowHide || hasGems) {
                 const craftTask = this._findCraftingTask(player);
                 if (craftTask) return craftTask;
             }
@@ -321,7 +326,7 @@ export class BotGoalPlanner {
                 if (step.action === 'firemaking') return new FiremakingTask(step);
                 if (step.action === 'smelt' || step.action === 'smith') return new SmithingTask(step);
                 if (step.action === 'thieve') return new ThievingTask(step);
-                if (step.action === 'thieve_stall') return new BakerStallThiefTask();
+                if (step.action === 'thieve_stall') return new StallThievingTask(step);
                 if (step.action === 'pick_flax') return new FlaxPickingTask(step);
                 if (step.action === 'herblore_attack') {
                     // Require guams (chaos druid drops) — no guams, no herblore.
@@ -491,6 +496,10 @@ export class BotGoalPlanner {
      *     Requires ring_mould in inventory and gold bars in bank/inv.
      *     If ring_mould missing, returns a ShopTripTask.
      *
+     *   Leatherworking: Available if bot has leather.
+     *
+     *   Gem cutting: Available if bot has uncut gems.
+     *
      * Returns null when neither phase can run right now.
      */
     private _findCraftingTask(player: Player): BotTask | null {
@@ -501,11 +510,34 @@ export class BotGoalPlanner {
         const steps = SkillProgression['CRAFTING'];
         if (!steps || steps.length === 0) return null;
 
+        const level = getBaseLevel(player, PlayerStat.CRAFTING);
+
+        // ── Gem Cutting ───────────────────────────────────────────────────────
+        const gemStep = steps.find(s => s.action.startsWith('cut_') && level >= s.minLevel && level <= s.maxLevel);
+        if (gemStep) {
+            const uncutId = gemStep.itemConsumed!;
+            if ((hasItem(player, uncutId) || this._hasItemInBank(player, uncutId)) && (hasItem(player, Items.CHISEL) || this._hasItemInBank(player, Items.CHISEL))) {
+                return new CraftingTask(gemStep);
+            }
+        }
+
+        // ── Leatherworking ────────────────────────────────────────────────────
+        const leatherStep = steps.find(s => (s.action.startsWith('craft_leather_') || s.action === 'craft_hard_leather_body') && level >= s.minLevel && level <= s.maxLevel);
+        if (leatherStep) {
+            const leatherId = leatherStep.itemConsumed!;
+            const hasMaterials = (hasItem(player, leatherId) || this._hasItemInBank(player, leatherId) || (leatherId === Items.LEATHER && (hasItem(player, Items.COW_HIDE) || this._hasItemInBank(player, Items.COW_HIDE)))) &&
+                                 (hasItem(player, Items.NEEDLE) || this._hasItemInBank(player, Items.NEEDLE)) &&
+                                 (hasItem(player, Items.THREAD) || this._hasItemInBank(player, Items.THREAD));
+
+            if (hasMaterials) {
+                return new CraftingTask(leatherStep);
+            }
+        }
+
         if (!phase2Unlocked) {
             // ── Phase 1: wool spinning ────────────────────────────────────────
             const woolStep = steps.find(s => s.action === 'craft_wool');
             const flaxStep = steps.find(s => s.action === 'spin_flax');
-            const level = getBaseLevel(player, PlayerStat.CRAFTING);
 
             // Prioritize flax if we have it and level >= 10
             if (flaxStep && level >= 10 && (hasItem(player, Items.FLAX) || this._hasItemInBank(player, Items.FLAX))) {
@@ -708,7 +740,7 @@ export class BotGoalPlanner {
      * to better equipment via shop trips.
      */
     private _starterItems(): number[] {
-        return [Items.BRONZE_AXE, Items.KNIFE, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER, Items.SHEARS];
+        return [Items.BRONZE_AXE, Items.KNIFE, Items.IRON_SCIMITAR, Items.BRONZE_PICKAXE, Items.SMALL_FISHING_NET, Items.TINDERBOX, Items.HAMMER, Items.SHEARS, Items.NEEDLE, Items.THREAD, Items.CHISEL];
     }
 
     /** True if knife is in inventory or bank — used to avoid a shop trip when it just needs withdrawing. */
