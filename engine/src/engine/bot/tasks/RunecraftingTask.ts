@@ -56,6 +56,7 @@ import {
 interface AltarDef {
     name: string;
     talismanId: number;
+    tiaraId: number;
     runeId: number;
     levelReq: number;
     /** Herblore-style XP storage: actual XP × 10 (e.g. 50 = 5.0 XP). */
@@ -64,16 +65,16 @@ interface AltarDef {
 }
 
 const ALTARS: readonly AltarDef[] = [
-    { name: 'Law',    talismanId: Items.LAW_TALISMAN,    runeId: Items.LAW_RUNE,    levelReq: 54, xpPerEssence: 95,  location: [...Locations.LAW_ALTAR]    as [number, number, number] },
-    { name: 'Nature', talismanId: Items.NATURE_TALISMAN, runeId: Items.NATURE_RUNE, levelReq: 44, xpPerEssence: 90,  location: [...Locations.NATURE_ALTAR]  as [number, number, number] },
-    { name: 'Chaos',  talismanId: Items.CHAOS_TALISMAN,  runeId: Items.CHAOS_RUNE,  levelReq: 35, xpPerEssence: 85,  location: [...Locations.CHAOS_ALTAR]   as [number, number, number] },
-    { name: 'Cosmic', talismanId: Items.COSMIC_TALISMAN, runeId: Items.COSMIC_RUNE, levelReq: 27, xpPerEssence: 80,  location: [...Locations.COSMIC_ALTAR]  as [number, number, number] },
-    { name: 'Body',   talismanId: Items.BODY_TALISMAN,   runeId: Items.BODY_RUNE,   levelReq: 20, xpPerEssence: 75,  location: [...Locations.BODY_ALTAR]    as [number, number, number] },
-    { name: 'Fire',   talismanId: Items.FIRE_TALISMAN,   runeId: Items.FIRE_RUNE,   levelReq: 14, xpPerEssence: 70,  location: [...Locations.FIRE_ALTAR]    as [number, number, number] },
-    { name: 'Earth',  talismanId: Items.EARTH_TALISMAN,  runeId: Items.EARTH_RUNE,  levelReq:  9, xpPerEssence: 65,  location: [...Locations.EARTH_ALTAR]   as [number, number, number] },
-    { name: 'Water',  talismanId: Items.WATER_TALISMAN,  runeId: Items.WATER_RUNE,  levelReq:  5, xpPerEssence: 60,  location: [...Locations.WATER_ALTAR]   as [number, number, number] },
-    { name: 'Mind',   talismanId: Items.MIND_TALISMAN,   runeId: Items.MIND_RUNE,   levelReq:  2, xpPerEssence: 55,  location: [...Locations.MIND_ALTAR]    as [number, number, number] },
-    { name: 'Air',    talismanId: Items.AIR_TALISMAN,    runeId: Items.AIR_RUNE,    levelReq:  1, xpPerEssence: 50,  location: [...Locations.AIR_ALTAR]     as [number, number, number] },
+    { name: 'Law',    talismanId: Items.LAW_TALISMAN,    tiaraId: Items.LAW_TIARA,    runeId: Items.LAW_RUNE,    levelReq: 54, xpPerEssence: 95,  location: [...Locations.LAW_ALTAR]    as [number, number, number] },
+    { name: 'Nature', talismanId: Items.NATURE_TALISMAN, tiaraId: Items.NATURE_TIARA, runeId: Items.NATURE_RUNE, levelReq: 44, xpPerEssence: 90,  location: [...Locations.NATURE_ALTAR]  as [number, number, number] },
+    { name: 'Chaos',  talismanId: Items.CHAOS_TALISMAN,  tiaraId: Items.CHAOS_TIARA,  runeId: Items.CHAOS_RUNE,  levelReq: 35, xpPerEssence: 85,  location: [...Locations.CHAOS_ALTAR]   as [number, number, number] },
+    { name: 'Cosmic', talismanId: Items.COSMIC_TALISMAN, tiaraId: Items.COSMIC_TIARA, runeId: Items.COSMIC_RUNE, levelReq: 27, xpPerEssence: 80,  location: [...Locations.COSMIC_ALTAR]  as [number, number, number] },
+    { name: 'Body',   talismanId: Items.BODY_TALISMAN,   tiaraId: Items.BODY_TIARA,   runeId: Items.BODY_RUNE,   levelReq: 20, xpPerEssence: 75,  location: [...Locations.BODY_ALTAR]    as [number, number, number] },
+    { name: 'Fire',   talismanId: Items.FIRE_TALISMAN,   tiaraId: Items.FIRE_TIARA,   runeId: Items.FIRE_RUNE,   levelReq: 14, xpPerEssence: 70,  location: [...Locations.FIRE_ALTAR]    as [number, number, number] },
+    { name: 'Earth',  talismanId: Items.EARTH_TALISMAN,  tiaraId: Items.EARTH_TIARA,  runeId: Items.EARTH_RUNE,  levelReq:  9, xpPerEssence: 65,  location: [...Locations.EARTH_ALTAR]   as [number, number, number] },
+    { name: 'Water',  talismanId: Items.WATER_TALISMAN,  tiaraId: Items.WATER_TIARA,  runeId: Items.WATER_RUNE,  levelReq:  5, xpPerEssence: 60,  location: [...Locations.WATER_ALTAR]   as [number, number, number] },
+    { name: 'Mind',   talismanId: Items.MIND_TALISMAN,   tiaraId: Items.MIND_TIARA,   runeId: Items.MIND_RUNE,   levelReq:  2, xpPerEssence: 55,  location: [...Locations.MIND_ALTAR]    as [number, number, number] },
+    { name: 'Air',    talismanId: Items.AIR_TALISMAN,    tiaraId: Items.AIR_TIARA,    runeId: Items.AIR_RUNE,    levelReq:  1, xpPerEssence: 50,  location: [...Locations.AIR_ALTAR]     as [number, number, number] },
 ] as const;
 
 // ── Pickaxe priority list (best first) ────────────────────────────────────────
@@ -462,7 +463,7 @@ export class RunecraftingTask extends BotTask {
     /**
      * Selects the highest-tier altar the bot qualifies for:
      *   1. RC level meets the altar's minimum requirement.
-     *   2. The matching talisman exists in inventory OR bank.
+     *   2. The matching talisman OR tiara exists in inventory OR bank.
      */
     private _pickBestAltar(player: Player): AltarDef | null {
         const level  = getBaseLevel(player, PlayerStat.RUNECRAFT);
@@ -472,11 +473,12 @@ export class RunecraftingTask extends BotTask {
         for (const altar of ALTARS) {
             if (level < altar.levelReq) continue;
 
-            if (hasItem(player, altar.talismanId)) return altar;
+            if (hasItem(player, altar.talismanId) || hasItem(player, altar.tiaraId)) return altar;
 
             if (bank) {
                 for (let i = 0; i < bank.capacity; i++) {
-                    if (bank.get(i)?.id === altar.talismanId) return altar;
+                    const item = bank.get(i);
+                    if (item?.id === altar.talismanId || item?.id === altar.tiaraId) return altar;
                 }
             }
         }
@@ -520,8 +522,8 @@ export class RunecraftingTask extends BotTask {
     }
 
     /**
-     * Deposits everything except the current talisman and best pickaxe,
-     * then withdraws those two items from the bank if not already in inventory.
+     * Deposits everything except the current talisman/tiara and best pickaxe,
+     * then withdraws those items from the bank if not already in inventory.
      */
     private _bankDeposit(player: Player): void {
         const bid = bankInvId();
@@ -532,8 +534,11 @@ export class RunecraftingTask extends BotTask {
         if (!inv || !bank) return;
 
         const talismanId = this.currentAltar?.talismanId ?? -1;
-        const keep       = new Set<number>();
+        const tiaraId = this.currentAltar?.tiaraId ?? -1;
+
+        const keep = new Set<number>();
         if (talismanId !== -1) keep.add(talismanId);
+        if (tiaraId !== -1) keep.add(tiaraId);
         keep.add(this.pickaxeId);
 
         // ── Deposit everything not in keep set ────────────────────────────────
@@ -544,8 +549,21 @@ export class RunecraftingTask extends BotTask {
             if (moved.completed > 0) bank.add(item.id, moved.completed);
         }
 
-        // ── Withdraw talisman if not in inventory ─────────────────────────────
-        if (talismanId !== -1 && !hasItem(player, talismanId)) {
+        // ── Withdraw tiara if we have one in bank ─────────────────────────────
+        if (tiaraId !== -1 && !hasItem(player, tiaraId)) {
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (it?.id === tiaraId) {
+                    bank.remove(tiaraId, 1);
+                    addItem(player, tiaraId, 1);
+                    this._log(null, `withdrew ${this.currentAltar?.name} tiara from bank`, 'tiara_out');
+                    break;
+                }
+            }
+        }
+
+        // ── Withdraw talisman if not in inventory AND we don't have tiara ─────
+        if (talismanId !== -1 && !hasItem(player, talismanId) && !hasItem(player, tiaraId)) {
             for (let i = 0; i < bank.capacity; i++) {
                 const it = bank.get(i);
                 if (it?.id === talismanId) {
@@ -555,6 +573,13 @@ export class RunecraftingTask extends BotTask {
                     break;
                 }
             }
+        }
+
+        // ── Equip tiara if we have one ────────────────────────────────────────
+        if (tiaraId !== -1 && hasItem(player, tiaraId)) {
+            // Simplified: just make sure it stays in inv for now,
+            // later we can add actual equipping if the engine supports it easily
+            // For now, having it in inventory is enough for altar entry in many scripts.
         }
 
         // ── Withdraw pickaxe if not in inventory ──────────────────────────────

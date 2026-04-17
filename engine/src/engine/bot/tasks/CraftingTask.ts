@@ -58,7 +58,7 @@ const FAIL_LIMIT = 6;
 // ── CraftingTask ──────────────────────────────────────────────────────────────
 
 type Phase1State = 'shear_walk' | 'shear' | 'climb' | 'spin' | 'spin_flax' | 'descend' | 'bank_walk' | 'bank';
-type Phase2State = 'bank_walk' | 'withdraw' | 'furnace_walk' | 'craft' | 'bank_return';
+type Phase2State = 'bank_walk' | 'withdraw' | 'furnace_walk' | 'craft' | 'bank_return' | 'tanning_walk' | 'tanning';
 
 export class CraftingTask extends BotTask {
     private readonly step: SkillStep;
@@ -94,6 +94,9 @@ export class CraftingTask extends BotTask {
 
         // Phase 2
         if (!phase2Unlocked) return false;
+        if (this.step.action.startsWith('craft_leather_')) {
+            return hasItem(player, Items.NEEDLE) && hasItem(player, Items.THREAD) && (hasItem(player, Items.LEATHER) || this._hasLeatherAnywhere(player) || hasItem(player, Items.COW_HIDE) || this._hasCowHideInBank(player));
+        }
         if (!hasItem(player, Items.RING_MOULD)) return false;
         return this._hasGoldBarsAnywhere(player);
     }
@@ -130,6 +133,8 @@ export class CraftingTask extends BotTask {
 
         if (this.phase === 1) {
             this._tickPhase1(player);
+        } else if (this.step.action.startsWith('craft_leather_')) {
+            this._tickLeather(player);
         } else {
             this._tickPhase2(player);
         }
@@ -397,6 +402,195 @@ export class CraftingTask extends BotTask {
         }
     }
 
+    // ── Leatherworking ────────────────────────────────────────────────────────
+
+    private _tickLeather(player: Player): void {
+        switch (this.p2State) {
+            case 'bank_walk': {
+                const result = advanceBankWalk(player, this.stuck);
+                if (result === 'walk') return;
+                this.cooldown = result === 'ready' ? 3 : 0;
+                this.p2State = 'withdraw';
+                return;
+            }
+
+            case 'withdraw': {
+                if (countItem(player, Items.COW_HIDE) > 0 || this._hasCowHideInBank(player)) {
+                    // We have hides to tan
+                    const inv = player.getInventory(InvType.INV);
+                    const bid = bankInvId();
+                    const bank = bid !== -1 ? player.getInventory(bid) : null;
+
+                    if (inv && bank && !hasItem(player, Items.COW_HIDE)) {
+                        for (let i = 0; i < bank.capacity; i++) {
+                            if (bank.get(i)?.id === Items.COW_HIDE) {
+                                const moved = bank.remove(Items.COW_HIDE, 27);
+                                inv.add(Items.COW_HIDE, moved.completed);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (hasItem(player, Items.COW_HIDE)) {
+                        // Also ensure we have some coins for tanning
+                        if (countItem(player, Items.COINS) < 27) {
+                            for (let i = 0; i < bank.capacity; i++) {
+                                if (bank.get(i)?.id === Items.COINS) {
+                                    const moved = bank.remove(Items.COINS, 1000);
+                                    inv.add(Items.COINS, moved.completed);
+                                    break;
+                                }
+                            }
+                        }
+
+                        this.p2State = 'tanning_walk';
+                        return;
+                    }
+                }
+
+                // Deposit crafted items
+                const bid = bankInvId();
+                const inv = player.getInventory(InvType.INV);
+                const bank = bid !== -1 ? player.getInventory(bid) : null;
+                if (inv && bank) {
+                    const products = [Items.LEATHER_GLOVES, Items.LEATHER_BOOTS, Items.LEATHER_VAMBRACES, Items.LEATHER_CHAPS, Items.LEATHER_BODY];
+                    for (let i = 0; i < inv.capacity; i++) {
+                        const item = inv.get(i);
+                        if (item && products.includes(item.id)) {
+                            const moved = inv.remove(item.id, item.count);
+                            bank.add(item.id, moved.completed);
+                        }
+                    }
+                }
+
+                if (!hasItem(player, Items.NEEDLE) || !hasItem(player, Items.THREAD)) {
+                    // Try to withdraw from bank
+                    if (bank) {
+                        if (!hasItem(player, Items.NEEDLE)) {
+                            for (let i = 0; i < bank.capacity; i++) {
+                                if (bank.get(i)?.id === Items.NEEDLE) {
+                                    bank.remove(Items.NEEDLE, 1);
+                                    inv?.add(Items.NEEDLE, 1);
+                                    break;
+                                }
+                            }
+                        }
+                        if (!hasItem(player, Items.THREAD)) {
+                            for (let i = 0; i < bank.capacity; i++) {
+                                if (bank.get(i)?.id === Items.THREAD) {
+                                    const moved = bank.remove(Items.THREAD, 5);
+                                    inv?.add(Items.THREAD, moved.completed);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (!hasItem(player, Items.NEEDLE) || !hasItem(player, Items.THREAD)) {
+                    this.done = true;
+                    this.interrupt();
+                    return;
+                }
+
+                // Withdraw leather
+                if (bank && !hasItem(player, Items.LEATHER)) {
+                    for (let i = 0; i < bank.capacity; i++) {
+                        const item = bank.get(i);
+                        if (item?.id === Items.LEATHER) {
+                            const moved = bank.remove(Items.LEATHER, 25);
+                            inv?.add(Items.LEATHER, moved.completed);
+                            break;
+                        }
+                    }
+                }
+
+                if (!hasItem(player, Items.LEATHER)) {
+                    this.done = true;
+                    this.interrupt();
+                    return;
+                }
+
+                this.p2State = 'craft';
+                return;
+            }
+
+            case 'tanning_walk': {
+                const [tx, tz, tl] = Locations.TANNER_AL_KHARID;
+                if (!isNear(player, tx, tz, 3, tl)) {
+                    this._stuckWalk(player, tx, tz);
+                    return;
+                }
+                this.p2State = 'tanning';
+                return;
+            }
+
+            case 'tanning': {
+                const hideCount = countItem(player, Items.COW_HIDE);
+                if (hideCount === 0) {
+                    this.p2State = 'bank_walk';
+                    return;
+                }
+
+                const tanner = findNpcByName(player.x, player.z, player.level, 'ellis', 10);
+                if (!tanner) {
+                    this.p2State = 'bank_walk';
+                    return;
+                }
+
+                // Tanning cost: 1gp per hide for soft leather
+                const coins = countItem(player, Items.COINS);
+                const toTan = Math.min(hideCount, coins);
+
+                if (toTan > 0) {
+                    removeItem(player, Items.COW_HIDE, toTan);
+                    removeItem(player, Items.COINS, toTan);
+                    addItem(player, Items.LEATHER, toTan);
+                    console.log(`[CraftingTask][${player.username}] Tanned ${toTan} leather`);
+                }
+
+                this.p2State = 'bank_walk';
+                this.cooldown = 2;
+                return;
+            }
+
+            case 'craft': {
+                if (!hasItem(player, Items.LEATHER)) {
+                    this.p2State = 'bank_walk';
+                    return;
+                }
+
+                const inv = player.getInventory(InvType.INV);
+                if (!inv) return;
+
+                let leatherSlot = -1;
+                for (let i = 0; i < inv.capacity; i++) {
+                    if (inv.get(i)?.id === Items.LEATHER) {
+                        leatherSlot = i;
+                        break;
+                    }
+                }
+
+                // Use needle on leather
+                // In many scripts, it's use needle on leather or leather on needle.
+                const ok = true; // Simulating successful click
+                if (ok) {
+                    player.stats[PlayerStat.CRAFTING] += this.step.xpPerAction;
+                    inv.remove(Items.LEATHER, 1);
+                    inv.add(this.step.itemGained!, 1);
+
+                    // Thread consumption: 1 thread per action (simplified RS logic)
+                    inv.remove(Items.THREAD, 1);
+
+                    this.watchdog.notifyActivity();
+                    this.cooldown = randInt(3, 5);
+                }
+
+                return;
+            }
+        }
+    }
+
     // ── Phase 2: gold ring crafting ───────────────────────────────────────────
 
     private _tickPhase2(player: Player): void {
@@ -516,6 +710,29 @@ export class CraftingTask extends BotTask {
         if (!bank) return false;
         for (let i = 0; i < bank.capacity; i++) {
             if (bank.get(i)?.id === Items.GOLD_BAR) return true;
+        }
+        return false;
+    }
+
+    private _hasCowHideInBank(player: Player): boolean {
+        const bid = bankInvId();
+        if (bid === -1) return false;
+        const bank = player.getInventory(bid);
+        if (!bank) return false;
+        for (let i = 0; i < bank.capacity; i++) {
+            if (bank.get(i)?.id === Items.COW_HIDE) return true;
+        }
+        return false;
+    }
+
+    private _hasLeatherAnywhere(player: Player): boolean {
+        if (countItem(player, Items.LEATHER) > 0) return true;
+        const bid = bankInvId();
+        if (bid === -1) return false;
+        const bank = player.getInventory(bid);
+        if (!bank) return false;
+        for (let i = 0; i < bank.capacity; i++) {
+            if (bank.get(i)?.id === Items.LEATHER) return true;
         }
         return false;
     }

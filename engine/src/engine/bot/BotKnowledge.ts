@@ -113,6 +113,14 @@ export const Items = {
     SHEARS: 1735,
     RING_MOULD: 1592,
     GOLD_RING: 1635,
+    NEEDLE: 1733,
+    THREAD: 1734,
+    LEATHER: 1741,
+    LEATHER_GLOVES: 1059,
+    LEATHER_BOOTS: 1061,
+    LEATHER_VAMBRACES: 1063,
+    LEATHER_CHAPS: 1095,
+    LEATHER_BODY: 1129,
 
     // Fletching
     ARROW_SHAFT: 52,
@@ -182,6 +190,9 @@ export const Items = {
     BODY_RUNE: 559,
 
     CAKE: 1891,
+    SILK: 950,
+    SILVER_ORE: 442,
+    SPICE: 2007,
 
     // Higher runes
     COSMIC_RUNE: 564,
@@ -198,6 +209,17 @@ export const Items = {
     BODY_TALISMAN: 1446,
     MIND_TALISMAN: 1448,
     CHAOS_TALISMAN: 1452,
+
+    AIR_TIARA: 5527,
+    MIND_TIARA: 5529,
+    WATER_TIARA: 5531,
+    BODY_TIARA: 5533,
+    EARTH_TIARA: 5535,
+    FIRE_TIARA: 5537,
+    COSMIC_TIARA: 5539,
+    NATURE_TIARA: 5541,
+    CHAOS_TIARA: 5543,
+    LAW_TIARA: 5545,
     COSMIC_TALISMAN: 1454,
     LAW_TALISMAN: 1458,
     NATURE_TALISMAN: 1462,
@@ -355,6 +377,7 @@ export const Locations = {
     FALADOR_FURNACE: [2975, 3369, 0] as [number, number, number], // ✅ near Falador east bank
     VARROCK_ANVIL: [3188, 3422, 0] as [number, number, number], // ✅
     LUMBRIDGE_ALTAR: [3243, 3210, 0] as [number, number, number], // ✅
+    TANNER_AL_KHARID: [3274, 3191, 0] as [number, number, number], // ✅ Ellis the tanner in Al Kharid
 
     // ── Crafting ──────────────────────────────────────────────────────────────
     FLAX_FIELD: [2743, 3444, 0] as [number, number, number], // ✅
@@ -369,6 +392,14 @@ export const Locations = {
     THIEVE_LUMBRIDGE_WOMAN: [3194, 3250, 0] as [number, number, number], // ✅ Lumbridge woman
     THIEVE_VARROCK_MAN: [3212, 3435, 0] as [number, number, number], // ✅ Varrock man
     THIEVE_VARROCK_WOMAN: [3214, 3437, 0] as [number, number, number], // ✅ Varrock woman
+    THIEVE_DRAYNOR_FARMER: [3081, 3250, 0] as [number, number, number], // ✅ Draynor farmer
+    THIEVE_VARROCK_GUARD: [3212, 3474, 0] as [number, number, number], // ✅ Varrock guard
+    THIEVE_ARDY_KNIGHT: [2655, 3302, 0] as [number, number, number], // ✅ Ardougne knight
+
+    // Thieving - Stalls
+    SILK_STALL: [2662, 3314, 0] as [number, number, number],
+    SILVER_STALL: [2658, 3313, 0] as [number, number, number],
+    SPICE_STALL: [2659, 3310, 0] as [number, number, number],
 
     // ── Herblore supply runs ──────────────────────────────────────────────────
     // All three sites are reached via teleJump from the bank.
@@ -1375,16 +1406,21 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // Pickpocket man/woman in Lumbridge/Varrock until 99
     THIEVING: [
         // Level 1-9: Lumbridge man
-        { minLevel: 1, maxLevel: 4, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 80, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
+        { minLevel: 1, maxLevel: 9, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 80, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
         // Level 5-19: Baker's stall (Seers/Ardougne)
-        { minLevel: 5, maxLevel: 99, action: 'thieve_stall', location: Locations.BAKER_STALL, toolItemIds: [], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.CAKE, extra: { stallId: 2561, npcType: 'Baker' } },
-        // Level 10-24: Varrock man (more profitable)
-        { minLevel: 10, maxLevel: 24, action: 'thieve', location: Locations.THIEVE_VARROCK_MAN, toolItemIds: [], xpPerAction: 350, ticksPerAction: 4, successRate: 0.8, itemGained: Items.COINS, extra: { npcName: 'man' } },
-        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 200, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
-      
-        // Level 25-49: Lumbridge woman (higher success rate)
-        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_WOMAN, toolItemIds: [], xpPerAction: 450, ticksPerAction: 4, successRate: 0.9, itemGained: Items.COINS, extra: { npcName: 'woman' } },
-        // Level 50-99: Varrock woman (best silver/tokens)
+        { minLevel: 5, maxLevel: 19, action: 'thieve_stall', location: Locations.BAKER_STALL, toolItemIds: [], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.CAKE, extra: { stallId: 2561, npcType: 'Baker' } },
+        // Level 10-24: Farmer
+        { minLevel: 10, maxLevel: 24, action: 'thieve', location: Locations.THIEVE_DRAYNOR_FARMER, toolItemIds: [], xpPerAction: 145, ticksPerAction: 4, successRate: 0.75, itemGained: Items.COINS, extra: { npcName: 'farmer' } },
+        // Level 20-41: Silk stall
+        { minLevel: 20, maxLevel: 41, action: 'thieve_stall', location: Locations.SILK_STALL, toolItemIds: [], xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SILK, extra: { stallId: 2560, npcType: 'Silk merchant' } },
+        // Level 40-54: Guard
+        { minLevel: 40, maxLevel: 54, action: 'thieve', location: Locations.THIEVE_VARROCK_GUARD, toolItemIds: [], xpPerAction: 468, ticksPerAction: 4, successRate: 0.65, itemGained: Items.COINS, extra: { npcName: 'guard' } },
+        // Level 42-64: Silver stall
+        { minLevel: 42, maxLevel: 64, action: 'thieve_stall', location: Locations.SILVER_STALL, toolItemIds: [], xpPerAction: 540, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SILVER_ORE, extra: { stallId: 2562, npcType: 'Silver merchant' } },
+        // Level 55-99: Knight
+        { minLevel: 55, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_ARDY_KNIGHT, toolItemIds: [], xpPerAction: 843, ticksPerAction: 4, successRate: 0.6, itemGained: Items.COINS, extra: { npcName: 'knight' } },
+        // Level 65-99: Spice stall
+        { minLevel: 65, maxLevel: 99, action: 'thieve_stall', location: Locations.SPICE_STALL, toolItemIds: [], xpPerAction: 810, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SPICE, extra: { stallId: 2564, npcType: 'Spice seller' } }
     ],
 
     // ── Crafting ─────────────────────────────────────────────────────────────
@@ -1448,6 +1484,66 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.BOW_STRING,
             itemConsumed: Items.FLAX
+        },
+        {
+            minLevel: 1,
+            maxLevel: 6,
+            action: 'craft_leather_gloves',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 138,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_GLOVES,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 7,
+            maxLevel: 10,
+            action: 'craft_leather_boots',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 163,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_BOOTS,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 11,
+            maxLevel: 13,
+            action: 'craft_leather_vambraces',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 185,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_VAMBRACES,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 14,
+            maxLevel: 17,
+            action: 'craft_leather_chaps',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 250,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_CHAPS,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 18,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 270,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_BODY,
+            itemConsumed: Items.LEATHER
         }
     ],
 

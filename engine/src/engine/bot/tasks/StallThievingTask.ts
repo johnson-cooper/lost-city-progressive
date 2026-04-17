@@ -5,12 +5,14 @@ import {
     bankInvId, StuckDetector, ProgressWatchdog, advanceBankWalk,
     teleportNear, randInt, findLocNear
 } from '#/engine/bot/tasks/BotTaskBase.js';
+import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
 
 const HP_SAFE_THRESHOLD = 15;
 const HEAL_IF_HP_BELOW = 20;
 
-export class BakerStallThiefTask extends BotTask {
+export class StallThievingTask extends BotTask {
+    private step: SkillStep;
     private state: 'VALIDATE' | 'POSITION' | 'AWARENESS' | 'INTERACT' | 'INVENTORY_MANAGEMENT' | 'bank_walk' | 'bank_done' | 'eat' | 'flee' = 'VALIDATE';
     private interactTicks = 0;
     private lastXp = 0;
@@ -19,26 +21,29 @@ export class BakerStallThiefTask extends BotTask {
     private stunTicks = 0;
     private currentStall: Loc | null = null;
 
-    private readonly STALL_ID = 2561;
-    private readonly BAKER_NPC_ID = 591;
+    private readonly stallId: number;
+    private readonly ownerNpcName: string;
     private readonly GUARD_NPC_ID = 9;
-    private readonly LOOT_IDS = [1891, 1893, 1895, 2309, 1901];
+    private readonly lootId: number;
     private readonly ACTION_DELAY = 7;
 
     private readonly stuck = new StuckDetector(30, 4, 2);
     private readonly watchdog = new ProgressWatchdog();
 
-    constructor() {
-        super('BakerStallThief');
+    constructor(step: SkillStep) {
+        super('StallThieving');
+        this.step = step;
+        this.stallId = step.extra?.stallId as number;
+        this.ownerNpcName = step.extra?.npcType as string;
+        this.lootId = step.itemGained!;
     }
 
     private debug(player: Player, message: string): void {
-        console.log(`[BakerStallThief][${player.username}][${this.state}] ${message}`);
+        console.log(`[StallThieving][${player.username}][${this.state}] ${message}`);
     }
 
     shouldRun(player: Player): boolean {
-        // Level 5 Thieving required
-        if (getBaseLevel(player, PlayerStat.THIEVING) < 5) return false;
+        if (getBaseLevel(player, PlayerStat.THIEVING) < this.step.minLevel) return false;
 
         const hp = player.stats[PlayerStat.HITPOINTS];
         if (hp < HP_SAFE_THRESHOLD) {
@@ -65,7 +70,6 @@ export class BakerStallThiefTask extends BotTask {
         }
 
         // --- STUN CHECK ---
-        // Runs before state evaluation to properly catch HP drops right after a cooldown ends
         if (this.lastHp > 0) {
             const currentHp = player.stats[PlayerStat.HITPOINTS];
             const hpDrop = this.lastHp - currentHp;
@@ -105,7 +109,7 @@ export class BakerStallThiefTask extends BotTask {
 
         // --- VALIDATE ---
         if (this.state === 'VALIDATE') {
-            if (getBaseLevel(player, PlayerStat.THIEVING) < 5) {
+            if (getBaseLevel(player, PlayerStat.THIEVING) < this.step.minLevel) {
                 this.interrupt();
                 return;
             }
@@ -136,7 +140,6 @@ export class BakerStallThiefTask extends BotTask {
 
         // --- INVENTORY_MANAGEMENT ---
         if (this.state === 'INVENTORY_MANAGEMENT') {
-            // Check if we need to heal first
             if (this._shouldHeal(player) && this._hasFoodInInventory(player)) {
                 this.state = 'eat';
                 return;
@@ -161,13 +164,11 @@ export class BakerStallThiefTask extends BotTask {
 
         // --- POSITION ---
         if (this.state === 'POSITION') {
-            // Find stall
-            const stall = findLocNear(player.x, player.z, player.level, this.STALL_ID, 20);
+            const stall = findLocNear(player.x, player.z, player.level, this.stallId, 20);
             if (!stall) {
-                // Not near ardy market probably, let's walk there
-                // Ardougne Baker Stall is around 2667, 3310
-                if (!isNear(player, 2667, 3310, 15)) {
-                    this._stuckWalk(player, 2667, 3310);
+                const [sx, sz] = this.step.location;
+                if (!isNear(player, sx, sz, 15)) {
+                    this._stuckWalk(player, sx, sz);
                     return;
                 }
                 this.approachTicks++;
@@ -181,10 +182,18 @@ export class BakerStallThiefTask extends BotTask {
             this.approachTicks = 0;
             this.currentStall = stall;
 
-            // Try to position specifically to avoid line of sight, e.g. behind the stall
-            // Stall is at 2667, 3310, Baker usually faces south. Safest tile is inside the stall or to the sides
-            const safeX = stall.x - 1; // Stand slightly west or east of the actual stall
-            const safeZ = stall.z;
+            // Ardougne Market stalls logic
+            let safeX = stall.x;
+            let safeZ = stall.z;
+
+            // Simple heuristic to stand behind or side of stall
+            if (this.stallId === 2561) { // Baker
+                 safeX = stall.x - 1;
+                 safeZ = stall.z;
+            } else if (this.stallId === 2560) { // Silk
+                 safeX = stall.x;
+                 safeZ = stall.z + 1;
+            }
 
             if (!isNear(player, safeX, safeZ, 1)) {
                 walkTo(player, safeX, safeZ);
@@ -197,23 +206,12 @@ export class BakerStallThiefTask extends BotTask {
 
         // --- AWARENESS ---
         if (this.state === 'AWARENESS') {
-            // Check for guards
             const guard = findNpcNear(player.x, player.z, player.level, this.GUARD_NPC_ID, 6);
+            const owner = findNpcByName(player.x, player.z, player.level, this.ownerNpcName, 3);
 
-            // Check if baker is facing us (simplified as distance check for now)
-            const baker = findNpcNear(player.x, player.z, player.level, this.BAKER_NPC_ID, 3);
-
-            // Basic awareness: if guard or baker is too close, pause for a tick or two
-            if (guard || baker) {
-                this.debug(player, 'Guard or Baker detected, pausing...');
+            if (guard || owner) {
+                this.debug(player, 'Guard or Owner detected, pausing...');
                 this.cooldown = randInt(2, 5);
-
-                // Reposition logic: back away slightly
-                if (baker && this.currentStall) {
-                    walkTo(player, this.currentStall.x - 2, this.currentStall.z + 1);
-                }
-
-                // Keep checking awareness
                 return;
             }
 
@@ -238,18 +236,12 @@ export class BakerStallThiefTask extends BotTask {
                 return;
             }
 
-            // Track HP before interacting
             this.lastHp = player.stats[PlayerStat.HITPOINTS];
-
             this.interactTicks++;
-            interactLocOp(player, this.currentStall, 2); // Steal-from is usually op 2 on stalls
-
+            interactLocOp(player, this.currentStall, 2);
             this.lastXp = player.stats[PlayerStat.THIEVING];
-
             this.watchdog.notifyActivity();
-            this.cooldown = this.ACTION_DELAY; // Removed human-like click delay for in-game bot
-
-            // Set state to check stun after cooldown
+            this.cooldown = this.ACTION_DELAY;
             this.state = 'VALIDATE';
             return;
         }
@@ -286,23 +278,18 @@ export class BakerStallThiefTask extends BotTask {
     private _eatFood(player: Player): void {
         const inv = player.getInventory(InvType.INV);
         if (!inv) return;
-
         const foodIds = [373, 379, 329, 333, 325, 315];
-
         for (const foodId of foodIds) {
             for (let slot = 0; slot < inv.capacity; slot++) {
                 const item = inv.get(slot);
                 if (!item || item.id !== foodId) continue;
-
                 inv.remove(foodId, 1);
                 this.debug(player, `ate ${item.id} to heal`);
-
                 this.cooldown = 2;
                 this.state = 'VALIDATE';
                 return;
             }
         }
-
         this.debug(player, `no food to eat`);
         this.state = 'bank_walk';
     }
@@ -310,26 +297,22 @@ export class BakerStallThiefTask extends BotTask {
     private _depositLoot(player: Player): void {
         const bid = bankInvId();
         if (bid === -1) return;
-
         const bank = player.getInventory(bid);
         const inv = player.getInventory(InvType.INV);
         if (!bank || !inv) return;
-
         let deposited = 0;
-
+        // Collect all possible loot from all stalls
+        const lootIds = [1891, 1893, 1895, 2309, 1901, 950, 442, 2007];
         for (let slot = 0; slot < inv.capacity; slot++) {
             const item = inv.get(slot);
             if (!item) continue;
-            // Only deposit loot
-            if (!this.LOOT_IDS.includes(item.id)) continue;
-
+            if (!lootIds.includes(item.id)) continue;
             const moved = inv.remove(item.id, item.count);
             if (moved.completed > 0) {
                 bank.add(item.id, moved.completed);
                 deposited += moved.completed;
             }
         }
-
         this.debug(player, `deposited ${deposited} items`);
     }
 
@@ -338,17 +321,13 @@ export class BakerStallThiefTask extends BotTask {
             walkTo(player, lx, lz);
             return;
         }
-
         if (this.stuck.desperatelyStuck) {
-            this.debug(player, `desperately stuck; teleporting`);
             teleportNear(player, lx, lz);
             this.stuck.reset();
             return;
         }
-
         const wx = player.x + randInt(-5, 5);
         const wz = player.z + randInt(-5, 5);
-        this.debug(player, `stuck fallback to ${wx}, ${wz}`);
         walkTo(player, wx, wz);
     }
 }
