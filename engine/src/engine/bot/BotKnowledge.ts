@@ -13,6 +13,7 @@ export const Items = {
     MITHRIL_AXE: 1355,
     ADAMANT_AXE: 1357,
     RUNE_AXE: 1359,
+    BLACK_AXE: 1361,
 
     // Pickaxes  (all verified)
     BRONZE_PICKAXE: 1265,
@@ -62,8 +63,33 @@ export const Items = {
     GOLD_BAR: 2357,
     HAMMER: 2347,
 
+    BLACK_PLATEBODY: 1125,
     ADAMANT_PLATEBODY: 1123,
     RUNE_PLATEBODY: 1127,
+
+    BLACK_PLATELEGS: 1077,
+    BRONZE_PLATELEGS: 1075,
+    IRON_PLATELEGS: 1067,
+    STEEL_PLATELEGS: 1069,
+    MITHRIL_PLATELEGS: 1071,
+    ADAMANT_PLATELEGS: 1073,
+    RUNE_PLATELEGS: 1079,
+
+    BRONZE_CHAINBODY: 1103,
+    IRON_CHAINBODY: 1101,
+    STEEL_CHAINBODY: 1105,
+    BLACK_CHAINBODY: 1107,
+    MITHRIL_CHAINBODY: 1109,
+    ADAMANT_CHAINBODY: 1111,
+    RUNE_CHAINBODY: 1113,
+
+    BRONZE_PLATESKIRT: 1087,
+    IRON_PLATESKIRT: 1081,
+    STEEL_PLATESKIRT: 1083,
+    BLACK_PLATESKIRT: 1089,
+    MITHRIL_PLATESKIRT: 1085,
+    ADAMANT_PLATESKIRT: 1091,
+    RUNE_PLATESKIRT: 1093,
 
     // Raw fish  (all verified)
     RAW_SHRIMP: 317,
@@ -74,6 +100,8 @@ export const Items = {
     RAW_LOBSTER: 377,
     RAW_SWORDFISH: 371,
     RAW_SHARK: 383,
+    RAW_MANTA_RAY: 389,
+    RAW_SEA_TURTLE: 395,
 
     // Cooked fish  (all verified)
     SHRIMP: 315,
@@ -84,6 +112,8 @@ export const Items = {
     LOBSTER: 379,
     SWORDFISH: 373,
     SHARK: 385,
+    MANTA_RAY: 391,
+    SEA_TURTLE: 397,
 
     // Combat drops
     BONES: 526,
@@ -92,29 +122,41 @@ export const Items = {
     RAW_CHICKEN: 2138,
     RAW_BEEF: 2312,
 
-    // ── Goblin / early combat drops ──────────────────────────────────────────
+    // ── Combat drops ──────────────────────────────────────────────────────────
     GOBLIN_MAIL: 288,
+
     BRONZE_MED_HELM: 1139,
+    IRON_MED_HELM: 1137,
+    STEEL_MED_HELM: 1141,
+    MITHRIL_MED_HELM: 1143,
+    ADAMANT_MED_HELM: 1145,
+    RUNE_MED_HELM: 1147,
+
     BRONZE_FULL_HELM: 1155,
-    BRONZE_SQ_SHIELD: 1173,
-    BRONZE_KITESHIELD: 1189,
-    BRONZE_PLATEBODY: 1117,
-
-    BRONZE_DAGGER: 1205,
-    BRONZE_LONGSWORD: 1291,
-    BRONZE_2H_SWORD: 1307,
-
-    // ── Iron drops (early upgrade tier) ─────────────────────────────────────
-    IRON_MED_HELM: 1141,
     IRON_FULL_HELM: 1153,
+    STEEL_FULL_HELM: 1157,
+    BLACK_FULL_HELM: 1165,
+    MITHRIL_FULL_HELM: 1159,
+    ADAMANT_FULL_HELM: 1161,
+    RUNE_FULL_HELM: 1163,
+
+    BRONZE_SQ_SHIELD: 1173,
     IRON_SQ_SHIELD: 1175,
+    STEEL_SQ_SHIELD: 1177,
+    MITHRIL_SQ_SHIELD: 1181,
+    ADAMANT_SQ_SHIELD: 1183,
+    RUNE_SQ_SHIELD: 1185,
+
+    BRONZE_KITESHIELD: 1189,
     IRON_KITESHIELD: 1191,
+    STEEL_KITESHIELD: 1193,
+    BLACK_KITESHIELD: 1195,
+    MITHRIL_KITESHIELD: 1197,
+    ADAMANT_KITESHIELD: 1199,
+    RUNE_KITESHIELD: 1201,
+
     IRON_PLATEBODY: 1115,
     STEEL_PLATEBODY: 1119,
-
-    IRON_DAGGER: 1203,
-    IRON_LONGSWORD: 1293,
-    IRON_2H_SWORD: 1309,
 
     // Food
     BREAD: 2309,
@@ -138,6 +180,31 @@ export const Items = {
     HARD_LEATHER_BODY: 1131,
     DRAGON_LEATHER: 1745,
     DRAGON_BODY: 1135,
+
+    DRAGON_HIDE_GREEN: 1753,
+    DRAGON_HIDE_BLUE: 1751,
+    DRAGON_HIDE_RED: 1749,
+    DRAGON_HIDE_BLACK: 1747,
+
+    DRAGON_LEATHER_GREEN: 1745,
+    DRAGON_LEATHER_BLUE: 2505,
+    DRAGON_LEATHER_RED: 2507,
+    DRAGON_LEATHER_BLACK: 2509,
+
+    DRAGON_BODY_GREEN: 1135,
+    DRAGON_BODY_BLUE: 2499,
+    DRAGON_BODY_RED: 2501,
+    DRAGON_BODY_BLACK: 2503,
+
+    DRAGON_VAMBRACES_GREEN: 1065,
+    DRAGON_VAMBRACES_BLUE: 2487,
+    DRAGON_VAMBRACES_RED: 2489,
+    DRAGON_VAMBRACES_BLACK: 2491,
+
+    DRAGON_CHAPS_GREEN: 1099,
+    DRAGON_CHAPS_BLUE: 2493,
+    DRAGON_CHAPS_RED: 2495,
+    DRAGON_CHAPS_BLACK: 2497,
 
     // Fletching
     ARROW_SHAFT: 52,
@@ -179,20 +246,82 @@ export const Items = {
     STEEL_SWORD: 1281,
     MITHRIL_SWORD: 1285,
     ADAMANT_SWORD: 1287,
+    RUNE_SWORD: 1289,
+    BLACK_SWORD: 1283,
+
+    // Weapons — longswords
+    BRONZE_LONGSWORD: 1291,
+    IRON_LONGSWORD: 1293,
+    STEEL_LONGSWORD: 1295,
+    BLACK_LONGSWORD: 1297,
+    MITHRIL_LONGSWORD: 1299,
+    ADAMANT_LONGSWORD: 1301,
+    RUNE_LONGSWORD: 1303,
+
+    // Weapons — daggers
+    BRONZE_DAGGER: 1205,
+    IRON_DAGGER: 1203,
+    STEEL_DAGGER: 1207,
+    BLACK_DAGGER: 1217,
+    MITHRIL_DAGGER: 1209,
+    ADAMANT_DAGGER: 1211,
+    RUNE_DAGGER: 1213,
 
     // Weapons — scimitars (Al Kharid, Zeke's only)
     BRONZE_SCIMITAR: 1321,
     IRON_SCIMITAR: 1323,
     STEEL_SCIMITAR: 1325,
+    BLACK_SCIMITAR: 1327,
     MITHRIL_SCIMITAR: 1329,
+    ADAMANT_SCIMITAR: 1331,
+    RUNE_SCIMITAR: 1333,
+
+    // Weapons — 2h swords
+    BRONZE_2H_SWORD: 1307,
+    IRON_2H_SWORD: 1309,
+    STEEL_2H_SWORD: 1311,
+    BLACK_2H_SWORD: 1313,
+    MITHRIL_2H_SWORD: 1315,
+    ADAMANT_2H_SWORD: 1317,
+    RUNE_2H_SWORD: 1319,
+
+    // Weapons — battleaxes
+    BRONZE_BATTLEAXE: 1375,
+    IRON_BATTLEAXE: 1363,
+    STEEL_BATTLEAXE: 1365,
+    BLACK_BATTLEAXE: 1367,
+    MITHRIL_BATTLEAXE: 1369,
+    ADAMANT_BATTLEAXE: 1371,
+    RUNE_BATTLEAXE: 1373,
+
+    // Weapons — maces
+    BRONZE_MACE: 1423,
+    IRON_MACE: 1420,
+    STEEL_MACE: 1425,
+    BLACK_MACE: 1427,
+    MITHRIL_MACE: 1429,
+    ADAMANT_MACE: 1431,
+    RUNE_MACE: 1433,
 
     // Arrows (Varrock archery shop)
     BRONZE_ARROW: 882,
     IRON_ARROW: 884,
     STEEL_ARROW: 886,
+    MITHRIL_ARROW: 888,
+    ADAMANT_ARROW: 890,
+    RUNE_ARROW: 892,
 
     // Magic
     STAFF_OF_AIR: 1381,
+    STAFF_OF_WATER: 1383,
+    STAFF_OF_EARTH: 1385,
+    STAFF_OF_FIRE: 1387,
+
+    BATTLESTAFF_FIRE: 1393,
+    BATTLESTAFF_WATER: 1395,
+    BATTLESTAFF_AIR: 1397,
+    BATTLESTAFF_EARTH: 1399,
+
     // Rune IDs (internal names have no underscore: airrune, mindrune, etc.)
     AIR_RUNE: 556,
     MIND_RUNE: 558,
@@ -200,6 +329,9 @@ export const Items = {
     EARTH_RUNE: 557,
     FIRE_RUNE: 554,
     BODY_RUNE: 559,
+    DEATH_RUNE: 560,
+    BLOOD_RUNE: 565,
+    SOUL_RUNE: 566,
 
     CAKE: 1891,
     SILK: 950,
@@ -215,12 +347,24 @@ export const Items = {
     EMERALD: 1607,
     RUBY: 1605,
     DIAMOND: 1603,
+
+    AMULET_OF_POWER: 1731,
+    AMULET_OF_STRENGTH: 1725,
+    AMULET_OF_MAGIC: 1727,
+    AMULET_OF_DEFENCE: 1729,
+    AMULET_OF_GLORY: 1704,
+    RING_OF_WEALTH: 2572,
+
     CHISEL: 1755,
     BUCKET: 1925,
     BUCKET_OF_WATER: 1929,
     JUG: 1935,
     JUG_OF_WATER: 1937,
     POT: 1931,
+
+    AMULET_MOULD: 1595,
+    NECKLACE_MOULD: 1597,
+    HOLY_SYMBOL_MOULD: 1599,
 
     // Higher runes
     COSMIC_RUNE: 564,
@@ -278,6 +422,8 @@ export const Items = {
 } as const;
 
 export const FOOD_IDS: number[] = [
+    Items.MANTA_RAY,
+    Items.SEA_TURTLE,
     Items.SHARK,
     Items.SWORDFISH,
     Items.LOBSTER,
@@ -384,7 +530,14 @@ export const Locations = {
     VARROCK_ARCHERY: [3233, 3425, 0] as [number, number, number], // ✅ Lowe's Archery
     VARROCK_RUNES: [3253, 3400, 0] as [number, number, number], // ✅ Aubury's Rune Shop
     VARROCK_STAFFS: [3202, 3434, 0] as [number, number, number], // ✅ Zaff's Superior Staffs
+    VARROCK_ARMOUR: [3229, 3438, 0] as [number, number, number], // ✅ Horvik's Armour
     AL_KHARID_SCIMITARS: [3274, 3190, 0] as [number, number, number], // ⛩ Zeke's — only F2P scimitar shop
+    AL_KHARID_LEGS: [3274, 3175, 0] as [number, number, number], // ⛩ Louie's Legs
+    AL_KHARID_SKIRTS: [3270, 3180, 0] as [number, number, number], // ⛩ Ranael's Skirts
+    FALADOR_SHIELDS: [2972, 3386, 0] as [number, number, number], // ✅ Cassie's Shields
+    FALADOR_CHAINS: [2972, 3314, 0] as [number, number, number], // ✅ Wayne's Chains
+    FALADOR_MACES: [2959, 3390, 0] as [number, number, number], // ✅ Flynn's Maces
+    PORT_SARIM_BATTLEAXES: [3026, 3249, 0] as [number, number, number], // ✅ Brian's Battleaxes
     PORT_SARIM_RUNES: [3013, 3224, 0] as [number, number, number], // ✅
     TAVERLEY_HERBS: [2893, 3448, 0] as [number, number, number], // ⛩ Jatix
     TAVERLEY_SWORDS: [2886, 3441, 0] as [number, number, number], // ⛩ Gaius
@@ -562,8 +715,23 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
             { itemId: Items.BRONZE_SWORD, cost: 32 },
             { itemId: Items.IRON_SWORD, cost: 112 },
             { itemId: Items.STEEL_SWORD, cost: 400 },
+            { itemId: Items.BLACK_SWORD, cost: 1000 },
             { itemId: Items.MITHRIL_SWORD, cost: 3000 },
-            { itemId: Items.ADAMANT_SWORD, cost: 12000 }
+            { itemId: Items.ADAMANT_SWORD, cost: 12000 },
+
+            { itemId: Items.BRONZE_LONGSWORD, cost: 50 },
+            { itemId: Items.IRON_LONGSWORD, cost: 175 },
+            { itemId: Items.STEEL_LONGSWORD, cost: 625 },
+            { itemId: Items.BLACK_LONGSWORD, cost: 1000 },
+            { itemId: Items.MITHRIL_LONGSWORD, cost: 4687 },
+            { itemId: Items.ADAMANT_LONGSWORD, cost: 18750 },
+
+            { itemId: Items.BRONZE_DAGGER, cost: 10 },
+            { itemId: Items.IRON_DAGGER, cost: 35 },
+            { itemId: Items.STEEL_DAGGER, cost: 125 },
+            { itemId: Items.BLACK_DAGGER, cost: 1000 },
+            { itemId: Items.MITHRIL_DAGGER, cost: 937 },
+            { itemId: Items.ADAMANT_DAGGER, cost: 3750 }
         ]
     },
 
@@ -598,6 +766,9 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
         stock: [
             { itemId: Items.SHEARS, cost: 1 },
             { itemId: Items.RING_MOULD, cost: 25 },
+            { itemId: Items.NECKLACE_MOULD, cost: 25 },
+            { itemId: Items.AMULET_MOULD, cost: 25 },
+            { itemId: Items.HOLY_SYMBOL_MOULD, cost: 25 },
             { itemId: Items.CHISEL, cost: 1 },
             { itemId: Items.NEEDLE, cost: 1 },
             { itemId: Items.THREAD, cost: 1 }
@@ -607,7 +778,26 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
     // Zaff's Superior Staffs — Varrock (staff_of_air 1000gp)
     VARROCK_STAFFS: {
         location: Locations.VARROCK_STAFFS,
-        stock: [{ itemId: Items.STAFF_OF_AIR, cost: 1000 }]
+        stock: [
+            { itemId: Items.STAFF_OF_AIR, cost: 1000 },
+            { itemId: Items.STAFF_OF_WATER, cost: 1000 },
+            { itemId: Items.STAFF_OF_EARTH, cost: 1000 },
+            { itemId: Items.STAFF_OF_FIRE, cost: 1000 }
+        ]
+    },
+
+    VARROCK_ARMOUR: {
+        location: Locations.VARROCK_ARMOUR,
+        stock: [
+            { itemId: Items.BRONZE_PLATEBODY, cost: 100 },
+            { itemId: Items.IRON_PLATEBODY, cost: 200 },
+            { itemId: Items.STEEL_PLATEBODY, cost: 400 },
+            { itemId: Items.MITHRIL_PLATEBODY, cost: 3000 },
+            { itemId: Items.BLACK_PLATEBODY, cost: 3000 },
+            { itemId: Items.IRON_PLATELEGS, cost: 100 },
+            { itemId: Items.STUDDED_BODY, cost: 700 },
+            { itemId: Items.STUDDED_CHAPS, cost: 700 }
+        ]
     },
 
     // Aemad's Adventuring Supplies — East Ardougne (vials for herblore)
@@ -637,6 +827,79 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
         ]
     },
 
+    AL_KHARID_LEGS: {
+        location: Locations.AL_KHARID_LEGS,
+        stock: [
+            { itemId: Items.BRONZE_PLATELEGS, cost: 100 },
+            { itemId: Items.IRON_PLATELEGS, cost: 400 },
+            { itemId: Items.STEEL_PLATELEGS, cost: 900 },
+            { itemId: Items.BLACK_PLATELEGS, cost: 1200 },
+            { itemId: Items.MITHRIL_PLATELEGS, cost: 2000 },
+            { itemId: Items.ADAMANT_PLATELEGS, cost: 13000 }
+        ]
+    },
+
+    AL_KHARID_SKIRTS: {
+        location: Locations.AL_KHARID_SKIRTS,
+        stock: [
+            { itemId: Items.BRONZE_PLATESKIRT, cost: 100 },
+            { itemId: Items.IRON_PLATESKIRT, cost: 400 },
+            { itemId: Items.STEEL_PLATESKIRT, cost: 900 },
+            { itemId: Items.BLACK_PLATESKIRT, cost: 1200 },
+            { itemId: Items.MITHRIL_PLATESKIRT, cost: 2000 },
+            { itemId: Items.ADAMANT_PLATESKIRT, cost: 13000 }
+        ]
+    },
+
+    FALADOR_SHIELDS: {
+        location: Locations.FALADOR_SHIELDS,
+        stock: [
+            { itemId: Items.BRONZE_SQ_SHIELD, cost: 48 },
+            { itemId: Items.IRON_SQ_SHIELD, cost: 168 },
+            { itemId: Items.STEEL_SQ_SHIELD, cost: 600 },
+            { itemId: Items.MITHRIL_SQ_SHIELD, cost: 1440 },
+            { itemId: Items.ADAMANT_SQ_SHIELD, cost: 3840 },
+            { itemId: Items.BRONZE_KITESHIELD, cost: 80 },
+            { itemId: Items.IRON_KITESHIELD, cost: 280 }
+        ]
+    },
+
+    FALADOR_CHAINS: {
+        location: Locations.FALADOR_CHAINS,
+        stock: [
+            { itemId: Items.BRONZE_CHAINBODY, cost: 60 },
+            { itemId: Items.IRON_CHAINBODY, cost: 210 },
+            { itemId: Items.STEEL_CHAINBODY, cost: 750 },
+            { itemId: Items.BLACK_CHAINBODY, cost: 1200 },
+            { itemId: Items.MITHRIL_CHAINBODY, cost: 1800 },
+            { itemId: Items.ADAMANT_CHAINBODY, cost: 4800 }
+        ]
+    },
+
+    FALADOR_MACES: {
+        location: Locations.FALADOR_MACES,
+        stock: [
+            { itemId: Items.BRONZE_MACE, cost: 18 },
+            { itemId: Items.IRON_MACE, cost: 63 },
+            { itemId: Items.STEEL_MACE, cost: 225 },
+            { itemId: Items.BLACK_MACE, cost: 450 },
+            { itemId: Items.MITHRIL_MACE, cost: 540 },
+            { itemId: Items.ADAMANT_MACE, cost: 1440 }
+        ]
+    },
+
+    PORT_SARIM_BATTLEAXES: {
+        location: Locations.PORT_SARIM_BATTLEAXES,
+        stock: [
+            { itemId: Items.BRONZE_BATTLEAXE, cost: 52 },
+            { itemId: Items.IRON_BATTLEAXE, cost: 182 },
+            { itemId: Items.STEEL_BATTLEAXE, cost: 650 },
+            { itemId: Items.BLACK_BATTLEAXE, cost: 1300 },
+            { itemId: Items.MITHRIL_BATTLEAXE, cost: 1560 },
+            { itemId: Items.ADAMANT_BATTLEAXE, cost: 4160 }
+        ]
+    },
+
     // Jatix's Herblore Shop — Taverley
     TAVERLEY_HERBS: {
         location: Locations.TAVERLEY_HERBS,
@@ -652,7 +915,10 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
         stock: [
             { itemId: Items.BRONZE_2H_SWORD, cost: 200 },
             { itemId: Items.IRON_2H_SWORD, cost: 300 },
-            { itemId: Items.STEEL_2H_SWORD, cost: 500 }
+            { itemId: Items.STEEL_2H_SWORD, cost: 500 },
+            { itemId: Items.BLACK_2H_SWORD, cost: 700 },
+            { itemId: Items.MITHRIL_2H_SWORD, cost: 1000 },
+            { itemId: Items.ADAMANT_2H_SWORD, cost: 15000 }
         ]
     }
 };
@@ -679,6 +945,7 @@ export const AxesByLevel: ToolRequirement[] = [
     { itemId: Items.BRONZE_AXE, levelReq: 1, shopKey: 'BOB_AXES' },
     { itemId: Items.IRON_AXE, levelReq: 1, shopKey: 'BOB_AXES' },
     { itemId: Items.STEEL_AXE, levelReq: 6, shopKey: 'BOB_AXES' },
+    { itemId: Items.BLACK_AXE, levelReq: 11, shopKey: '' },
     { itemId: Items.MITHRIL_AXE, levelReq: 21, shopKey: 'BOB_AXES' },
     { itemId: Items.ADAMANT_AXE, levelReq: 31, shopKey: 'BOB_AXES' },
     { itemId: Items.RUNE_AXE, levelReq: 41, shopKey: 'BOB_AXES' }
@@ -1810,15 +2077,51 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         {
             minLevel: 57,
-            maxLevel: 99,
+            maxLevel: 65,
             action: 'craft_leather_body',
             location: Locations.AL_KHARID_BANK,
             toolItemIds: [Items.NEEDLE, Items.THREAD],
             xpPerAction: 620,
             ticksPerAction: 4,
             successRate: 1.0,
-            itemGained: Items.DRAGON_BODY,
-            itemConsumed: Items.DRAGON_LEATHER
+            itemGained: Items.DRAGON_BODY_GREEN,
+            itemConsumed: Items.DRAGON_LEATHER_GREEN
+        },
+        {
+            minLevel: 66,
+            maxLevel: 72,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 700,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_BLUE,
+            itemConsumed: Items.DRAGON_LEATHER_BLUE
+        },
+        {
+            minLevel: 73,
+            maxLevel: 78,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 780,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_RED,
+            itemConsumed: Items.DRAGON_LEATHER_RED
+        },
+        {
+            minLevel: 79,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 860,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_BLACK,
+            itemConsumed: Items.DRAGON_LEATHER_BLACK
         }
     ],
 
@@ -1957,6 +2260,30 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.YEW_LOGS
         },
         {
+            minLevel: 75,
+            maxLevel: 84,
+            action: 'fletch_yew_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 750,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_YEW_LONGBOW,
+            itemConsumed: Items.YEW_LOGS
+        },
+        {
+            minLevel: 80,
+            maxLevel: 99,
+            action: 'fletch_magic_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 833,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_MAGIC_SHORTBOW,
+            itemConsumed: Items.MAGIC_LOGS
+        },
+        {
             minLevel: 85,
             maxLevel: 99,
             action: 'fletch_magic_longbow',
@@ -2083,6 +2410,32 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.YEW_SHORTBOW,
             itemConsumed: Items.UNSTRUNG_YEW_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 75,
+            maxLevel: 84,
+            action: 'string_yew_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 750,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.YEW_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_YEW_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 80,
+            maxLevel: 99,
+            action: 'string_magic_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 833,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.MAGIC_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_MAGIC_SHORTBOW,
             extra: { stringItem: Items.BOW_STRING }
         },
         {
