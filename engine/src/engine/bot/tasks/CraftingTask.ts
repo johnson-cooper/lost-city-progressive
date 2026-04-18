@@ -45,6 +45,7 @@ import {
     advanceBankWalk,
     botTeleport,
     interactHeldOpU,
+    interactLocOp,
     addXp
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
@@ -450,7 +451,7 @@ export class CraftingTask extends BotTask {
 
                     if (hasItem(player, Items.COW_HIDE)) {
                         // Also ensure we have some coins for tanning
-                        if (countItem(player, Items.COINS) < 27) {
+                        if (inv && bank && countItem(player, Items.COINS) < 27) {
                             for (let i = 0; i < bank.capacity; i++) {
                                 if (bank.get(i)?.id === Items.COINS) {
                                     const moved = bank.remove(Items.COINS, 1000);
@@ -467,7 +468,7 @@ export class CraftingTask extends BotTask {
 
                 // Deposit crafted items
                 if (inv && bank) {
-                    const products = [Items.LEATHER_GLOVES, Items.LEATHER_BOOTS, Items.LEATHER_VAMBRACES, Items.LEATHER_CHAPS, Items.LEATHER_BODY, Items.HARD_LEATHER_BODY];
+                    const products: number[] = [Items.LEATHER_GLOVES, Items.LEATHER_BOOTS, Items.LEATHER_VAMBRACES, Items.LEATHER_CHAPS, Items.LEATHER_BODY, Items.HARD_LEATHER_BODY];
                     for (let i = 0; i < inv.capacity; i++) {
                         const item = inv.get(i);
                         if (item && products.includes(item.id)) {
@@ -558,10 +559,13 @@ export class CraftingTask extends BotTask {
                 const toTan = Math.min(hideCount, coins);
 
                 if (toTan > 0) {
-                    inv.remove(Items.COW_HIDE, toTan);
-                    inv.remove(Items.COINS, toTan);
-                    inv.add(Items.LEATHER, toTan);
-                    console.log(`[CraftingTask][${player.username}] Tanned ${toTan} leather`);
+                    const inv = player.getInventory(InvType.INV);
+                    if (inv) {
+                        inv.remove(Items.COW_HIDE, toTan);
+                        inv.remove(Items.COINS, toTan);
+                        inv.add(Items.LEATHER, toTan);
+                        console.log(`[CraftingTask][${player.username}] Tanned ${toTan} leather`);
+                    }
                 }
 
                 this.p2State = 'bank_walk';
@@ -856,7 +860,7 @@ export class CraftingTask extends BotTask {
 
                 if (inv && bank) {
                     // Deposit finished products
-                    const products = [Items.SOFT_CLAY, Items.POT];
+                    const products: number[] = [Items.SOFT_CLAY, Items.POT];
                     for (let i = 0; i < inv.capacity; i++) {
                         const item = inv.get(i);
                         if (item && products.includes(item.id)) {
@@ -1025,7 +1029,7 @@ export class CraftingTask extends BotTask {
 
                 // Deposit cut gems
                 if (inv && bank) {
-                    const gems = [Items.SAPPHIRE, Items.EMERALD, Items.RUBY, Items.DIAMOND];
+                    const gems: number[] = [Items.SAPPHIRE, Items.EMERALD, Items.RUBY, Items.DIAMOND];
                     for (let i = 0; i < inv.capacity; i++) {
                         const item = inv.get(i);
                         if (item && gems.includes(item.id)) {
