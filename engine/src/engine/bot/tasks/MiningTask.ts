@@ -287,7 +287,7 @@ export class MiningTask extends BotTask {
         }
 
         // Get player's actual mining level using base level
-        const miningLevel = player.baseLevels[PlayerStat.MINING];
+        const miningLevel = getBaseLevel(player, PlayerStat.MINING);
 
         // Level 1-14: copper and tin available
         if (miningLevel <= 14) {

@@ -1,6 +1,6 @@
 import {
     BotTask, Player, Loc, InvType, Npc,
-    walkTo, interactLocOp, findNpcNear, countItem,
+    walkTo, interactLocOp, findNpcNear, findNpcByName, countItem,
     isInventoryFull, isNear, getBaseLevel, PlayerStat,
     bankInvId, StuckDetector, ProgressWatchdog, advanceBankWalk,
     teleportNear, randInt, findLocNear

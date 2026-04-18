@@ -62,6 +62,9 @@ export const Items = {
     GOLD_BAR: 2357,
     HAMMER: 2347,
 
+    ADAMANT_PLATEBODY: 1123,
+    RUNE_PLATEBODY: 1127,
+
     // Raw fish  (all verified)
     RAW_SHRIMP: 317,
     RAW_SARDINE: 327,
@@ -128,8 +131,13 @@ export const Items = {
     LEATHER_VAMBRACES: 1063,
     LEATHER_CHAPS: 1095,
     LEATHER_BODY: 1129,
+    STUDDED_BODY: 1133,
+    STUDDED_CHAPS: 1097,
+    STUDS: 2370,
     HARD_LEATHER: 1743,
     HARD_LEATHER_BODY: 1131,
+    DRAGON_LEATHER: 1745,
+    DRAGON_BODY: 1135,
 
     // Fletching
     ARROW_SHAFT: 52,
@@ -177,11 +185,6 @@ export const Items = {
     IRON_SCIMITAR: 1323,
     STEEL_SCIMITAR: 1325,
     MITHRIL_SCIMITAR: 1329,
-
-    // Bows (Varrock archery shop)
-    SHORTBOW: 841,
-    OAK_SHORTBOW: 843,
-    LONGBOW: 839,
 
     // Arrows (Varrock archery shop)
     BRONZE_ARROW: 882,
@@ -429,7 +432,7 @@ export const Locations = {
     CHAOS_DRUIDS_TAVERLY: [2931, 9847, 0] as [number, number, number], // 🚪 centre of chaos druid corridor (level 13, open area)
 
     // ── Skilling stations ─────────────────────────────────────────────────────
-    ALKHRAID_RANGE: [3292, 3203, 0] as [number, number, number], // ⛩ Al Kharid palace range — inside palace past curtain (3292,3202)
+    AL_KHARID_RANGE: [3292, 3203, 0] as [number, number, number], // ⛩ Al Kharid palace range — inside palace past curtain (3292,3202)
     VARROCK_RANGE: [3237, 3410, 0] as [number, number, number], // ✅ cooking range in house SW of Varrock west bank — open building, no gate
     FALADOR_RANGE: [3040, 3366, 0] as [number, number, number], // ✅ cooking range in house west of Falador east bank — open building
     FIRE_LUMBRIDGE_ROAD: [3218, 3253, 0] as [number, number, number], // ✅ firemaking road
@@ -856,12 +859,12 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // ── Cooking ──────────────────────────────────────────────────────────────
     // XP from cooking_generic.dbrow experience, levels from levelrequired.
     COOKING: [
-        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
-        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
-        { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
-        { minLevel: 25, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 900, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_SALMON, itemGained: Items.SALMON },
-        { minLevel: 40, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.8, itemConsumed: Items.RAW_LOBSTER, itemGained: Items.LOBSTER },
-        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
+        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
+        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
+        { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
+        { minLevel: 25, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 900, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_SALMON, itemGained: Items.SALMON },
+        { minLevel: 40, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.8, itemConsumed: Items.RAW_LOBSTER, itemGained: Items.LOBSTER },
+        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
         { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
         { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
         { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
@@ -1484,7 +1487,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 6,
             successRate: 1.0,
             itemConsumed: Items.ADAMANT_BAR,
-            itemGained: 1123, // adamant_platebody
+            itemGained: Items.ADAMANT_PLATEBODY,
             extra: { barCount: 5 }
         },
         {
@@ -1497,7 +1500,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 6,
             successRate: 1.0,
             itemConsumed: Items.RUNE_BAR,
-            itemGained: 1127, // rune_platebody
+            itemGained: Items.RUNE_PLATEBODY,
             extra: { barCount: 5 }
         }
     ],
@@ -1774,8 +1777,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             xpPerAction: 620,
             ticksPerAction: 4,
             successRate: 1.0,
-            itemGained: 1135, // dragon_body
-            itemConsumed: 1745 // dragon_leather
+            itemGained: Items.DRAGON_BODY,
+            itemConsumed: Items.DRAGON_LEATHER
         }
     ],
 

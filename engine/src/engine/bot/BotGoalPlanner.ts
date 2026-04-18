@@ -175,7 +175,7 @@ export class BotGoalPlanner {
         // the bot doesn't accidentally bank its axe/pickaxe/weapon alongside the
         // logs/ores/fish that actually caused the overflow.
         if (isInventoryFull(player)) {
-            const keepIds = new Set<number>([Items.COINS]);
+            const keepIds = new Set<number>([Items.COINS, Items.STUDS]);
             for (const steps of Object.values(SkillProgression)) {
                 for (const step of steps) {
                     for (const id of step.toolItemIds) keepIds.add(id);
