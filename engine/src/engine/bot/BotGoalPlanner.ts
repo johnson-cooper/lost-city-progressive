@@ -133,7 +133,7 @@ const SKILLS_WITH_CONTENT = new Set(
 // Shops close enough to Lumbridge spawn that bots can reach without getting stuck.
 // Bots will ONLY go to these shops automatically. Starter weapons/tools are given
 // via InitTask so bots never need to walk to Varrock or Port Sarim just to begin.
-const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMITARS', 'AL_KHARID_CRAFTING', 'VARROCK_ARCHERY', 'VARROCK_RUNES', 'VARROCK_STAFFS']);
+const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMITARS', 'AL_KHARID_CRAFTING', 'VARROCK_ARCHERY', 'VARROCK_RUNES', 'VARROCK_STAFFS', 'TAVERLEY_HERBS', 'TAVERLEY_SWORDS']);
 
 // ── Planner ───────────────────────────────────────────────────────────────────
 

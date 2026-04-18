@@ -114,11 +114,14 @@ const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
     Locations.VARROCK_WEST_BANK,
     Locations.VARROCK_EAST_BANK,
     Locations.AL_KHARID_BANK,
+    Locations.FALADOR_WEST_BANK,
     Locations.FALADOR_EAST_BANK,
     Locations.SEERS_BANK,
     Locations.EDGEVILLE_BANK,
     Locations.YANILLE_BANK,
-    Locations.CATHERBY_BANK
+    Locations.CATHERBY_BANK,
+    Locations.ARDOUGNE_NORTH_BANK,
+    Locations.ARDOUGNE_SOUTH_BANK
 ];
 
 /**
