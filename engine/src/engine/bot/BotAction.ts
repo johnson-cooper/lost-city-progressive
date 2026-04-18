@@ -191,8 +191,8 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // (2956, 3143).  The boat costs 30 coins and triggers a dialog that
         // bots cannot handle natively, so teleport is used instead.
         name: 'PortSarimToKaramja',
-        destInRegion: (x, _z) => x < 2970,
-        playerInRegion: (x, _z) => x < 2970,
+        destInRegion: (x, z) => x < 2970 && z < 3250,
+        playerInRegion: (x, z) => x < 2970 && z < 3250,
         approachX: 3031,
         approachZ: 3217,
         arrivalRadius: 5,
@@ -206,12 +206,136 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // teleported to the Port Sarim arrival tile (3047, 3235).
         name: 'KaramjaToPortSarim',
         destInRegion: (x, _z) => x >= 2990,
-        playerInRegion: (x, _z) => x >= 2990,
+        playerInRegion: (x, z) => x >= 2990 || z > 3250,
         approachX: 2956,
         approachZ: 3145,
         arrivalRadius: 5,
         teleportDestX: 3047,
         teleportDestZ: 3235
+    },
+    {
+        // ── Port Sarim → Entrana (boat) ───────────────────────────────────────
+        // Bots heading to Entrana (gathering herblore supplies or woodcutting)
+        // walk to the Port Sarim northern docks and teleport to Entrana.
+        name: 'PortSarimToEntrana',
+        destInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        playerInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        approachX: 3048,
+        approachZ: 3234,
+        arrivalRadius: 5,
+        teleportDestX: 2834,
+        teleportDestZ: 3335
+    },
+    {
+        // ── Entrana → Port Sarim (boat return) ────────────────────────────────
+        name: 'EntranaToPortSarim',
+        destInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        playerInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        approachX: 2834,
+        approachZ: 3335,
+        arrivalRadius: 5,
+        teleportDestX: 3048,
+        teleportDestZ: 3234
+    },
+    {
+        // ── Shantay Pass (Mainland → Desert) ──────────────────────────────────
+        // Access to the Kharidian desert via Shantay Pass.  Requires a toll/pass
+        // so bots teleport through the gate.
+        name: 'ShantayPass',
+        destInRegion: (x, z) => x >= 3200 && x <= 3400 && z <= 3115,
+        playerInRegion: (x, z) => z <= 3115,
+        approachX: 3303,
+        approachZ: 3123,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3115
+    },
+    {
+        // ── Shantay Pass Exit (Desert → Mainland) ─────────────────────────────
+        name: 'ShantayPassExit',
+        destInRegion: (x, z) => z >= 3117,
+        playerInRegion: (x, z) => z >= 3117,
+        approachX: 3303,
+        approachZ: 3116,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3123
+    },
+    {
+        // ── Taverley Gate (Falador → Taverley) ────────────────────────────────
+        // The long wall between Falador and Taverley.
+        name: 'TaverleyGate',
+        destInRegion: (x, z) => x < 2933 && z > 3250,
+        playerInRegion: (x, z) => x < 2933 && z > 3250,
+        approachX: 2936,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Taverley Gate Exit (Taverley → Falador) ───────────────────────────
+        name: 'TaverleyGateExit',
+        destInRegion: (x, _z) => x >= 2933,
+        playerInRegion: (x, _z) => x >= 2933,
+        approachX: 2932,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate (East → West) ─────────────────────────────────
+        name: 'ArdougneNorthGate',
+        destInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        playerInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        approachX: 2636,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate Exit (West → East) ────────────────────────────
+        name: 'ArdougneNorthGateExit',
+        destInRegion: (x, _z) => x >= 2634,
+        playerInRegion: (x, _z) => x >= 2634,
+        approachX: 2633,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Gate (East → West) ──────────────────────────────────
+        // Gate between East and West Ardougne.
+        name: 'WestArdougneGate',
+        destInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        playerInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        approachX: 2555,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Exit (West → East) ──────────────────────────────────
+        name: 'WestArdougneExit',
+        destInRegion: (x, z) => x >= 2551,
+        playerInRegion: (x, z) => x >= 2551,
+        approachX: 2551,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── Draynor Manor (Mainland → Manor) ──────────────────────────────────
+        // Fenced grounds of Draynor Manor.
+        name: 'DraynorManor',
+        destInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        playerInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        approachX: 3108,
+        approachZ: 3329,
+        arrivalRadius: 4
+    },
+    {
+        // ── Hemenster (Mainland → Hemenster) ──────────────────────────────────
+        // Fenced fishing village.
+        name: 'Hemenster',
+        destInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        playerInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        approachX: 2643,
+        approachZ: 3433,
+        arrivalRadius: 4
     },
     {
         // ── Lumbridge sheep pen ───────────────────────────────────────────────
@@ -299,6 +423,27 @@ const ROUTE_CORRIDORS: RouteCorridor[] = [
         playerCleared: (x, _z) => x <= 3200,
         viaX: 3194,
         viaZ: 3226
+    },
+    {
+        // ── White Wolf Mountain — westbound bypass ────────────────────────────
+        // Bots heading from Taverley/Falador (x > 2870) toward Catherby/Seers
+        // (x < 2800) must route through the mountain pass at (2848, 3497).
+        // The BFS often gets lost in the mountain crags.
+        name: 'WhiteWolfMountainWest',
+        playerInZone: (x, z) => x > 2860 && x < 3000 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x < 2810,
+        playerCleared: (x, _z) => x <= 2850,
+        viaX: 2848,
+        viaZ: 3497
+    },
+    {
+        // ── White Wolf Mountain — eastbound bypass ────────────────────────────
+        name: 'WhiteWolfMountainEast',
+        playerInZone: (x, z) => x < 2830 && x > 2700 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x > 2880,
+        playerCleared: (x, _z) => x >= 2845,
+        viaX: 2848,
+        viaZ: 3497
     }
 ];
 
@@ -1380,7 +1525,7 @@ const GATE_OPEN_KEYWORDS = ['open', 'pay', 'pay-toll', 'walk-through', 'pass-thr
 const GATE_CLOSE_KEYWORDS = ['close', 'shut'];
 
 /** Loc debug-name prefixes that represent closeable barriers (curtains, etc.). */
-const BARRIER_NAME_PREFIXES = ['loc_1528']; // Al Kharid palace curtain (closed state)
+const BARRIER_NAME_PREFIXES = ['loc_1528', 'curtain']; // Al Kharid palace curtain (closed state)
 
 /** Big door prefixes - large double doors that also need opening */
 const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];

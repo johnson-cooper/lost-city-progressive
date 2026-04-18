@@ -352,8 +352,11 @@ export const Locations = {
     VARROCK_WEST_BANK: [3185, 3444, 0] as [number, number, number], // ✅
     VARROCK_EAST_BANK: [3253, 3420, 0] as [number, number, number], // ✅
     AL_KHARID_BANK: [3269, 3163, 0] as [number, number, number], // ⛩ inside Al Kharid (2 tiles past south door)
+    FALADOR_WEST_BANK: [2946, 3368, 0] as [number, number, number], // ✅
     FALADOR_EAST_BANK: [3013, 3355, 0] as [number, number, number], // ✅
     SEERS_BANK: [2725, 3493, 0] as [number, number, number], // ✅
+    ARDOUGNE_NORTH_BANK: [2615, 3332, 0] as [number, number, number], // ⛩
+    ARDOUGNE_SOUTH_BANK: [2655, 3283, 0] as [number, number, number], // ✅
 
     // ── Agility ───────────────────────────────────────────────────────────────
     GNOME_AGILITY: [2474, 3436, 0] as [number, number, number], // ✅
@@ -367,9 +370,11 @@ export const Locations = {
     VARROCK_SWORD_SHOP: [3205, 3420, 0] as [number, number, number], // ✅ swords/longswords/daggers — no scimitars
     VARROCK_ARCHERY: [3233, 3425, 0] as [number, number, number], // ✅ Lowe's Archery
     VARROCK_RUNES: [3253, 3400, 0] as [number, number, number], // ✅ Aubury's Rune Shop
-    VARROCK_STAFFS: [3203, 3235, 0] as [number, number, number], // ✅ Zaff's Superior Staffs
+    VARROCK_STAFFS: [3202, 3434, 0] as [number, number, number], // ✅ Zaff's Superior Staffs
     AL_KHARID_SCIMITARS: [3274, 3190, 0] as [number, number, number], // ⛩ Zeke's — only F2P scimitar shop
     PORT_SARIM_RUNES: [3013, 3224, 0] as [number, number, number], // ✅
+    TAVERLEY_HERBS: [2893, 3448, 0] as [number, number, number], // ⛩ Jatix
+    TAVERLEY_SWORDS: [2886, 3441, 0] as [number, number, number], // ⛩ Gaius
 
     // ── Woodcutting ───────────────────────────────────────────────────────────
     TREES_LUMBRIDGE: [3194, 3226, 0] as [number, number, number], // ✅ behind Lumbridge castle
@@ -382,6 +387,8 @@ export const Locations = {
     YEWS_FALADOR: [2987, 3340, 0] as [number, number, number], // ✅ south-east of Falador, near east bank
     MAPLES_SEERS: [2725, 3500, 0] as [number, number, number], // ✅
     MAGICS_SEERS: [2696, 3424, 0] as [number, number, number], // ✅
+    YEWS_SEERS: [2713, 3481, 0] as [number, number, number], // ✅
+    YEWS_EDGEVILLE: [3087, 3476, 0] as [number, number, number], // ✅
 
     // ── Mining ────────────────────────────────────────────────────────────────
     // MINE_DWARVEN is now mapped to Barbarian Village surface mine:
@@ -409,6 +416,7 @@ export const Locations = {
     FISH_BARBARIAN: [3105, 3432, 0] as [number, number, number], // ✅ trout + salmon (fly rod) — best accessible spot
     FISH_KARAMJA: [2924, 3173, 0] as [number, number, number], // ⛩ lobster + swordfish (pot/harpoon) — boat-routed via Port Sarim
     FISH_ALKHARID: [3277, 3142, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
+    FISH_CATHERBY: [2850, 3430, 0] as [number, number, number], // ✅ lobster + swordfish
     FISH_SHARK: [2600, 3415, 0] as [number, number, number], // Catherby
     // ── Combat ────────────────────────────────────────────────────────────────
     CHICKENS_LUMBRIDGE: [3237, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
@@ -613,6 +621,25 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
             { itemId: Items.IRON_SCIMITAR, cost: 200 },
             { itemId: Items.STEEL_SCIMITAR, cost: 600 },
             { itemId: Items.MITHRIL_SCIMITAR, cost: 4000 }
+        ]
+    },
+
+    // Jatix's Herblore Shop — Taverley
+    TAVERLEY_HERBS: {
+        location: Locations.TAVERLEY_HERBS,
+        stock: [
+            { itemId: Items.VIAL_EMPTY, cost: 2 },
+            { itemId: Items.EYE_OF_NEWT, cost: 3 }
+        ]
+    },
+
+    // Gaius' Two Handed Shop — Taverley
+    TAVERLEY_SWORDS: {
+        location: Locations.TAVERLEY_SWORDS,
+        stock: [
+            { itemId: Items.BRONZE_2H_SWORD, cost: 200 },
+            { itemId: Items.IRON_2H_SWORD, cost: 300 },
+            { itemId: Items.STEEL_2H_SWORD, cost: 500 }
         ]
     }
 };
