@@ -3,7 +3,7 @@ import {
     walkTo, interactLocOp, findNpcNear, findNpcByName, countItem,
     isInventoryFull, isNear, getBaseLevel, PlayerStat,
     bankInvId, StuckDetector, ProgressWatchdog, advanceBankWalk,
-    teleportNear, randInt, findLocNear
+    teleportNear, randInt, findLocNear, Items
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
