@@ -38,12 +38,13 @@ import {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOp,
     interactHeldOpU,
     openNearbyGate,
     isAdjacentToLoc,
     botTeleport
 } from '#/engine/bot/BotAction.js';
-import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
+import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP, FOOD_IDS } from '#/engine/bot/BotKnowledge.js';
 import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
@@ -237,11 +238,13 @@ export {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOp,
     interactHeldOpU,
     Items,
     Shops,
     Locations,
     getProgressionStep,
+    FOOD_IDS,
     getMissingPurchases,
     STARTING_COINS,
     openNearbyGate,

@@ -19,7 +19,7 @@ import { PlayerStat, getBaseLevel, hasItem, countItem, isInventoryFull } from '#
 import { Items, SkillProgression, getProgressionStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, canAffordStep, totalCostOfMissing } from '#/engine/bot/BotNeeds.js';
 import type { Purchase } from '#/engine/bot/BotNeeds.js';
-import { bankInvId, BotTask } from '#/engine/bot/tasks/BotTaskBase.js';
+import { bankInvId, BotTask, FOOD_IDS } from '#/engine/bot/tasks/BotTaskBase.js';
 import { InitTask, BuryBonesTask, IdleTask, BankTask } from '#/engine/bot/tasks/UtilTasks.js';
 import { ShopTripTask } from '#/engine/bot/tasks/ShopTripTask.js';
 import { WoodcuttingTask } from '#/engine/bot/tasks/WoodcuttingTask.js';
@@ -175,7 +175,7 @@ export class BotGoalPlanner {
         // the bot doesn't accidentally bank its axe/pickaxe/weapon alongside the
         // logs/ores/fish that actually caused the overflow.
         if (isInventoryFull(player)) {
-            const keepIds = new Set<number>([Items.COINS, Items.STUDS]);
+            const keepIds = new Set<number>([Items.COINS, Items.STUDS, ...FOOD_IDS]);
             for (const steps of Object.values(SkillProgression)) {
                 for (const step of steps) {
                     for (const id of step.toolItemIds) keepIds.add(id);

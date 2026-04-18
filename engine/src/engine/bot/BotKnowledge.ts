@@ -277,6 +277,19 @@ export const Items = {
     ATTACK_POTION_3: 121  // 3dose1attack — freshly brewed unf_guam + eye_of_newt
 } as const;
 
+export const FOOD_IDS: number[] = [
+    Items.SHARK,
+    Items.SWORDFISH,
+    Items.LOBSTER,
+    Items.SALMON,
+    Items.TROUT,
+    Items.HERRING,
+    Items.SARDINE,
+    Items.SHRIMP,
+    Items.BREAD,
+    Items.CAKE
+];
+
 /**
  * Maps grimy herb ID → [clean herb ID, herblore XP × 10].
  * XP values match RS2 (e.g. guam = 2.5 XP stored as 25).

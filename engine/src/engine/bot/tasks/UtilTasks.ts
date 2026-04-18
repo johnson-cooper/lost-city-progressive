@@ -9,7 +9,7 @@ import {
     Items, Locations, STARTING_COINS,
     teleportToSafety, teleportNear, randInt, bankInvId, StuckDetector,
     openNearbyGate, advanceBankWalk,
-    PlayerStat,
+    PlayerStat, FOOD_IDS,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import { GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
 
@@ -143,6 +143,43 @@ export class BankTask extends BotTask {
             if (this.keepItems.includes(item.id)) continue;
             const moved = inv.remove(item.id, item.count);
             if (moved.completed > 0) bank.add(item.id, moved.completed);
+        }
+        this._withdrawFood(player);
+    }
+
+    private _withdrawFood(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        let currentFoodCount = 0;
+        for (const foodId of FOOD_IDS) {
+            currentFoodCount += countItem(player, foodId);
+        }
+
+        if (currentFoodCount >= 5) return;
+
+        const toWithdraw = 8 - currentFoodCount;
+        let withdrawn = 0;
+
+        for (const foodId of FOOD_IDS) {
+            if (withdrawn >= toWithdraw) break;
+
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (it && it.id === foodId) {
+                    const amount = Math.min(toWithdraw - withdrawn, it.count);
+                    const moved = bank.remove(foodId, amount);
+                    if (moved.completed > 0) {
+                        inv.add(foodId, moved.completed);
+                        withdrawn += moved.completed;
+                    }
+                    break;
+                }
+            }
         }
     }
 }

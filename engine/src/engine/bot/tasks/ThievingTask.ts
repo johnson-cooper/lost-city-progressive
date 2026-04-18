@@ -28,7 +28,8 @@ import {
     INTERACT_TIMEOUT,
     StuckDetector,
     ProgressWatchdog,
-    advanceBankWalk
+    advanceBankWalk,
+    FOOD_IDS
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
@@ -43,6 +44,7 @@ const HP_SAFE_THRESHOLD = 15;
 /** Pre-emptive heal threshold — eat BEFORE pickpocket if HP is below this */
 const HP_PREEMPTIVE_THRESHOLD = 30;
 const HEAL_IF_HP_BELOW = 20;
+const FOOD_WITHDRAW_COUNT = 12;
 const MAX_TICKETS = 5;
 
 export class ThievingTask extends BotTask {
@@ -181,6 +183,7 @@ export class ThievingTask extends BotTask {
         // ── Bank deposit ─────────────────────────────────────────────
         if (this.state === 'bank_done') {
             this._depositLoot(player);
+            this._withdrawFood(player);
             this.state = 'walk';
             return;
         }
@@ -343,30 +346,11 @@ export class ThievingTask extends BotTask {
     }
 
     private _hasFoodInInventory(player: Player): boolean {
-        // Check for cooked fish that can heal - use raw numbers to avoid type errors
-        const foodIds = [315, 325, 333, 329, 379, 373];
-
-        for (const foodId of foodIds) {
+        for (const foodId of FOOD_IDS) {
             if (countItem(player, foodId) > 0) {
                 return true;
             }
         }
-
-        // Check bank for cooked fish
-        const bid = bankInvId();
-        if (bid !== -1) {
-            const bank = player.getInventory(bid);
-            if (bank) {
-                for (let i = 0; i < bank.capacity; i++) {
-                    const item = bank.get(i);
-                    if (!item) continue;
-                    if (foodIds.includes(item.id)) {
-                        return true;
-                    }
-                }
-            }
-        }
-
         return false;
     }
 
@@ -374,15 +358,11 @@ export class ThievingTask extends BotTask {
         const inv = player.getInventory(InvType.INV);
         if (!inv) return;
 
-        // Find food in inventory - use raw numbers (higher = more healing)
-        const foodIds = [373, 379, 329, 333, 325, 315];
-
-        for (const foodId of foodIds) {
+        for (const foodId of FOOD_IDS) {
             for (let slot = 0; slot < inv.capacity; slot++) {
                 const item = inv.get(slot);
                 if (!item || item.id !== foodId) continue;
 
-                // Eat the food
                 inv.remove(foodId, 1);
                 this.debug(player, `ate ${item.id} to heal`);
 
@@ -392,9 +372,44 @@ export class ThievingTask extends BotTask {
             }
         }
 
-        // No food found
         this.debug(player, `no food to eat`);
         this.state = 'bank_walk';
+    }
+
+    private _withdrawFood(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        let currentFoodCount = 0;
+        for (const foodId of FOOD_IDS) {
+            currentFoodCount += countItem(player, foodId);
+        }
+
+        if (currentFoodCount >= 5) return;
+
+        const toWithdraw = FOOD_WITHDRAW_COUNT - currentFoodCount;
+        let withdrawn = 0;
+
+        for (const foodId of FOOD_IDS) {
+            if (withdrawn >= toWithdraw) break;
+
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (it && it.id === foodId) {
+                    const amount = Math.min(toWithdraw - withdrawn, it.count);
+                    const moved = bank.remove(foodId, amount);
+                    if (moved.completed > 0) {
+                        inv.add(foodId, moved.completed);
+                        withdrawn += moved.completed;
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     private _depositLoot(player: Player): void {
@@ -413,6 +428,7 @@ export class ThievingTask extends BotTask {
             const item = inv.get(slot);
             if (!item) continue;
             if (lootableIds.includes(item.id)) continue;
+            if (FOOD_IDS.includes(item.id)) continue;
 
             const moved = inv.remove(item.id, item.count);
             if (moved.completed > 0) {

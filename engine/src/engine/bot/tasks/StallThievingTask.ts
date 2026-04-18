@@ -3,7 +3,7 @@ import {
     walkTo, interactLocOp, findNpcNear, findNpcByName, countItem,
     isInventoryFull, isNear, getBaseLevel, PlayerStat,
     bankInvId, StuckDetector, ProgressWatchdog, advanceBankWalk,
-    teleportNear, randInt, findLocNear, Items
+    teleportNear, randInt, findLocNear, Items, FOOD_IDS
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
@@ -156,6 +156,7 @@ export class StallThievingTask extends BotTask {
 
         if (this.state === 'bank_done') {
             this._depositLoot(player);
+            this._withdrawFood(player);
             this.state = 'VALIDATE';
             return;
         }
@@ -276,8 +277,7 @@ export class StallThievingTask extends BotTask {
     }
 
     private _hasFoodInInventory(player: Player): boolean {
-        const foodIds = [315, 325, 333, 329, 379, 373];
-        for (const foodId of foodIds) {
+        for (const foodId of FOOD_IDS) {
             if (countItem(player, foodId) > 0) {
                 return true;
             }
@@ -288,8 +288,7 @@ export class StallThievingTask extends BotTask {
     private _eatFood(player: Player): void {
         const inv = player.getInventory(InvType.INV);
         if (!inv) return;
-        const foodIds = [373, 379, 329, 333, 325, 315];
-        for (const foodId of foodIds) {
+        for (const foodId of FOOD_IDS) {
             for (let slot = 0; slot < inv.capacity; slot++) {
                 const item = inv.get(slot);
                 if (!item || item.id !== foodId) continue;
@@ -302,6 +301,42 @@ export class StallThievingTask extends BotTask {
         }
         this.debug(player, `no food to eat`);
         this.state = 'bank_walk';
+    }
+
+    private _withdrawFood(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        let currentFoodCount = 0;
+        for (const foodId of FOOD_IDS) {
+            currentFoodCount += countItem(player, foodId);
+        }
+
+        if (currentFoodCount >= 5) return;
+
+        const toWithdraw = 12 - currentFoodCount;
+        let withdrawn = 0;
+
+        for (const foodId of FOOD_IDS) {
+            if (withdrawn >= toWithdraw) break;
+
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (it && it.id === foodId) {
+                    const amount = Math.min(toWithdraw - withdrawn, it.count);
+                    const moved = bank.remove(foodId, amount);
+                    if (moved.completed > 0) {
+                        inv.add(foodId, moved.completed);
+                        withdrawn += moved.completed;
+                    }
+                    break;
+                }
+            }
+        }
     }
 
     private _depositLoot(player: Player): void {
@@ -322,6 +357,8 @@ export class StallThievingTask extends BotTask {
             const item = inv.get(slot);
             if (!item) continue;
             if (!lootIds.includes(item.id)) continue;
+            if (FOOD_IDS.includes(item.id)) continue;
+
             const moved = inv.remove(item.id, item.count);
             if (moved.completed > 0) {
                 bank.add(item.id, moved.completed);
