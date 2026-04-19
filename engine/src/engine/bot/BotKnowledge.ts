@@ -415,10 +415,28 @@ export const Items = {
     // Herblore — vials, additives, and potions
     VIAL_EMPTY: 229,      // empty glass vial (bought from Aemad / dropped by druids)
     VIAL_OF_WATER: 227,   // vial filled at any watersource loc
-    EYE_OF_NEWT: 221,     // secondary ingredient for attack potion (Betty / Port Sarim)
-    UNFINISHED_GUAM: 91,  // guamvial — guam_leaf + vial_of_water
-    ATTACK_POTION: 2428,  // 4dose1attack (full dose, e.g. from Entrana drop)
-    ATTACK_POTION_3: 121  // 3dose1attack — freshly brewed unf_guam + eye_of_newt
+    // Secondaries
+    EYE_OF_NEWT: 221,       // attack potion (Betty / Port Sarim)
+    UNICORN_HORN_DUST: 235, // antipoison potion
+    LIMPWURT_ROOT: 225,     // strength potion
+    RED_SPIDERS_EGGS: 223,  // restore potion
+    SNAPE_GRASS: 231,       // prayer restore potion
+
+    // Unfinished Potions
+    UNFINISHED_GUAM: 91,        // guamvial
+    UNFINISHED_MARRENTILL: 93,  // marrentillvial
+    UNFINISHED_TARROMIN: 95,    // tarrominvial
+    UNFINISHED_HARRALANDER: 97, // harralandervial
+    UNFINISHED_RANARR: 99,      // ranarrvial
+
+    // Finished Potions (3-dose)
+    ATTACK_POTION_3: 121,       // 3dose1attack
+    ANTIPOISON_POTION_3: 175,   // 3doseantipoison
+    STRENGTH_POTION_3: 115,     // 3dose1strength
+    RESTORE_POTION_3: 127,      // 3dosestatrestore
+    PRAYER_POTION_3: 139,       // 3doseprayerrestore
+
+    ATTACK_POTION: 2428  // 4dose1attack (full dose, e.g. from Entrana drop)
 } as const;
 
 export const FOOD_IDS: number[] = [
@@ -2138,7 +2156,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     HERBLORE: [
         {
             minLevel: 1,
-            maxLevel: 99,
+            maxLevel: 4,
             action: 'herblore_attack',
             location: Locations.AEMAD_SUPPLIES,   // placeholder — task uses teleJump
             toolItemIds: [],                       // no persistent tool needed
@@ -2147,6 +2165,54 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemConsumed: Items.CLEAN_GUAM,        // consumed per batch
             itemGained:   Items.ATTACK_POTION_3    // 3-dose attack potion (freshly brewed)
+        },
+        {
+            minLevel: 5,
+            maxLevel: 11,
+            action: 'herblore_antipoison',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 375,                      // 37.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_MARRENTILL,
+            itemGained:   Items.ANTIPOISON_POTION_3
+        },
+        {
+            minLevel: 12,
+            maxLevel: 21,
+            action: 'herblore_strength',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 500,                      // 50.0 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_TARROMIN,
+            itemGained:   Items.STRENGTH_POTION_3
+        },
+        {
+            minLevel: 22,
+            maxLevel: 37,
+            action: 'herblore_restore',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 625,                      // 62.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_HARRALANDER,
+            itemGained:   Items.RESTORE_POTION_3
+        },
+        {
+            minLevel: 38,
+            maxLevel: 99,
+            action: 'herblore_prayer',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 875,                      // 87.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_RANARR,
+            itemGained:   Items.PRAYER_POTION_3
         }
     ],
 
