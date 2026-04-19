@@ -48,7 +48,9 @@ import {
     botTeleport
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
-import { interactHeldOpU, interactUseLocOp } from '#/engine/bot/BotAction.js';
+import { GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
+import { interactHeldOp, interactHeldOpU, interactUseLocOp } from '#/engine/bot/BotAction.js';
+import { cleanGrimyHerbs } from '#/engine/bot/tasks/BotTaskBase.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
@@ -70,15 +72,25 @@ const BREW_WAIT_TICKS = 2;
 /** After this many failed brew attempts per item, simulate manually. */
 const BREW_FAIL_LIMIT = 3;
 
+// Mappings based on the primary herb (step.itemConsumed)
+const POTION_RECIPES: Record<number, { unf: number, secondary: number, finished: number, secondaryCost: number }> = {
+    [Items.CLEAN_GUAM]:        { unf: Items.UNFINISHED_GUAM,        secondary: Items.EYE_OF_NEWT,       finished: Items.ATTACK_POTION_3,     secondaryCost: 3 },
+    [Items.CLEAN_MARRENTILL]:  { unf: Items.UNFINISHED_MARRENTILL,  secondary: Items.UNICORN_HORN_DUST, finished: Items.ANTIPOISON_POTION_3, secondaryCost: 0 }, // no shop
+    [Items.CLEAN_TARROMIN]:    { unf: Items.UNFINISHED_TARROMIN,    secondary: Items.LIMPWURT_ROOT,     finished: Items.STRENGTH_POTION_3,   secondaryCost: 0 }, // no shop
+    [Items.CLEAN_HARRALANDER]: { unf: Items.UNFINISHED_HARRALANDER, secondary: Items.RED_SPIDERS_EGGS,  finished: Items.RESTORE_POTION_3,    secondaryCost: 0 }, // no shop
+    [Items.CLEAN_RANARR]:      { unf: Items.UNFINISHED_RANARR,      secondary: Items.SNAPE_GRASS,       finished: Items.PRAYER_POTION_3,     secondaryCost: 0 }  // no shop
+};
+
 type HerbloreState =
     | 'buy_vials'    // teleport + find Aemad + trade + buy empty vials
     | 'fill_vials'   // teleport to Falador fountain + fill all empty vials
-    | 'buy_newt'     // teleport + find Betty + trade + buy eye of newt
+    | 'buy_newt'     // teleport + find Betty + trade + buy eye of newt (only for guam)
     | 'bank_walk'    // advance to nearest bank
-    | 'withdraw'     // withdraw guams equal to vial_water count
-    | 'mix_unf'      // mix vial_of_water + guam_leaf → unfinished guam (loop)
-    | 'mix_pot'      // mix unfinished_guam + eye_of_newt → attack potion (loop)
-    | 'deposit';     // bank all potions, reset cycle
+    | 'withdraw'     // withdraw herbs and secondaries
+    | 'clean_herbs'  // clean grimy herbs before mixing
+    | 'mix_unf'      // mix vial_of_water + clean_herb → unfinished potion (loop)
+    | 'mix_pot'      // mix unfinished_potion + secondary → finished potion (loop)
+    | 'deposit';     // bank all potions, reset cycle     // bank all potions, reset cycle
 
 // ── Shop sub-phase index (buy_vials / buy_newt states) ────────────────────────
 // 0 = teleport to shop, 1 = find NPC + open trade, 2 = wait for shop UI, 3 = buy items
@@ -107,12 +119,25 @@ export class HerbloreTask extends BotTask {
         if (level < 1) return false;
 
         // Need guams available (bank or inventory)
-        const guamCount = this._totalItem(player, Items.CLEAN_GUAM);
-        if (guamCount < MIN_GUAMS) return false;
+        const recipe = POTION_RECIPES[this.step.itemConsumed!];
+        if (!recipe) return false;
+
+        // Need herbs available (bank or inventory) - check both clean and grimy
+        let herbCount = this._totalItem(player, this.step.itemConsumed!); // clean
+        // We can find the grimy herb from GRIMY_HERB_MAP
+        const grimyHerbId = Object.keys(GRIMY_HERB_MAP).find(
+            key => GRIMY_HERB_MAP[Number(key)][0] === this.step.itemConsumed
+        );
+        if (grimyHerbId) {
+            herbCount += this._totalItem(player, Number(grimyHerbId));
+        }
+
+        if (herbCount < MIN_GUAMS) return false;
 
         // Need coins for at least one batch
         const coins = this._totalCoins(player);
-        if (coins < MIN_COINS) return false;
+        const recipeCost = 2 + recipe.secondaryCost;
+        if (recipeCost > 0 && coins < BATCH_MAX * recipeCost) return false;
 
         return true;
     }
@@ -192,9 +217,17 @@ export class HerbloreTask extends BotTask {
 
             // ── 3. Buy eye of newt from Betty (Port Sarim) ───────────────────
             case 'buy_newt': {
-                // Skip if we already have enough newts
-                if (countItem(player, Items.EYE_OF_NEWT) >= BATCH_MAX) {
-                    this._log(player, 'already have newts, skipping buy');
+                const recipe = POTION_RECIPES[this.step.itemConsumed!];
+                if (recipe.secondaryCost === 0) {
+                    this._log(player, 'secondary not bought from shop, skipping buy');
+                    this.state = 'bank_walk';
+                    this.shopPhase = 0;
+                    return;
+                }
+
+                // Skip if we already have enough secondaries
+                if (countItem(player, recipe.secondary) >= BATCH_MAX) {
+                    this._log(player, 'already have secondaries, skipping buy');
                     this.state = 'bank_walk';
                     this.shopPhase = 0;
                     return;
@@ -214,14 +247,13 @@ export class HerbloreTask extends BotTask {
                     player,
                     Locations.PORT_SARIM_HERBS,
                     'betty',
-                    Items.EYE_OF_NEWT,
-                    3, // cost per eye of newt
+                    recipe.secondary,
+                    recipe.secondaryCost, // cost per secondary
                     'bank_walk'
                 );
                 return;
             }
 
-            // ── 4. Walk to nearest bank ───────────────────────────────────────
             case 'bank_walk': {
                 const result = advanceBankWalk(player, this.stuck);
                 if (result === 'walk') return;
@@ -232,10 +264,21 @@ export class HerbloreTask extends BotTask {
 
             // ── 5. Withdraw guams equal to number of vials of water ───────────
             case 'withdraw': {
+                const recipe = POTION_RECIPES[this.step.itemConsumed!];
                 const vialWater = countItem(player, Items.VIAL_OF_WATER);
-                const eyeNewt   = countItem(player, Items.EYE_OF_NEWT);
+
+                // If secondary is not shop-bought, we need to withdraw it
+                if (recipe.secondaryCost === 0) {
+                    const secondaryInBank = this._totalItem(player, recipe.secondary) - countItem(player, recipe.secondary);
+                    const toWithdrawSecondary = Math.min(vialWater - countItem(player, recipe.secondary), secondaryInBank);
+                    if (toWithdrawSecondary > 0) {
+                        this._withdrawItems(player, recipe.secondary, toWithdrawSecondary);
+                    }
+                }
+
+                const secondaryCount = countItem(player, recipe.secondary);
                 // How many complete potions can we make?
-                const pairs = Math.min(vialWater, eyeNewt);
+                const pairs = Math.min(vialWater, secondaryCount);
                 if (pairs === 0) {
                     // Nothing to mix — restart supply run
                     this._log(player, 'no mixing pairs available → restart');
@@ -245,15 +288,69 @@ export class HerbloreTask extends BotTask {
                     return;
                 }
 
-                const withdrawn = this._withdrawGuams(player, pairs);
+                // Withdraw clean or grimy herbs
+                let withdrawn = this._withdrawItems(player, this.step.itemConsumed!, pairs);
                 if (!withdrawn) {
-                    this._log(player, 'no guams in bank → interrupt');
+                    const grimyHerbId = Object.keys(GRIMY_HERB_MAP).find(
+                        key => GRIMY_HERB_MAP[Number(key)][0] === this.step.itemConsumed
+                    );
+                    if (grimyHerbId) {
+                        withdrawn = this._withdrawItems(player, Number(grimyHerbId), pairs);
+                    }
+                }
+
+                if (!withdrawn) {
+                    this._log(player, 'no herbs in bank → interrupt');
                     this.interrupt();
                     return;
                 }
                 this.brewFailCount = 0;
-                this.state = 'mix_unf';
+                this.state = 'clean_herbs';
                 this.cooldown = 1;
+                return;
+            }
+
+            case 'clean_herbs': {
+                const inv = player.getInventory(InvType.INV);
+                if (!inv) return;
+
+                // Find a grimy herb in inventory
+                let grimySlot = -1;
+                let grimyId = -1;
+                for (let i = 0; i < inv.capacity; i++) {
+                    const item = inv.get(i);
+                    if (item && GRIMY_HERB_MAP[item.id]) {
+                        grimySlot = i;
+                        grimyId = item.id;
+                        break;
+                    }
+                }
+
+                if (grimySlot === -1) {
+                    // All herbs clean → proceed
+                    this.state = 'mix_unf';
+                    return;
+                }
+
+                const prevClean = countItem(player, GRIMY_HERB_MAP[grimyId][0]);
+                // Send op1 (clean)
+                const ok = interactHeldOp(player, inv, grimyId, grimySlot, 1);
+                const newClean = countItem(player, GRIMY_HERB_MAP[grimyId][0]);
+
+                if (ok && newClean > prevClean) {
+                    this.watchdog.notifyActivity();
+                    this.brewFailCount = 0;
+                    this.cooldown = 1;
+                } else {
+                    this.brewFailCount++;
+                    if (this.brewFailCount >= BREW_FAIL_LIMIT) {
+                        this._log(player, 'clean failed, simulating manually');
+                        // Use cleanGrimyHerbs to clean remaining
+                        cleanGrimyHerbs(player);
+                        this.brewFailCount = 0;
+                    }
+                    this.cooldown = 1;
+                }
                 return;
             }
 
@@ -264,9 +361,9 @@ export class HerbloreTask extends BotTask {
             // failures (e.g. map_members=false blocks the server script).
             case 'mix_unf': {
                 const vialSlot = this._findSlot(player, Items.VIAL_OF_WATER);
-                const guamSlot = this._findSlot(player, Items.CLEAN_GUAM);
+                const herbSlot = this._findSlot(player, this.step.itemConsumed!);
 
-                if (vialSlot === -1 || guamSlot === -1) {
+                if (vialSlot === -1 || herbSlot === -1) {
                     // All unfinished potions mixed → proceed to add secondaries
                     this._log(player, 'unf mix done → mix_pot');
                     this.brewFailCount = 0;
@@ -277,12 +374,13 @@ export class HerbloreTask extends BotTask {
                 const inv = player.getInventory(InvType.INV);
                 if (!inv) return;
 
-                const prevUnf = countItem(player, Items.UNFINISHED_GUAM);
+                const recipe = POTION_RECIPES[this.step.itemConsumed!];
+                const prevUnf = countItem(player, recipe.unf);
                 const ok = interactHeldOpU(player, inv,
                     Items.VIAL_OF_WATER, vialSlot,
-                    Items.CLEAN_GUAM,    guamSlot
+                    this.step.itemConsumed!,    herbSlot
                 );
-                const newUnf = countItem(player, Items.UNFINISHED_GUAM);
+                const newUnf = countItem(player, recipe.unf);
 
                 if (ok && newUnf > prevUnf) {
                     // Brew succeeded
@@ -304,13 +402,15 @@ export class HerbloreTask extends BotTask {
 
             // ── 7. Mix attack potions ────────────────────────────────────────
             // interactHeldOpU fires [opheldu,guamvial] → synchronous execute.
+            // ── 7. Mix finished potions ────────────────────────────────────────
             case 'mix_pot': {
-                const unfSlot  = this._findSlot(player, Items.UNFINISHED_GUAM);
-                const newtSlot = this._findSlot(player, Items.EYE_OF_NEWT);
+                const recipe = POTION_RECIPES[this.step.itemConsumed!];
+                const unfSlot  = this._findSlot(player, recipe.unf);
+                const newtSlot = this._findSlot(player, recipe.secondary);
 
                 if (unfSlot === -1 || newtSlot === -1) {
                     // All potions mixed → deposit and start next cycle
-                    this._log(player, 'attack potion mix done → deposit');
+                    this._log(player, 'potion mix done → deposit');
                     this.state = 'deposit';
                     return;
                 }
@@ -318,12 +418,12 @@ export class HerbloreTask extends BotTask {
                 const inv = player.getInventory(InvType.INV);
                 if (!inv) return;
 
-                const prevPot = countItem(player, Items.ATTACK_POTION_3);
+                const prevPot = countItem(player, recipe.finished);
                 const ok = interactHeldOpU(player, inv,
-                    Items.UNFINISHED_GUAM, unfSlot,
-                    Items.EYE_OF_NEWT,     newtSlot
+                    recipe.unf, unfSlot,
+                    recipe.secondary,     newtSlot
                 );
-                const newPot = countItem(player, Items.ATTACK_POTION_3);
+                const newPot = countItem(player, recipe.finished);
 
                 if (ok && newPot > prevPot) {
                     this.watchdog.notifyActivity();
@@ -332,7 +432,7 @@ export class HerbloreTask extends BotTask {
                 } else {
                     this.brewFailCount++;
                     if (this.brewFailCount >= BREW_FAIL_LIMIT) {
-                        this._log(player, 'attack brew failed, simulating manually');
+                        this._log(player, 'potion brew failed, simulating manually');
                         this._manualBrewPot(player);
                         this.brewFailCount = 0;
                     }
@@ -484,7 +584,7 @@ export class HerbloreTask extends BotTask {
 
     // ── Bank helpers ──────────────────────────────────────────────────────────
 
-    private _withdrawGuams(player: Player, count: number): boolean {
+    private _withdrawItems(player: Player, itemId: number, count: number): boolean {
         const bid = bankInvId();
         if (bid === -1) return false;
 
@@ -494,7 +594,7 @@ export class HerbloreTask extends BotTask {
 
         for (let i = 0; i < bank.capacity; i++) {
             const item = bank.get(i);
-            if (!item || item.id !== Items.CLEAN_GUAM) continue;
+            if (!item || item.id !== itemId) continue;
 
             // Free slots in inventory
             let freeSlots = 0;
@@ -505,9 +605,9 @@ export class HerbloreTask extends BotTask {
             const toTake = Math.min(count, item.count, freeSlots);
             if (toTake <= 0) break;
 
-            const removed = bank.remove(Items.CLEAN_GUAM, toTake);
+            const removed = bank.remove(itemId, toTake);
             if (removed.completed > 0) {
-                inv.add(Items.CLEAN_GUAM, removed.completed);
+                inv.add(itemId, removed.completed);
                 return true;
             }
         }
@@ -571,22 +671,24 @@ export class HerbloreTask extends BotTask {
         this.watchdog.notifyActivity();
     }
 
-    /** Manually mixes one vial_of_water + guam_leaf → unf_guam. No XP (correct). */
+    /** Manually mixes one vial_of_water + clean_herb → unfinished_potion. No XP (correct). */
     private _manualBrewUnf(player: Player): void {
-        if (!hasItem(player, Items.VIAL_OF_WATER) || !hasItem(player, Items.CLEAN_GUAM)) return;
+        const recipe = POTION_RECIPES[this.step.itemConsumed!];
+        if (!hasItem(player, Items.VIAL_OF_WATER) || !hasItem(player, this.step.itemConsumed!)) return;
         removeItem(player, Items.VIAL_OF_WATER, 1);
-        removeItem(player, Items.CLEAN_GUAM,    1);
-        addItem(player, Items.UNFINISHED_GUAM, 1);
+        removeItem(player, this.step.itemConsumed!,    1);
+        addItem(player, recipe.unf, 1);
         this.watchdog.notifyActivity();
     }
 
-    /** Manually mixes one unf_guam + eye_of_newt → attack_potion_3 + 25 XP. */
+    /** Manually mixes one unfinished_potion + secondary → finished potion + XP. */
     private _manualBrewPot(player: Player): void {
-        if (!hasItem(player, Items.UNFINISHED_GUAM) || !hasItem(player, Items.EYE_OF_NEWT)) return;
-        removeItem(player, Items.UNFINISHED_GUAM, 1);
-        removeItem(player, Items.EYE_OF_NEWT,     1);
-        addItem(player, Items.ATTACK_POTION_3, 1);
-        addXp(player, PlayerStat.HERBLORE, this.step.xpPerAction); // 250 = 25.0 XP
+        const recipe = POTION_RECIPES[this.step.itemConsumed!];
+        if (!hasItem(player, recipe.unf) || !hasItem(player, recipe.secondary)) return;
+        removeItem(player, recipe.unf, 1);
+        removeItem(player, recipe.secondary,     1);
+        addItem(player, recipe.finished, 1);
+        addXp(player, PlayerStat.HERBLORE, this.step.xpPerAction); // XP per potion
         this.watchdog.notifyActivity();
     }
 
