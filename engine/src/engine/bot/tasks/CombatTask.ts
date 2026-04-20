@@ -1,3 +1,4 @@
+import { POTION_IDS } from '#/engine/bot/BotKnowledge.js';
 import {
     BotTask,
     Player,
@@ -28,7 +29,8 @@ import {
     botJitter,
     advanceBankWalk,
     cleanGrimyHerbs,
-    botTeleport
+    botTeleport,
+    FOOD_IDS
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import {
@@ -88,7 +90,7 @@ export class CombatTask extends BotTask {
     private trainIndex = 0;
     private readonly noAttackTimeoutTicks = 12; // RS2 rounds are 5-6 ticks; allow ~2 full rounds before timeout
 
-    private state: 'walk' | 'patrol' | 'scan' | 'interact' | 'flee' | 'shop_walk' | 'shop_open' | 'shop_sell' | 'bank_walk' | 'bank_deposit' | 'loot' | 'bury' = 'walk';
+    private state: 'walk' | 'patrol' | 'scan' | 'interact' | 'flee' | 'shop_walk' | 'shop_open' | 'shop_sell' | 'bank_walk' | 'bank_deposit' | 'loot' | 'bury' | 'eat' = 'walk';
 
     private interactTicks = 0;
     private approachTicks = 0;
@@ -169,11 +171,31 @@ export class CombatTask extends BotTask {
 
         if (this.intentCooldown > 0) this.intentCooldown--;
 
+        // ── HP CHECK & HEALING ───────────────────────────────────────────────────
+        const hp = player.stats[PlayerStat.HITPOINTS];
+        const maxHp = player.baseLevels[PlayerStat.HITPOINTS];
+
+        // Low HP check
+        if (hp < maxHp * 0.4 && this.state !== 'bank_walk' && this.state !== 'bank_deposit' && this.state !== 'flee' && this.state !== 'eat') {
+             if (this._hasFood(player)) {
+                 this._log(player, `HP low (${hp}/${maxHp}), eating...`, 'heal_trigger');
+                 this.state = 'eat';
+                 return;
+             } else {
+                 this._log(player, `HP low (${hp}/${maxHp}) and NO FOOD, fleeing!`, 'flee_low_hp');
+                 this._releaseNpc();
+                 this.currentNpc = null;
+                 this.state = 'flee';
+                 this.fleeTicks = 0;
+                 return;
+             }
+        }
+
         // ── AGGRESSOR DETECTION ──────────────────────────────────────────────────
         // If an NPC that we did not initiate combat with starts chasing the bot
         // and its combat level exceeds the bot's, retreat to the spawn area.
         // Skip this check while banking/shopping — the bot is already leaving.
-        const safeStates = ['bank_walk', 'bank_deposit', 'flee', 'bury'];
+        const safeStates = ['bank_walk', 'bank_deposit', 'flee', 'bury', 'eat'];
         if (!safeStates.includes(this.state)) {
             const aggressor = findAggressorNpc(player, 8);
             if (aggressor && aggressor !== this.currentNpc) {
@@ -348,6 +370,7 @@ export class CombatTask extends BotTask {
             cleanGrimyHerbs(player);
             this._depositGold(player);
             this._depositLoot(player);
+            this._withdrawFood(player);
             this._rerollStep(player); // re-randomise location for the next run
 
             this.state = 'walk';
@@ -415,6 +438,12 @@ export class CombatTask extends BotTask {
             this.state = 'patrol';
             this.patrolTicks = 0;
             this.patrolTarget = null;
+            return;
+        }
+
+        // ── EAT ──────────────────────────────────────
+        if (this.state === 'eat') {
+            this._eatFood(player);
             return;
         }
 
@@ -959,24 +988,80 @@ export class CombatTask extends BotTask {
         }
     }
 
-    private _depositLoot(player: Player): void {
+    private _hasFood(player: Player): boolean {
+        for (const id of POTION_IDS) {
+            const slot = inv.indexOf(id);
+            if (slot !== -1) return true;
+        }
+        for (const id of FOOD_IDS) {
+            if (hasItem(player, id)) return true;
+        }
+        return false;
+    }
+
+    private _eatFood(player: Player): void {
         const inv = player.getInventory(InvType.INV);
-        const bid = bankInvId();
-        if (!inv || bid === -1) return;
+        if (!inv) {
+            this.state = 'walk';
+            return;
+        }
 
-        const bank = player.getInventory(bid);
-        if (!bank) return;
+        for (const potId of POTION_IDS) {
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
+                return;
+            }
+        }
+        for (const foodId of POTION_IDS) {
+            let total = 0;
+            for (let i = 0; i < inv.capacity; i++) {
+                if (inv.get(i)?.id === foodId) total++;
+            }
+            if (total >= 1) {
+                hasFoodCount += total;
+            }
+        }
+        for (const foodId of FOOD_IDS) {
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
+                return;
+            }
+        }
+        for (const foodId of POTION_IDS) {
+            let total = 0;
+            for (let i = 0; i < inv.capacity; i++) {
+                if (inv.get(i)?.id === foodId) total++;
+            }
+            if (total >= 1) {
+                hasFoodCount += total;
+            }
+        }
+        for (const foodId of FOOD_IDS) {
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
+                return;
+            }
+        }
+        for (const foodId of FOOD_IDS) {
+            if (withdrawn >= toWithdraw) break;
 
-        for (let slot = 0; slot < inv.capacity; slot++) {
-            const item = inv.get(slot);
-            if (!item) continue;
-
-            if (this.step.toolItemIds.includes(item.id)) continue;
-            if (item.id === Items.COINS) continue;
-
-            const moved = inv.remove(item.id, item.count);
-            if (moved.completed > 0) {
-                bank.add(item.id, moved.completed);
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (it && it.id === foodId) {
+                    const amount = Math.min(toWithdraw - withdrawn, it.count);
+                    const moved = bank.remove(foodId, amount);
+                    if (moved.completed > 0) {
+                        inv.add(foodId, moved.completed);
+                        withdrawn += moved.completed;
+                    }
+                    break;
+                }
             }
         }
     }
