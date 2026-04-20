@@ -439,6 +439,15 @@ export const Items = {
     ATTACK_POTION: 2428  // 4dose1attack (full dose, e.g. from Entrana drop)
 } as const;
 
+export const POTION_IDS: number[] = [
+    Items.ATTACK_POTION,
+    Items.ATTACK_POTION_3,
+    Items.ANTIPOISON_POTION_3,
+    Items.STRENGTH_POTION_3,
+    Items.RESTORE_POTION_3,
+    Items.PRAYER_POTION_3
+];
+
 export const FOOD_IDS: number[] = [
     Items.MANTA_RAY,
     Items.SEA_TURTLE,

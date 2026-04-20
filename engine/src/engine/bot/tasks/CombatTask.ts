@@ -1,3 +1,4 @@
+import { POTION_IDS } from '#/engine/bot/BotKnowledge.js';
 import {
     BotTask,
     Player,
@@ -988,6 +989,10 @@ export class CombatTask extends BotTask {
     }
 
     private _hasFood(player: Player): boolean {
+        for (const id of POTION_IDS) {
+            const slot = inv.indexOf(id);
+            if (slot !== -1) return true;
+        }
         for (const id of FOOD_IDS) {
             if (hasItem(player, id)) return true;
         }
@@ -1001,74 +1006,48 @@ export class CombatTask extends BotTask {
             return;
         }
 
-        for (const foodId of FOOD_IDS) {
-            for (let slot = 0; slot < inv.capacity; slot++) {
-                const item = inv.get(slot);
-                if (!item || item.id !== foodId) continue;
-
-                // Use the food
-                interactHeldOp(player, inv, foodId, slot, 1);
-                this._log(player, `ate ${foodId} to heal`, 'ate_food');
-                this.cooldown = 3;
-
-                // After eating, if HP is still relatively low and we have more food,
-                // stay in eat state. Otherwise return to previous activity.
-                const hp = player.stats[PlayerStat.HITPOINTS];
-                const maxHp = player.baseLevels[PlayerStat.HITPOINTS];
-                if (hp < maxHp * 0.8 && this._hasFood(player)) {
-                    this.state = 'eat';
-                } else {
-                    this.state = 'walk';
-                }
+        for (const potId of POTION_IDS) {
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
                 return;
             }
         }
-
-        // Out of food
-        this.state = 'walk';
-    }
-
-    private _depositLoot(player: Player): void {
-        const inv = player.getInventory(InvType.INV);
-        const bid = bankInvId();
-        if (!inv || bid === -1) return;
-
-        const bank = player.getInventory(bid);
-        if (!bank) return;
-
-        for (let slot = 0; slot < inv.capacity; slot++) {
-            const item = inv.get(slot);
-            if (!item) continue;
-
-            if (this.step.toolItemIds.includes(item.id)) continue;
-            if (item.id === Items.COINS) continue;
-            if (FOOD_IDS.includes(item.id)) continue;
-
-            const moved = inv.remove(item.id, item.count);
-            if (moved.completed > 0) {
-                bank.add(item.id, moved.completed);
+        for (const foodId of POTION_IDS) {
+            let total = 0;
+            for (let i = 0; i < inv.capacity; i++) {
+                if (inv.get(i)?.id === foodId) total++;
+            }
+            if (total >= 1) {
+                hasFoodCount += total;
             }
         }
-    }
-
-    private _withdrawFood(player: Player): void {
-        const inv = player.getInventory(InvType.INV);
-        const bid = bankInvId();
-        if (!inv || bid === -1) return;
-
-        const bank = player.getInventory(bid);
-        if (!bank) return;
-
-        let currentFoodCount = 0;
         for (const foodId of FOOD_IDS) {
-            currentFoodCount += countItem(player, foodId);
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
+                return;
+            }
         }
-
-        if (currentFoodCount >= 5) return;
-
-        const toWithdraw = 8 - currentFoodCount;
-        let withdrawn = 0;
-
+        for (const foodId of POTION_IDS) {
+            let total = 0;
+            for (let i = 0; i < inv.capacity; i++) {
+                if (inv.get(i)?.id === foodId) total++;
+            }
+            if (total >= 1) {
+                hasFoodCount += total;
+            }
+        }
+        for (const foodId of FOOD_IDS) {
+            const slot = inv.indexOf(potId);
+            if (slot !== -1) {
+                interactHeldOp(player, inv, potId, slot, 1);
+                this.watchdog.notifyActivity();
+                return;
+            }
+        }
         for (const foodId of FOOD_IDS) {
             if (withdrawn >= toWithdraw) break;
 
