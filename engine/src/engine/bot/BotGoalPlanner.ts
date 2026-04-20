@@ -38,6 +38,7 @@ import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
 import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
 import { StallThievingTask } from '#/engine/bot/tasks/StallThievingTask.js';
 import { AgilityTask } from '#/engine/bot/tasks/AgilityTask.js';
+import { BankstandTask } from '#/engine/bot/tasks/BankstandTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -140,6 +141,9 @@ const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMIT
 export class BotGoalPlanner {
     readonly personality: BotPersonality;
     private initialised = false;
+    // Counts pickTask calls remaining before bankstand is eligible again.
+    // Initialised with a random offset so bots don't all bankstand at once.
+    private bankstandCooldown = Math.floor(Math.random() * 20) + 10;
 
     constructor(personality: BotPersonality = Personalities.BALANCED) {
         this.personality = personality;
@@ -183,6 +187,16 @@ export class BotGoalPlanner {
             }
             return new BankTask([...keepIds]);
         }
+
+        // ── BANKSTAND: periodic sell session at Varrock West Bank ────────────
+        // Triggered every ~20-40 planner calls (roughly once every 30-60 min at
+        // the default 150-tick rescan interval). Skipped when inventory is full
+        // so the bot banks first.
+        if (this.bankstandCooldown <= 0) {
+            this.bankstandCooldown = Math.floor(Math.random() * 20) + 20;
+            return new BankstandTask();
+        }
+        this.bankstandCooldown--;
 
         // ── COOKING priority: cook whenever any fish are available ───────────
         // Without this, FISHING (weight 25) almost always beats COOKING (weight 15)

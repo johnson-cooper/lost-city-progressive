@@ -627,32 +627,151 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
     _pathTowards(player, destX, destZ);
 }
 
+
+
+
+/**
+ * Items we wish the bots to sell to real players, namely materials such as logs, ores, bars, etc... In their noted forms.
+ */
+export const viableItemIds:    number[] = [
+    2349, //bronze_bar
+    2350, //cert_bronze_bar
+    2351, //iron_bar
+    2352, //cert_iron_bar
+    2353, //steel_bar
+    2354, //cert_steel_bar
+    2355, //silver_bar
+    2356, //cert_silver_bar
+    2357, //gold_bar
+    2358, //cert_gold_bar
+    2359, //mithril_bar
+    2360, //cert_mithril_bar
+    2361, //adamantite_bar
+    2362, //cert_adamantite_bar
+    2363, //runite_bar
+    2364, //cert_runite_bar
+    39, //bronze_arrowheads
+    40, //iron_arrowheads
+    41, //steel_arrowheads
+    42, //mithril_arrowheads
+    43, //adamant_arrowheads
+    44, //rune_arrowheads
+    221, //eye_of_newt
+    223, //red_spiders_eggs
+    225, //limpwurt_root
+    227, //vial_water
+    229, //vial_empty
+    231, //snape_grass
+    314, //feather
+    317, //raw_shrimp
+    321, //raw_anchovies
+    327, //raw_sardine
+    331, //raw_salmon
+    335, //raw_trout
+    341, //raw_cod
+    345, //raw_herring
+    349, //raw_pike
+    353, //raw_mackerel
+    359, //raw_tuna
+    363, //raw_bass
+    371, //raw_swordfish
+    377, //raw_lobster
+    383, //raw_shark
+    389, //raw_mantaray
+    395, //raw_seaturtle
+    401, //seaweed
+    434, //clay
+    526, //bones
+    530, //bat_bones
+    532, //big_bones
+    534, //babydragon_bones
+    536, //dragon_bones
+    1617, //uncut_diamond
+    1619, //uncut_ruby
+    1621, //uncut_emerald
+    1623, //uncut_sapphire
+    1625, //uncut_opal
+    1627, //uncut_jade
+    1629, //uncut_red_topaz
+    1631, //uncut_dragonstone
+    434, //clay
+    435, //cert_clay
+    436, //copper_ore
+    437, //cert_copper_ore
+    438, //tin_ore
+    439, //cert_tin_ore
+    440, //iron_ore
+    441, //cert_iron_ore
+    442, //silver_ore
+    443, //cert_silver_ore
+    444, //gold_ore
+    445, //cert_gold_ore
+    446, //perfect_gold_ore
+    447, //mithril_ore
+    448, //cert_mithril_ore
+    449, //adamantite_ore
+    450, //cert_adamantite_ore
+    451, //runite_ore
+    452, //cert_runite_ore
+    453, //coal
+    454, //cert_coal
+    1511, //logs
+    1512, //cert_logs
+    1513, //magic_logs
+    1514, //cert_magic_logs
+    1515, //yew_logs
+    1516, //cert_yew_logs
+    1517, //maple_logs
+    1518, //cert_maple_logs
+    1519, //willow_logs
+    1520, //cert_willow_logs
+    1521, //oak_logs
+    1522 //cert_oak_logs
+];
+
+
+
+
 /**
  * interface interface use operation: 1 - 4
  * interfaceId, itemId, itemSlot, operation
  */
-export function interactIF_UseOp(player: Player, intrfce: number, item: number, slot: number, op: 1 | 2 | 3 | 4 | 5): boolean {
+export function interactIF_UseOp(player: Player, intrfce: number, item: number, slot: number, op: number, invId:number = -1): boolean {
     // jagex has if_button1-5
     const com = Component.get(intrfce);
-    if (typeof com === 'undefined' || !com.iop || !com.iop.length || !player.isComponentVisible(com)) {
+    if (typeof com === 'undefined') {
+        console.log('Component undefined');
+        return false;
+    }
+    if(!com.iop || !com.iop.length) {
+        console.log('Cannot find com.inventoryOptions');
         return false;
     }
 
     if (!com.iop[op - 1]) {
         return false;
     }
+    let inv = null;
 
-    const listener = player.invListeners.find(l => l.com === intrfce);
-    if (!listener) {
-        return false;
+    if(invId == -1) {
+        const listener = player.invListeners.find(l => l.com === intrfce);
+        if (!listener) {
+            console.log('No listener active');
+            return false;
+        }
+
+        inv = player.getInventoryFromListener(listener);
+    } else {
+        inv = player.getInventory(invId);
     }
 
-    const inv = player.getInventoryFromListener(listener);
     if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, item)) {
+        console.log('inv or invslot invalid');
         return false;
     }
 
     if (player.delayed) {
+        console.log('Player is busy...');
         return false;
     }
 
@@ -683,7 +802,6 @@ export function interactIF_UseOp(player: Player, intrfce: number, item: number, 
 
     return true;
 }
-
 export function interactHeldOp(player: Player, inv: Inventory, itemId: number, slot: number, op: 1 | 2 | 3 | 4 | 5 | 6): boolean {
     const trigger = (ServerTriggerType.OPHELD1 + (op - 1)) as ServerTriggerType;
     if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, itemId)) {
@@ -808,9 +926,10 @@ export function interactIfButtonByName(player: Player, comName: string): boolean
     return interactIfButton(player, comId);
 }
 
+//Interface buttons
 export function interactIfButton(player: Player, comId: number): boolean {
     const com = Component.get(comId);
-    if (typeof com === 'undefined' || !player.isComponentVisible(com)) {
+    if (typeof com === 'undefined') { // || !player.isComponentVisible(com)) {
         return false;
     }
 
@@ -834,26 +953,22 @@ export function interactIfButton(player: Player, comId: number): boolean {
     return true;
 }
 
+
+
+//Player op
 /**
  * Usage:
  * @param player - Player from botPlayer
- * @param pid - Target Player PID (Maybe slot in 254?)
+ * @param slot - Target Player PID (Maybe slot in 254?)
  * @param op  - op 1-4
+ * op 1 duel
+ * op 2 attack
+ * op 3 follow
+ * op 4 trade
  */
-export function interactPlayerOp(player: Player, pid: number, op: number): boolean {
-    if (player.delayed) {
-        player.write(new UnsetMapFlag());
-        return false;
-    }
-
-    const other = World.getPlayer(pid);
+export function interactPlayerOp(player: Player, slot: number, op: number): boolean {
+    const other = World.getPlayer(slot);
     if (!other) {
-        player.write(new UnsetMapFlag());
-        player.clearPendingAction();
-        return false;
-    }
-
-    if (!rsbuf.hasPlayer(player.slot, other.slot)) {
         player.write(new UnsetMapFlag());
         player.clearPendingAction();
         return false;

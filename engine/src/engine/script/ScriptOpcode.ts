@@ -443,6 +443,8 @@ export const enum ScriptOpcode {
     ERROR,
     GETTIMESPENT, // custom: used to profile script execution (current duration)
     TIMESPENT, // custom: used to profile script execution (record start time)
+    P_ISBOT,
+    P_BOT_INTERACT_TRADE
 }
 
 export const ScriptOpcodeMap: Map<string, number> = new Map([
@@ -860,6 +862,8 @@ export const ScriptOpcodeMap: Map<string, number> = new Map([
     ['ERROR', ScriptOpcode.ERROR],
     ['GETTIMESPENT', ScriptOpcode.GETTIMESPENT],
     ['TIMESPENT', ScriptOpcode.TIMESPENT],
+    ['P_ISBOT', ScriptOpcode.P_ISBOT],
+    ['P_BOT_INTERACT_TRADE', ScriptOpcode.P_BOT_INTERACT_TRADE]
 ]);
 
 export const ScriptOpcodeNameMap: Map<number, string> = new Map(

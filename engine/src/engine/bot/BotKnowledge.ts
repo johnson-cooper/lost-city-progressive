@@ -1,3 +1,4 @@
+
 export const Items = {
     // Currency
     COINS: 995,
@@ -52,6 +53,7 @@ export const Items = {
     GOLD_ORE: 444,
     CLAY: 434,
     SOFT_CLAY: 1761,
+    CHOCOLATE_DUST: 1975,
 
     // Bars  (all verified)
     BRONZE_BAR: 2349,
@@ -61,6 +63,9 @@ export const Items = {
     ADAMANT_BAR: 2361,
     RUNE_BAR: 2363,
     GOLD_BAR: 2357,
+    SILVER_BAR: 2355,
+    ADAMANTITE_BAR: 2361,
+    RUNITE_BAR: 2363,
     HAMMER: 2347,
 
     BLACK_PLATEBODY: 1125,
@@ -453,6 +458,172 @@ export const FOOD_IDS: number[] = [
     Items.BREAD,
     Items.CAKE
 ];
+    EYE_OF_NEWT: 221,     // secondary ingredient for attack potion (Betty / Port Sarim)
+    UNFINISHED_GUAM: 91,  // guamvial — guam_leaf + vial_of_water
+    ATTACK_POTION: 2428,  // 4dose1attack (full dose, e.g. from Entrana drop)
+    ATTACK_POTION_3: 121,  // 3dose1attack — freshly brewed unf_guam + eye_of_newt
+
+    // Weapon tiers (additional)
+    STEEL_DAGGER:          1207,
+    MITHRIL_DAGGER:        1209,
+    ADAMANT_DAGGER:        1211,
+    RUNE_DAGGER:           1213,
+    DRAGON_DAGGER:         1215,
+    BLACK_DAGGER:          1217,
+
+    // Shields (additional tiers)
+    WOODEN_SHIELD:         1171,
+    STEEL_SQ_SHIELD:       1177,
+    BLACK_SQ_SHIELD:       1179,
+    MITHRIL_SQ_SHIELD:     1181,
+    ADAMANT_SQ_SHIELD:     1183,
+    RUNE_SQ_SHIELD:        1185,
+    DRAGON_SQ_SHIELD:      1187,
+    STEEL_KITESHIELD:      1193,
+    BLACK_KITESHIELD:      1195,
+    MITHRIL_KITESHIELD:    1197,
+    ADAMANT_KITESHIELD:    1199,
+    RUNE_KITESHIELD:       1201,
+
+    // Helmets (additional tiers)
+    STEEL_MED_HELM:        1141,
+    MITHRIL_MED_HELM:      1143,
+    ADAMANT_MED_HELM:      1145,
+    RUNE_MED_HELM:         1147,
+    DRAGON_MED_HELM:       1149,
+    BLACK_MED_HELM:        1151,
+    STEEL_FULL_HELM:       1157,
+    MITHRIL_FULL_HELM:     1159,
+    ADAMANT_FULL_HELM:     1161,
+    RUNE_FULL_HELM:        1163,
+    BLACK_FULL_HELM:       1165,
+    LEATHER_COWL:          1167,
+    COIF:                  1169,
+
+    // Platelegs & plateskirts
+    BRONZE_PLATELEGS:      1075,
+    IRON_PLATELEGS:        1067,
+    STEEL_PLATELEGS:       1069,
+    MITHRIL_PLATELEGS:     1071,
+    ADAMANT_PLATELEGS:     1073,
+    BLACK_PLATELEGS:       1077,
+    RUNE_PLATELEGS:        1079,
+    BRONZE_PLATESKIRT:     1087,
+    IRON_PLATESKIRT:       1081,
+    STEEL_PLATESKIRT:      1083,
+    MITHRIL_PLATESKIRT:    1085,
+    BLACK_PLATESKIRT:      1089,
+    ADAMANT_PLATESKIRT:    1091,
+    RUNE_PLATESKIRT:       1093,
+
+    // Chainbodies
+    BRONZE_CHAINBODY:      1103,
+    IRON_CHAINBODY:        1101,
+    STEEL_CHAINBODY:       1105,
+    BLACK_CHAINBODY:       1107,
+    MITHRIL_CHAINBODY:     1109,
+    ADAMANT_CHAINBODY:     1111,
+    RUNE_CHAINBODY:        1113,
+
+    // Platebodies (additional tiers)
+    MITHRIL_PLATEBODY:     1121,
+    ADAMANT_PLATEBODY:     1123,
+    BLACK_PLATEBODY:       1125,
+    RUNE_PLATEBODY:        1127,
+
+    // Leather & ranger armour
+    LEATHER_BODY:          1129,
+    HARDLEATHER_BODY:      1131,
+    STUDDED_BODY:          1133,
+    DRAGONHIDE_BODY:       1135,
+    LEATHER_CHAPS:         1095,
+    STUDDED_CHAPS:         1097,
+    DRAGONHIDE_CHAPS:      1099,
+    LEATHER_GLOVES:        1059,
+    LEATHER_BOOTS:         1061,
+    LEATHER_VAMBRACES:     1063,
+    DRAGON_VAMBRACES:      1065,
+
+    // Skirts & capes
+    BLUE_SKIRT:            1011,
+    PINK_SKIRT:            1013,
+    BLACK_SKIRT:           1015,
+    BLACK_CAPE:            1019,
+    BLUE_CAPE:             1021,
+    YELLOW_CAPE:           1023,
+    GREEN_CAPE:            1027,
+    PURPLE_CAPE:           1029,
+    ORANGE_CAPE:           1031,
+    CAPE_OF_LEGENDS:       1052,
+
+    // Robes & wizard gear
+    WIZARDS_ROBE:          577,
+    BLUEWIZHAT:            579,
+    BLACK_ROBE:            581,
+    BLACK_WIZARD_HAT:      1017,
+    ZAMORAK_ROBE_BOTTOM:   1033,
+    ZAMORAK_ROBE_TOP:      1035,
+
+    // Cosmetic / holiday
+    EYE_PATCH:             1025,
+    BUNNY_EARS:            1037,
+    RED_PARTYHAT:          1038,
+    YELLOW_PARTYHAT:       1040,
+    BLUE_PARTYHAT:         1042,
+    GREEN_PARTYHAT:        1044,
+    PURPLE_PARTYHAT:       1046,
+    WHITE_PARTYHAT:        1048,
+    SANTA_HAT:             1050,
+    GREEN_HALLOWEEN_MASK:  1053,
+    BLUE_HALLOWEEN_MASK:   1055,
+    RED_HALLOWEEN_MASK:    1057,
+
+    // Arrowheads (fletching)
+    BRONZE_ARROWHEADS:     39,
+    IRON_ARROWHEADS:       40,
+    STEEL_ARROWHEADS:      41,
+    MITHRIL_ARROWHEADS:    42,
+    ADAMANT_ARROWHEADS:    43,
+    RUNE_ARROWHEADS:       44,
+
+    // Herblore secondaries
+    RED_SPIDERS_EGGS:      223,
+    LIMPWURT_ROOT:         225,
+    SNAPE_GRASS:           231,
+
+    // Additional raw fish
+    RAW_ANCHOVIES:         321,
+    RAW_COD:               341,
+    RAW_PIKE:              349,
+    RAW_MACKEREL:          353,
+    RAW_TUNA:              359,
+    RAW_BASS:              363,
+    RAW_SHARK:             383,
+    RAW_MANTARAY:          389,
+    RAW_SEA_TURTLE:        395,
+    SEAWEED:               401,
+
+    // Additional bones
+    BAT_BONES:             530,
+    BABYDRAGON_BONES:      534,
+    DRAGON_BONES:          536,
+
+    // Gems (uncut & cut)
+    DRAGONSTONE:           1615,
+    UNCUT_DRAGONSTONE:     1631,
+    UNCUT_DIAMOND:         1617,
+    UNCUT_RUBY:            1619,
+    UNCUT_EMERALD:         1621,
+    UNCUT_SAPPHIRE:        1623,
+    UNCUT_OPAL:            1625,
+    UNCUT_JADE:            1627,
+    UNCUT_RED_TOPAZ:       1629,
+
+    // Misc
+    CLAY:                  434
+} as const;
+
+type Coord = [number, number, number];
 
 /**
  * Maps grimy herb ID → [clean herb ID, herblore XP × 10].
@@ -475,6 +646,8 @@ export const GRIMY_HERB_MAP: Record<number, [number, number]> = {
 export const Objects = {
     FIRE: 2732
 } as const;
+
+
 
 // ─────────────────────────────────────────────────────────────────────────────
 // World Locations  [x, z, level]
@@ -628,6 +801,7 @@ export const Locations = {
     VARROCK_RANGE: [3237, 3410, 0] as [number, number, number], // ✅ cooking range in house SW of Varrock west bank — open building, no gate
     FALADOR_RANGE: [3040, 3366, 0] as [number, number, number], // ✅ cooking range in house west of Falador east bank — open building
     FIRE_LUMBRIDGE_ROAD: [3218, 3253, 0] as [number, number, number], // ✅ firemaking road
+    FIRE_VARROCK_ROAD:       [3184, 3430, 0] as [number, number, number],
     AL_KHARID_FURNACE: [3192, 3162, 0] as [number, number, number], // ⛩ inside Al Kharid
     FALADOR_FURNACE: [2975, 3369, 0] as [number, number, number], // ✅ near Falador east bank
     VARROCK_ANVIL: [3188, 3422, 0] as [number, number, number], // ✅
@@ -952,10 +1126,18 @@ export interface ToolRequirement {
 }
 
 export const Interfaces = {
-    SHOP_SIDE: 3822,
+     SHOP_SIDE: 3822,
     SHOP_SIDE_INV: 3823,
     SHOP: 3824,
-    SHOP_INV: 3900
+    SHOP_INV: 3900,
+    BANK_MAIN: 5292,
+    BANK_MAIN_INV: 5382,
+    BANK_SIDE: 2005,
+    BANK_SIDE_INV: 2006,
+    TRADE_SIDE: 3321,
+    TRADE_SIDE_INV: 3322,
+    TRADE_MAIN: 3323,
+    TRADE_MAIN_INV: 3415
 } as const;
 
 // Axes — level requirements from axes.obj param=levelrequire
@@ -2534,6 +2716,37 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         { minLevel: 54, maxLevel: 99, action: 'runecraft', location: Locations.LAW_ALTAR, toolItemIds: [], xpPerAction: 95, ticksPerAction: 10, successRate: 1.0, itemGained: Items.LAW_RUNE }
     ]
 };
+
+
+function distanceSq(a: Coord, b: Coord, includeLevel = false): number {
+    const dx = a[0] - b[0];
+    const dz = a[1] - b[1];
+    const dl = includeLevel ? (a[2] - b[2]) : 0;
+
+    return dx * dx + dz * dz + dl * dl;
+}
+
+export function findClosest(
+    player: { x: number; z: number; level: number },
+    locations: Coord[]
+): Coord | null {
+    if (locations.length === 0) return null;
+
+    const playerCoord: Coord = [player.x, player.z, player.level];
+
+    let closest = locations[0];
+    let bestDist = distanceSq(playerCoord, closest);
+
+    for (let i = 1; i < locations.length; i++) {
+        const dist = distanceSq(playerCoord, locations[i]);
+        if (dist < bestDist) {
+            bestDist = dist;
+            closest = locations[i];
+        }
+    }
+
+    return closest;
+}
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
