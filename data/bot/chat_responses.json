@@ -1,0 +1,29 @@
+{
+  "greetings": {
+    "patterns": ["hi", "hello", "hey", "yo", "morning", "evening", "greetings"],
+    "replies": ["Hey!", "Hello there", "Yo", "Hi :)", "Hey, hows it going?"]
+  },
+  "help": {
+    "patterns": ["help", "how do i", "where is", "can you show me"],
+    "replies": ["I'm just training right now, maybe ask a guide?", "Not sure, I'm kind of busy here", "Check the wiki maybe?"]
+  },
+  "intents": [
+    {
+      "id": "how",
+      "patterns": ["how are you", "how r u", "you ok"],
+      "replies": ["I'm doing good, thanks!", "Pretty good, just grinding", "Not bad, you?", "Doing well!"]
+    },
+    {
+      "id": "doing",
+      "patterns": ["what are you doing", "wyd", "training"],
+      "replies": ["Just training some skills", "Grinding for a level", "Fishing mostly", "Just standard training stuff"]
+    },
+    {
+      "id": "levelup",
+      "patterns": ["level up", "just got"],
+      "replies": ["Gratz!", "Nice one!", "Gz!", "Big congrats!", "Keep it up!", "Gz on the level!"]
+    }
+  ],
+  "greetingReplies": ["Hey!", "Hello!", "Hi there", "Yo!"],
+  "fallback": ["Hmm?", "Not sure what you mean", "Yeah lol", "Nice"]
+}

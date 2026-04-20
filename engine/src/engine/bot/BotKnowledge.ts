@@ -14,6 +14,7 @@ export const Items = {
     MITHRIL_AXE: 1355,
     ADAMANT_AXE: 1357,
     RUNE_AXE: 1359,
+    BLACK_AXE: 1361,
 
     // Pickaxes  (all verified)
     BRONZE_PICKAXE: 1265,
@@ -50,6 +51,8 @@ export const Items = {
     ADAMANTITE_ORE: 449,
     RUNITE_ORE: 451,
     GOLD_ORE: 444,
+    CLAY: 434,
+    SOFT_CLAY: 1761,
     CHOCOLATE_DUST: 1975,
 
     // Bars  (all verified)
@@ -57,11 +60,41 @@ export const Items = {
     IRON_BAR: 2351,
     STEEL_BAR: 2353,
     MITHRIL_BAR: 2359,
+    ADAMANT_BAR: 2361,
+    RUNE_BAR: 2363,
     GOLD_BAR: 2357,
     SILVER_BAR: 2355,
     ADAMANTITE_BAR: 2361,
     RUNITE_BAR: 2363,
     HAMMER: 2347,
+
+    BLACK_PLATEBODY: 1125,
+    ADAMANT_PLATEBODY: 1123,
+    RUNE_PLATEBODY: 1127,
+
+    BLACK_PLATELEGS: 1077,
+    BRONZE_PLATELEGS: 1075,
+    IRON_PLATELEGS: 1067,
+    STEEL_PLATELEGS: 1069,
+    MITHRIL_PLATELEGS: 1071,
+    ADAMANT_PLATELEGS: 1073,
+    RUNE_PLATELEGS: 1079,
+
+    BRONZE_CHAINBODY: 1103,
+    IRON_CHAINBODY: 1101,
+    STEEL_CHAINBODY: 1105,
+    BLACK_CHAINBODY: 1107,
+    MITHRIL_CHAINBODY: 1109,
+    ADAMANT_CHAINBODY: 1111,
+    RUNE_CHAINBODY: 1113,
+
+    BRONZE_PLATESKIRT: 1087,
+    IRON_PLATESKIRT: 1081,
+    STEEL_PLATESKIRT: 1083,
+    BLACK_PLATESKIRT: 1089,
+    MITHRIL_PLATESKIRT: 1085,
+    ADAMANT_PLATESKIRT: 1091,
+    RUNE_PLATESKIRT: 1093,
 
     // Raw fish  (all verified)
     RAW_SHRIMP: 317,
@@ -71,6 +104,9 @@ export const Items = {
     RAW_SALMON: 331,
     RAW_LOBSTER: 377,
     RAW_SWORDFISH: 371,
+    RAW_SHARK: 383,
+    RAW_MANTA_RAY: 389,
+    RAW_SEA_TURTLE: 395,
 
     // Cooked fish  (all verified)
     SHRIMP: 315,
@@ -80,6 +116,9 @@ export const Items = {
     SALMON: 329,
     LOBSTER: 379,
     SWORDFISH: 373,
+    SHARK: 385,
+    MANTA_RAY: 391,
+    SEA_TURTLE: 397,
 
     // Combat drops
     BONES: 526,
@@ -88,29 +127,41 @@ export const Items = {
     RAW_CHICKEN: 2138,
     RAW_BEEF: 2312,
 
-    // ── Goblin / early combat drops ──────────────────────────────────────────
+    // ── Combat drops ──────────────────────────────────────────────────────────
     GOBLIN_MAIL: 288,
+
     BRONZE_MED_HELM: 1139,
+    IRON_MED_HELM: 1137,
+    STEEL_MED_HELM: 1141,
+    MITHRIL_MED_HELM: 1143,
+    ADAMANT_MED_HELM: 1145,
+    RUNE_MED_HELM: 1147,
+
     BRONZE_FULL_HELM: 1155,
-    BRONZE_SQ_SHIELD: 1173,
-    BRONZE_KITESHIELD: 1189,
-    BRONZE_PLATEBODY: 1117,
-
-    BRONZE_DAGGER: 1205,
-    BRONZE_LONGSWORD: 1291,
-    BRONZE_2H_SWORD: 1307,
-
-    // ── Iron drops (early upgrade tier) ─────────────────────────────────────
-    IRON_MED_HELM: 1141,
     IRON_FULL_HELM: 1153,
+    STEEL_FULL_HELM: 1157,
+    BLACK_FULL_HELM: 1165,
+    MITHRIL_FULL_HELM: 1159,
+    ADAMANT_FULL_HELM: 1161,
+    RUNE_FULL_HELM: 1163,
+
+    BRONZE_SQ_SHIELD: 1173,
     IRON_SQ_SHIELD: 1175,
+    STEEL_SQ_SHIELD: 1177,
+    MITHRIL_SQ_SHIELD: 1181,
+    ADAMANT_SQ_SHIELD: 1183,
+    RUNE_SQ_SHIELD: 1185,
+
+    BRONZE_KITESHIELD: 1189,
     IRON_KITESHIELD: 1191,
+    STEEL_KITESHIELD: 1193,
+    BLACK_KITESHIELD: 1195,
+    MITHRIL_KITESHIELD: 1197,
+    ADAMANT_KITESHIELD: 1199,
+    RUNE_KITESHIELD: 1201,
+
     IRON_PLATEBODY: 1115,
     STEEL_PLATEBODY: 1119,
-
-    IRON_DAGGER: 1203,
-    IRON_LONGSWORD: 1293,
-    IRON_2H_SWORD: 1309,
 
     // Food
     BREAD: 2309,
@@ -119,6 +170,46 @@ export const Items = {
     SHEARS: 1735,
     RING_MOULD: 1592,
     GOLD_RING: 1635,
+    NEEDLE: 1733,
+    THREAD: 1734,
+    LEATHER: 1741,
+    LEATHER_GLOVES: 1059,
+    LEATHER_BOOTS: 1061,
+    LEATHER_VAMBRACES: 1063,
+    LEATHER_CHAPS: 1095,
+    LEATHER_BODY: 1129,
+    STUDDED_BODY: 1133,
+    STUDDED_CHAPS: 1097,
+    STUDS: 2370,
+    HARD_LEATHER: 1743,
+    HARD_LEATHER_BODY: 1131,
+    DRAGON_LEATHER: 1745,
+    DRAGON_BODY: 1135,
+
+    DRAGON_HIDE_GREEN: 1753,
+    DRAGON_HIDE_BLUE: 1751,
+    DRAGON_HIDE_RED: 1749,
+    DRAGON_HIDE_BLACK: 1747,
+
+    DRAGON_LEATHER_GREEN: 1745,
+    DRAGON_LEATHER_BLUE: 2505,
+    DRAGON_LEATHER_RED: 2507,
+    DRAGON_LEATHER_BLACK: 2509,
+
+    DRAGON_BODY_GREEN: 1135,
+    DRAGON_BODY_BLUE: 2499,
+    DRAGON_BODY_RED: 2501,
+    DRAGON_BODY_BLACK: 2503,
+
+    DRAGON_VAMBRACES_GREEN: 1065,
+    DRAGON_VAMBRACES_BLUE: 2487,
+    DRAGON_VAMBRACES_RED: 2489,
+    DRAGON_VAMBRACES_BLACK: 2491,
+
+    DRAGON_CHAPS_GREEN: 1099,
+    DRAGON_CHAPS_BLUE: 2493,
+    DRAGON_CHAPS_RED: 2495,
+    DRAGON_CHAPS_BLACK: 2497,
 
     // Fletching
     ARROW_SHAFT: 52,
@@ -128,6 +219,28 @@ export const Items = {
     UNSTRUNG_OAK_LONGBOW: 56,
     UNSTRUNG_WILLOW_SHORTBOW: 60,
     UNSTRUNG_WILLOW_LONGBOW: 58,
+    UNSTRUNG_MAPLE_SHORTBOW: 62,
+    UNSTRUNG_MAPLE_LONGBOW: 64,
+    UNSTRUNG_YEW_SHORTBOW: 66,
+    UNSTRUNG_YEW_LONGBOW: 68,
+    UNSTRUNG_MAGIC_SHORTBOW: 70,
+    UNSTRUNG_MAGIC_LONGBOW: 72,
+
+    SHORTBOW: 841,
+    LONGBOW: 839,
+    OAK_SHORTBOW: 843,
+    OAK_LONGBOW: 845,
+    WILLOW_SHORTBOW: 847,
+    WILLOW_LONGBOW: 849,
+    MAPLE_SHORTBOW: 851,
+    MAPLE_LONGBOW: 853,
+    YEW_SHORTBOW: 855,
+    YEW_LONGBOW: 857,
+    MAGIC_SHORTBOW: 859,
+    MAGIC_LONGBOW: 861,
+
+    BOW_STRING: 1777,
+    FLAX: 1779,
 
     // Firemaking
     TINDERBOX: 590,
@@ -138,25 +251,82 @@ export const Items = {
     STEEL_SWORD: 1281,
     MITHRIL_SWORD: 1285,
     ADAMANT_SWORD: 1287,
+    RUNE_SWORD: 1289,
+    BLACK_SWORD: 1283,
+
+    // Weapons — longswords
+    BRONZE_LONGSWORD: 1291,
+    IRON_LONGSWORD: 1293,
+    STEEL_LONGSWORD: 1295,
+    BLACK_LONGSWORD: 1297,
+    MITHRIL_LONGSWORD: 1299,
+    ADAMANT_LONGSWORD: 1301,
+    RUNE_LONGSWORD: 1303,
+
+    // Weapons — daggers
+    BRONZE_DAGGER: 1205,
+    IRON_DAGGER: 1203,
+    STEEL_DAGGER: 1207,
+    BLACK_DAGGER: 1217,
+    MITHRIL_DAGGER: 1209,
+    ADAMANT_DAGGER: 1211,
+    RUNE_DAGGER: 1213,
 
     // Weapons — scimitars (Al Kharid, Zeke's only)
     BRONZE_SCIMITAR: 1321,
     IRON_SCIMITAR: 1323,
     STEEL_SCIMITAR: 1325,
+    BLACK_SCIMITAR: 1327,
     MITHRIL_SCIMITAR: 1329,
+    ADAMANT_SCIMITAR: 1331,
+    RUNE_SCIMITAR: 1333,
 
-    // Bows (Varrock archery shop)
-    SHORTBOW: 841,
-    OAK_SHORTBOW: 843,
-    LONGBOW: 839,
+    // Weapons — 2h swords
+    BRONZE_2H_SWORD: 1307,
+    IRON_2H_SWORD: 1309,
+    STEEL_2H_SWORD: 1311,
+    BLACK_2H_SWORD: 1313,
+    MITHRIL_2H_SWORD: 1315,
+    ADAMANT_2H_SWORD: 1317,
+    RUNE_2H_SWORD: 1319,
+
+    // Weapons — battleaxes
+    BRONZE_BATTLEAXE: 1375,
+    IRON_BATTLEAXE: 1363,
+    STEEL_BATTLEAXE: 1365,
+    BLACK_BATTLEAXE: 1367,
+    MITHRIL_BATTLEAXE: 1369,
+    ADAMANT_BATTLEAXE: 1371,
+    RUNE_BATTLEAXE: 1373,
+
+    // Weapons — maces
+    BRONZE_MACE: 1423,
+    IRON_MACE: 1420,
+    STEEL_MACE: 1425,
+    BLACK_MACE: 1427,
+    MITHRIL_MACE: 1429,
+    ADAMANT_MACE: 1431,
+    RUNE_MACE: 1433,
 
     // Arrows (Varrock archery shop)
     BRONZE_ARROW: 882,
     IRON_ARROW: 884,
     STEEL_ARROW: 886,
+    MITHRIL_ARROW: 888,
+    ADAMANT_ARROW: 890,
+    RUNE_ARROW: 892,
 
     // Magic
     STAFF_OF_AIR: 1381,
+    STAFF_OF_WATER: 1383,
+    STAFF_OF_EARTH: 1385,
+    STAFF_OF_FIRE: 1387,
+
+    BATTLESTAFF_FIRE: 1393,
+    BATTLESTAFF_WATER: 1395,
+    BATTLESTAFF_AIR: 1397,
+    BATTLESTAFF_EARTH: 1399,
+
     // Rune IDs (internal names have no underscore: airrune, mindrune, etc.)
     AIR_RUNE: 556,
     MIND_RUNE: 558,
@@ -164,6 +334,42 @@ export const Items = {
     EARTH_RUNE: 557,
     FIRE_RUNE: 554,
     BODY_RUNE: 559,
+    DEATH_RUNE: 560,
+    BLOOD_RUNE: 565,
+    SOUL_RUNE: 566,
+
+    CAKE: 1891,
+    SILK: 950,
+    SILVER_ORE: 442,
+    SPICE: 2007,
+    GREY_WOLF_FUR: 958,
+    UNCUT_SAPPHIRE: 1623,
+    UNCUT_EMERALD: 1621,
+    UNCUT_RUBY: 1619,
+    UNCUT_DIAMOND: 1617,
+
+    SAPPHIRE: 1609,
+    EMERALD: 1607,
+    RUBY: 1605,
+    DIAMOND: 1603,
+
+    AMULET_OF_POWER: 1731,
+    AMULET_OF_STRENGTH: 1725,
+    AMULET_OF_MAGIC: 1727,
+    AMULET_OF_DEFENCE: 1729,
+    AMULET_OF_GLORY: 1704,
+    RING_OF_WEALTH: 2572,
+
+    CHISEL: 1755,
+    BUCKET: 1925,
+    BUCKET_OF_WATER: 1929,
+    JUG: 1935,
+    JUG_OF_WATER: 1937,
+    POT: 1931,
+
+    AMULET_MOULD: 1595,
+    NECKLACE_MOULD: 1597,
+    HOLY_SYMBOL_MOULD: 1599,
 
     // Higher runes
     COSMIC_RUNE: 564,
@@ -180,6 +386,7 @@ export const Items = {
     BODY_TALISMAN: 1446,
     MIND_TALISMAN: 1448,
     CHAOS_TALISMAN: 1452,
+
     COSMIC_TALISMAN: 1454,
     LAW_TALISMAN: 1458,
     NATURE_TALISMAN: 1462,
@@ -213,6 +420,44 @@ export const Items = {
     // Herblore — vials, additives, and potions
     VIAL_EMPTY: 229,      // empty glass vial (bought from Aemad / dropped by druids)
     VIAL_OF_WATER: 227,   // vial filled at any watersource loc
+    // Secondaries
+    EYE_OF_NEWT: 221,       // attack potion (Betty / Port Sarim)
+    UNICORN_HORN_DUST: 235, // antipoison potion
+    LIMPWURT_ROOT: 225,     // strength potion
+    RED_SPIDERS_EGGS: 223,  // restore potion
+    SNAPE_GRASS: 231,       // prayer restore potion
+
+    // Unfinished Potions
+    UNFINISHED_GUAM: 91,        // guamvial
+    UNFINISHED_MARRENTILL: 93,  // marrentillvial
+    UNFINISHED_TARROMIN: 95,    // tarrominvial
+    UNFINISHED_HARRALANDER: 97, // harralandervial
+    UNFINISHED_RANARR: 99,      // ranarrvial
+
+    // Finished Potions (3-dose)
+    ATTACK_POTION_3: 121,       // 3dose1attack
+    ANTIPOISON_POTION_3: 175,   // 3doseantipoison
+    STRENGTH_POTION_3: 115,     // 3dose1strength
+    RESTORE_POTION_3: 127,      // 3dosestatrestore
+    PRAYER_POTION_3: 139,       // 3doseprayerrestore
+
+    ATTACK_POTION: 2428  // 4dose1attack (full dose, e.g. from Entrana drop)
+} as const;
+
+export const FOOD_IDS: number[] = [
+    Items.MANTA_RAY,
+    Items.SEA_TURTLE,
+    Items.SHARK,
+    Items.SWORDFISH,
+    Items.LOBSTER,
+    Items.SALMON,
+    Items.TROUT,
+    Items.HERRING,
+    Items.SARDINE,
+    Items.SHRIMP,
+    Items.BREAD,
+    Items.CAKE
+];
     EYE_OF_NEWT: 221,     // secondary ingredient for attack potion (Betty / Port Sarim)
     UNFINISHED_GUAM: 91,  // guamvial — guam_leaf + vial_of_water
     ATTACK_POTION: 2428,  // 4dose1attack (full dose, e.g. from Entrana drop)
@@ -414,6 +659,39 @@ export const Objects = {
 //   🚫 Avoid               — unreachable by bots (underground / boat-only)
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface AgilityObstacle {
+    name: string;
+    op: number;
+}
+
+export const AgilityCourses: Record<string, AgilityObstacle[]> = {
+    GNOME: [
+        { name: 'gnome_log_balance', op: 1 },
+        { name: 'gnome_obstacle_net_1', op: 1 },
+        { name: 'gnome_tree_branch_1', op: 1 },
+        { name: 'gnome_balancing_rope', op: 1 },
+        { name: 'gnome_tree_branch_2', op: 1 },
+        { name: 'gnome_obstacle_net_2', op: 1 },
+        { name: 'gnome_obstacle_pipe', op: 1 }
+    ],
+    BARBARIAN: [
+        { name: 'barbarian_rope_swing', op: 1 },
+        { name: 'barbarian_log_balance', op: 1 },
+        { name: 'barbarian_obstacle_net', op: 1 },
+        { name: 'barbarian_ledge', op: 1 },
+        { name: 'castlecrumbly1', op: 1 },
+        { name: 'barbarian_obstacle_pipe', op: 1 }
+    ],
+    WILDERNESS: [
+        { name: 'loc_2309', op: 1 },
+        { name: 'wilderness_obstacle_pipe', op: 1 },
+        { name: 'wilderness_rope_swing', op: 1 },
+        { name: 'wilderness_stepping_stone', op: 1 },
+        { name: 'wilderness_log_balance', op: 1 },
+        { name: 'wilderness_rocks', op: 1 }
+    ]
+};
+
 export const Locations = {
     // ── Spawn ─────────────────────────────────────────────────────────────────
     LUMBRIDGE_SPAWN: [3180, 3240, 0] as [number, number, number], // ✅ road north of Lumbridge castle
@@ -424,18 +702,36 @@ export const Locations = {
     VARROCK_WEST_BANK: [3185, 3444, 0] as [number, number, number], // ✅
     VARROCK_EAST_BANK: [3253, 3420, 0] as [number, number, number], // ✅
     AL_KHARID_BANK: [3269, 3163, 0] as [number, number, number], // ⛩ inside Al Kharid (2 tiles past south door)
+    FALADOR_WEST_BANK: [2946, 3368, 0] as [number, number, number], // ✅
     FALADOR_EAST_BANK: [3013, 3355, 0] as [number, number, number], // ✅
+    SEERS_BANK: [2725, 3493, 0] as [number, number, number], // ✅
+    ARDOUGNE_NORTH_BANK: [2615, 3332, 0] as [number, number, number], // ⛩
+    ARDOUGNE_SOUTH_BANK: [2655, 3283, 0] as [number, number, number], // ✅
 
-    // ── Shops ─────────────────────────────────────────────────────────────────
+    // ── Agility ───────────────────────────────────────────────────────────────
+    GNOME_AGILITY: [2474, 3436, 0] as [number, number, number], // ✅
+    BARBARIAN_AGILITY: [2541, 3556, 0] as [number, number, number], // ✅
+    WILDERNESS_AGILITY: [2998, 3912, 0] as [number, number, number], // ✅
+
+    // ── Mining ────────────────────────────────────────────────────────────────
     BOB_AXES: [3231, 3203, 0] as [number, number, number], // ✅ Bob's Axes, Lumbridge
     LUMBRIDGE_GENERAL: [3213, 3247, 0] as [number, number, number], // ✅ General Store
     GERRANTS_FISHING: [3014, 3224, 0] as [number, number, number], // ✅ Port Sarim — only F2P fishing shop
     VARROCK_SWORD_SHOP: [3205, 3420, 0] as [number, number, number], // ✅ swords/longswords/daggers — no scimitars
     VARROCK_ARCHERY: [3233, 3425, 0] as [number, number, number], // ✅ Lowe's Archery
     VARROCK_RUNES: [3253, 3400, 0] as [number, number, number], // ✅ Aubury's Rune Shop
-    VARROCK_STAFFS: [3203, 3235, 0] as [number, number, number], // ✅ Zaff's Superior Staffs
+    VARROCK_STAFFS: [3202, 3434, 0] as [number, number, number], // ✅ Zaff's Superior Staffs
+    VARROCK_ARMOUR: [3229, 3438, 0] as [number, number, number], // ✅ Horvik's Armour
     AL_KHARID_SCIMITARS: [3274, 3190, 0] as [number, number, number], // ⛩ Zeke's — only F2P scimitar shop
+    AL_KHARID_LEGS: [3274, 3175, 0] as [number, number, number], // ⛩ Louie's Legs
+    AL_KHARID_SKIRTS: [3270, 3180, 0] as [number, number, number], // ⛩ Ranael's Skirts
+    FALADOR_SHIELDS: [2972, 3386, 0] as [number, number, number], // ✅ Cassie's Shields
+    FALADOR_CHAINS: [2972, 3314, 0] as [number, number, number], // ✅ Wayne's Chains
+    FALADOR_MACES: [2959, 3390, 0] as [number, number, number], // ✅ Flynn's Maces
+    PORT_SARIM_BATTLEAXES: [3026, 3249, 0] as [number, number, number], // ✅ Brian's Battleaxes
     PORT_SARIM_RUNES: [3013, 3224, 0] as [number, number, number], // ✅
+    TAVERLEY_HERBS: [2893, 3448, 0] as [number, number, number], // ⛩ Jatix
+    TAVERLEY_SWORDS: [2886, 3441, 0] as [number, number, number], // ⛩ Gaius
 
     // ── Woodcutting ───────────────────────────────────────────────────────────
     TREES_LUMBRIDGE: [3194, 3226, 0] as [number, number, number], // ✅ behind Lumbridge castle
@@ -446,6 +742,10 @@ export const Locations = {
     WILLOWS_BARBARIAN_VIA: [3045, 3340, 0] as [number, number, number], // ↗ waypoint west of Draynor Mansion (3110,3329)
     YEWS_VARROCK: [3204, 3499, 0] as [number, number, number], // ⛩ north Varrock — VarrockNorth gateway
     YEWS_FALADOR: [2987, 3340, 0] as [number, number, number], // ✅ south-east of Falador, near east bank
+    MAPLES_SEERS: [2725, 3500, 0] as [number, number, number], // ✅
+    MAGICS_SEERS: [2696, 3424, 0] as [number, number, number], // ✅
+    YEWS_SEERS: [2713, 3481, 0] as [number, number, number], // ✅
+    YEWS_EDGEVILLE: [3087, 3476, 0] as [number, number, number], // ✅
 
     // ── Mining ────────────────────────────────────────────────────────────────
     // MINE_DWARVEN is now mapped to Barbarian Village surface mine:
@@ -458,12 +758,23 @@ export const Locations = {
     MINE_VARROCK_WEST: [3177, 3368, 0] as [number, number, number], // ✅ tin + iron — open area
     MINE_DWARVEN: [3082, 3421, 0] as [number, number, number], // ✅ Barbarian Village surface mine — copper/tin/iron/coal, gate-free
     MINE_KARAMJA: [2734, 3221, 0] as [number, number, number], // ✅ karmajagold
+    MINE_RIMMINGTON: [2977, 3233, 0] as [number, number, number], // ✅ clay
+    MINE_MITHRIL: [3302, 3300, 0] as [number, number, number], // Al Kharid
+    MINE_ADAMANT: [3300, 3310, 0] as [number, number, number], // Al Kharid
+    MINE_RUNITE: [3060, 3885, 0] as [number, number, number], // Wilderness
+    EDGEVILLE_BANK: [3093, 3491, 0] as [number, number, number],
+    YANILLE_BANK: [2613, 3093, 0] as [number, number, number],
+    CATHERBY_BANK: [2808, 3441, 0] as [number, number, number],
+    EDGEVILLE_DUNGEON: [3096, 3469, 0] as [number, number, number],
+    YANILLE_DUNGEON: [2606, 3102, 0] as [number, number, number],
 
     // ── Fishing ───────────────────────────────────────────────────────────────
     FISH_DRAYNOR: [3088, 3228, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
     FISH_BARBARIAN: [3105, 3432, 0] as [number, number, number], // ✅ trout + salmon (fly rod) — best accessible spot
     FISH_KARAMJA: [2924, 3173, 0] as [number, number, number], // ⛩ lobster + swordfish (pot/harpoon) — boat-routed via Port Sarim
     FISH_ALKHARID: [3277, 3142, 0] as [number, number, number], // ✅ shrimp + sardine (net/bait)
+    FISH_CATHERBY: [2850, 3430, 0] as [number, number, number], // ✅ lobster + swordfish
+    FISH_SHARK: [2600, 3415, 0] as [number, number, number], // Catherby
     // ── Combat ────────────────────────────────────────────────────────────────
     CHICKENS_LUMBRIDGE: [3237, 3295, 0] as [number, number, number], // ✅ level 1 chickens, no walls
     CHICKENS_LUMBRIDGE2: [3188, 3278, 0] as [number, number, number], // ✅ level 1 chickens, no walls
@@ -473,6 +784,10 @@ export const Locations = {
     BARBARIANS_VILLAGE: [3082, 3434, 0] as [number, number, number], // ✅ level 17 barbarians, aggressive, open area
     GUARDS_VARROCK: [3224, 3470, 0] as [number, number, number], // ⛩ level 21 guards, north Varrock
     AL_KHARID_WARRIORS: [3294, 3172, 0] as [number, number, number], // ⛩ Al Kharid palace — AlKharid gateway
+
+    // ── Thieving ──────────────────────────────────────────────────────────────
+    BAKER_STALL: [2667, 3310, 0] as [number, number, number], // ✅
+
     // ── Taverley Dungeon — chaos druids ──────────────────────────────────────
     // Entrance: surface trapdoor at (2884,3450); underground floor at (2884,9848).
     // Chaos druids spawn in the open corridor east of the entrance (parsed from
@@ -482,7 +797,7 @@ export const Locations = {
     CHAOS_DRUIDS_TAVERLY: [2931, 9847, 0] as [number, number, number], // 🚪 centre of chaos druid corridor (level 13, open area)
 
     // ── Skilling stations ─────────────────────────────────────────────────────
-    ALKHRAID_RANGE: [3292, 3203, 0] as [number, number, number], // ⛩ Al Kharid palace range — inside palace past curtain (3292,3202)
+    AL_KHARID_RANGE: [3292, 3203, 0] as [number, number, number], // ⛩ Al Kharid palace range — inside palace past curtain (3292,3202)
     VARROCK_RANGE: [3237, 3410, 0] as [number, number, number], // ✅ cooking range in house SW of Varrock west bank — open building, no gate
     FALADOR_RANGE: [3040, 3366, 0] as [number, number, number], // ✅ cooking range in house west of Falador east bank — open building
     FIRE_LUMBRIDGE_ROAD: [3218, 3253, 0] as [number, number, number], // ✅ firemaking road
@@ -491,8 +806,11 @@ export const Locations = {
     FALADOR_FURNACE: [2975, 3369, 0] as [number, number, number], // ✅ near Falador east bank
     VARROCK_ANVIL: [3188, 3422, 0] as [number, number, number], // ✅
     LUMBRIDGE_ALTAR: [3243, 3210, 0] as [number, number, number], // ✅
+    TANNER_AL_KHARID: [3274, 3191, 0] as [number, number, number], // ✅ Ellis the tanner in Al Kharid
+    BARBARIAN_VILLAGE_POTTERY: [3085, 3408, 0] as [number, number, number], // ✅ Barbarian Village pottery wheel
 
     // ── Crafting ──────────────────────────────────────────────────────────────
+    FLAX_FIELD: [2743, 3444, 0] as [number, number, number], // ✅
     LUMBRIDGE_SHEEP: [3200, 3262, 0] as [number, number, number], // ✅ inside sheep pen NE of castle (within SheepPen GATEWAY_REGION)
     LUMBRIDGE_CASTLE_STAIRS: [3206, 3207, 0] as [number, number, number], // ✅ foot of castle stairs (ground floor)
     LUMBRIDGE_CASTLE_APPROACH: [3215, 3218, 0] as [number, number, number], // ✅ outside south castle entrance — no doors blocking
@@ -504,6 +822,18 @@ export const Locations = {
     THIEVE_LUMBRIDGE_WOMAN: [3194, 3250, 0] as [number, number, number], // ✅ Lumbridge woman
     THIEVE_VARROCK_MAN: [3212, 3435, 0] as [number, number, number], // ✅ Varrock man
     THIEVE_VARROCK_WOMAN: [3214, 3437, 0] as [number, number, number], // ✅ Varrock woman
+    THIEVE_ALKHARID_WARRIOR: [3294, 3172, 0] as [number, number, number], // ✅ Al Kharid warrior
+    THIEVE_VARROCK_GUARD: [3212, 3474, 0] as [number, number, number], // ✅ Varrock guard
+    THIEVE_ARDY_KNIGHT: [2655, 3302, 0] as [number, number, number], // ✅ Ardougne knight
+    THIEVE_PALADIN: [2655, 3295, 0] as [number, number, number], // ✅ Paladin
+    THIEVE_HERO: [2655, 3290, 0] as [number, number, number], // ✅ Hero
+
+    // Thieving - Stalls
+    SILK_STALL: [2662, 3314, 0] as [number, number, number],
+    SILVER_STALL: [2658, 3313, 0] as [number, number, number],
+    SPICE_STALL: [2659, 3310, 0] as [number, number, number],
+    FUR_STALL: [2662, 3305, 0] as [number, number, number],
+    GEM_STALL: [2662, 3310, 0] as [number, number, number],
 
     // ── Herblore supply runs ──────────────────────────────────────────────────
     // All three sites are reached via teleJump from the bank.
@@ -577,8 +907,23 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
             { itemId: Items.BRONZE_SWORD, cost: 32 },
             { itemId: Items.IRON_SWORD, cost: 112 },
             { itemId: Items.STEEL_SWORD, cost: 400 },
+            { itemId: Items.BLACK_SWORD, cost: 1000 },
             { itemId: Items.MITHRIL_SWORD, cost: 3000 },
-            { itemId: Items.ADAMANT_SWORD, cost: 12000 }
+            { itemId: Items.ADAMANT_SWORD, cost: 12000 },
+
+            { itemId: Items.BRONZE_LONGSWORD, cost: 50 },
+            { itemId: Items.IRON_LONGSWORD, cost: 175 },
+            { itemId: Items.STEEL_LONGSWORD, cost: 625 },
+            { itemId: Items.BLACK_LONGSWORD, cost: 1000 },
+            { itemId: Items.MITHRIL_LONGSWORD, cost: 4687 },
+            { itemId: Items.ADAMANT_LONGSWORD, cost: 18750 },
+
+            { itemId: Items.BRONZE_DAGGER, cost: 10 },
+            { itemId: Items.IRON_DAGGER, cost: 35 },
+            { itemId: Items.STEEL_DAGGER, cost: 125 },
+            { itemId: Items.BLACK_DAGGER, cost: 1000 },
+            { itemId: Items.MITHRIL_DAGGER, cost: 937 },
+            { itemId: Items.ADAMANT_DAGGER, cost: 3750 }
         ]
     },
 
@@ -612,14 +957,39 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
         location: Locations.AL_KHARID_CRAFTING_SHOP,
         stock: [
             { itemId: Items.SHEARS, cost: 1 },
-            { itemId: Items.RING_MOULD, cost: 25 }
+            { itemId: Items.RING_MOULD, cost: 25 },
+            { itemId: Items.NECKLACE_MOULD, cost: 25 },
+            { itemId: Items.AMULET_MOULD, cost: 25 },
+            { itemId: Items.HOLY_SYMBOL_MOULD, cost: 25 },
+            { itemId: Items.CHISEL, cost: 1 },
+            { itemId: Items.NEEDLE, cost: 1 },
+            { itemId: Items.THREAD, cost: 1 }
         ]
     },
 
     // Zaff's Superior Staffs — Varrock (staff_of_air 1000gp)
     VARROCK_STAFFS: {
         location: Locations.VARROCK_STAFFS,
-        stock: [{ itemId: Items.STAFF_OF_AIR, cost: 1000 }]
+        stock: [
+            { itemId: Items.STAFF_OF_AIR, cost: 1000 },
+            { itemId: Items.STAFF_OF_WATER, cost: 1000 },
+            { itemId: Items.STAFF_OF_EARTH, cost: 1000 },
+            { itemId: Items.STAFF_OF_FIRE, cost: 1000 }
+        ]
+    },
+
+    VARROCK_ARMOUR: {
+        location: Locations.VARROCK_ARMOUR,
+        stock: [
+            { itemId: Items.BRONZE_PLATEBODY, cost: 100 },
+            { itemId: Items.IRON_PLATEBODY, cost: 200 },
+            { itemId: Items.STEEL_PLATEBODY, cost: 400 },
+            { itemId: Items.MITHRIL_PLATEBODY, cost: 3000 },
+            { itemId: Items.BLACK_PLATEBODY, cost: 3000 },
+            { itemId: Items.IRON_PLATELEGS, cost: 100 },
+            { itemId: Items.STUDDED_BODY, cost: 700 },
+            { itemId: Items.STUDDED_CHAPS, cost: 700 }
+        ]
     },
 
     // Aemad's Adventuring Supplies — East Ardougne (vials for herblore)
@@ -646,6 +1016,101 @@ export const Shops: Record<string, { location: [number, number, number]; stock: 
             { itemId: Items.IRON_SCIMITAR, cost: 200 },
             { itemId: Items.STEEL_SCIMITAR, cost: 600 },
             { itemId: Items.MITHRIL_SCIMITAR, cost: 4000 }
+        ]
+    },
+
+    AL_KHARID_LEGS: {
+        location: Locations.AL_KHARID_LEGS,
+        stock: [
+            { itemId: Items.BRONZE_PLATELEGS, cost: 100 },
+            { itemId: Items.IRON_PLATELEGS, cost: 400 },
+            { itemId: Items.STEEL_PLATELEGS, cost: 900 },
+            { itemId: Items.BLACK_PLATELEGS, cost: 1200 },
+            { itemId: Items.MITHRIL_PLATELEGS, cost: 2000 },
+            { itemId: Items.ADAMANT_PLATELEGS, cost: 13000 }
+        ]
+    },
+
+    AL_KHARID_SKIRTS: {
+        location: Locations.AL_KHARID_SKIRTS,
+        stock: [
+            { itemId: Items.BRONZE_PLATESKIRT, cost: 100 },
+            { itemId: Items.IRON_PLATESKIRT, cost: 400 },
+            { itemId: Items.STEEL_PLATESKIRT, cost: 900 },
+            { itemId: Items.BLACK_PLATESKIRT, cost: 1200 },
+            { itemId: Items.MITHRIL_PLATESKIRT, cost: 2000 },
+            { itemId: Items.ADAMANT_PLATESKIRT, cost: 13000 }
+        ]
+    },
+
+    FALADOR_SHIELDS: {
+        location: Locations.FALADOR_SHIELDS,
+        stock: [
+            { itemId: Items.BRONZE_SQ_SHIELD, cost: 48 },
+            { itemId: Items.IRON_SQ_SHIELD, cost: 168 },
+            { itemId: Items.STEEL_SQ_SHIELD, cost: 600 },
+            { itemId: Items.MITHRIL_SQ_SHIELD, cost: 1440 },
+            { itemId: Items.ADAMANT_SQ_SHIELD, cost: 3840 },
+            { itemId: Items.BRONZE_KITESHIELD, cost: 80 },
+            { itemId: Items.IRON_KITESHIELD, cost: 280 }
+        ]
+    },
+
+    FALADOR_CHAINS: {
+        location: Locations.FALADOR_CHAINS,
+        stock: [
+            { itemId: Items.BRONZE_CHAINBODY, cost: 60 },
+            { itemId: Items.IRON_CHAINBODY, cost: 210 },
+            { itemId: Items.STEEL_CHAINBODY, cost: 750 },
+            { itemId: Items.BLACK_CHAINBODY, cost: 1200 },
+            { itemId: Items.MITHRIL_CHAINBODY, cost: 1800 },
+            { itemId: Items.ADAMANT_CHAINBODY, cost: 4800 }
+        ]
+    },
+
+    FALADOR_MACES: {
+        location: Locations.FALADOR_MACES,
+        stock: [
+            { itemId: Items.BRONZE_MACE, cost: 18 },
+            { itemId: Items.IRON_MACE, cost: 63 },
+            { itemId: Items.STEEL_MACE, cost: 225 },
+            { itemId: Items.BLACK_MACE, cost: 450 },
+            { itemId: Items.MITHRIL_MACE, cost: 540 },
+            { itemId: Items.ADAMANT_MACE, cost: 1440 }
+        ]
+    },
+
+    PORT_SARIM_BATTLEAXES: {
+        location: Locations.PORT_SARIM_BATTLEAXES,
+        stock: [
+            { itemId: Items.BRONZE_BATTLEAXE, cost: 52 },
+            { itemId: Items.IRON_BATTLEAXE, cost: 182 },
+            { itemId: Items.STEEL_BATTLEAXE, cost: 650 },
+            { itemId: Items.BLACK_BATTLEAXE, cost: 1300 },
+            { itemId: Items.MITHRIL_BATTLEAXE, cost: 1560 },
+            { itemId: Items.ADAMANT_BATTLEAXE, cost: 4160 }
+        ]
+    },
+
+    // Jatix's Herblore Shop — Taverley
+    TAVERLEY_HERBS: {
+        location: Locations.TAVERLEY_HERBS,
+        stock: [
+            { itemId: Items.VIAL_EMPTY, cost: 2 },
+            { itemId: Items.EYE_OF_NEWT, cost: 3 }
+        ]
+    },
+
+    // Gaius' Two Handed Shop — Taverley
+    TAVERLEY_SWORDS: {
+        location: Locations.TAVERLEY_SWORDS,
+        stock: [
+            { itemId: Items.BRONZE_2H_SWORD, cost: 200 },
+            { itemId: Items.IRON_2H_SWORD, cost: 300 },
+            { itemId: Items.STEEL_2H_SWORD, cost: 500 },
+            { itemId: Items.BLACK_2H_SWORD, cost: 700 },
+            { itemId: Items.MITHRIL_2H_SWORD, cost: 1000 },
+            { itemId: Items.ADAMANT_2H_SWORD, cost: 15000 }
         ]
     }
 };
@@ -680,13 +1145,21 @@ export const AxesByLevel: ToolRequirement[] = [
     { itemId: Items.BRONZE_AXE, levelReq: 1, shopKey: 'BOB_AXES' },
     { itemId: Items.IRON_AXE, levelReq: 1, shopKey: 'BOB_AXES' },
     { itemId: Items.STEEL_AXE, levelReq: 6, shopKey: 'BOB_AXES' },
+    { itemId: Items.BLACK_AXE, levelReq: 11, shopKey: '' },
     { itemId: Items.MITHRIL_AXE, levelReq: 21, shopKey: 'BOB_AXES' },
     { itemId: Items.ADAMANT_AXE, levelReq: 31, shopKey: 'BOB_AXES' },
     { itemId: Items.RUNE_AXE, levelReq: 41, shopKey: 'BOB_AXES' }
 ];
 
-// Pickaxes — Bob sells bronze_pickaxe; rest dropped/smithed
-export const PickaxesByLevel: ToolRequirement[] = [{ itemId: Items.BRONZE_PICKAXE, levelReq: 1, shopKey: 'BOB_AXES' }];
+// Pickaxes — Bob sells bronze; rest dropped/smithed
+export const PickaxesByLevel: ToolRequirement[] = [
+    { itemId: Items.BRONZE_PICKAXE, levelReq: 1, shopKey: 'BOB_AXES' },
+    { itemId: Items.IRON_PICKAXE, levelReq: 1, shopKey: '' },
+    { itemId: Items.STEEL_PICKAXE, levelReq: 6, shopKey: '' },
+    { itemId: Items.MITHRIL_PICKAXE, levelReq: 21, shopKey: '' },
+    { itemId: Items.ADAMANT_PICKAXE, levelReq: 31, shopKey: '' },
+    { itemId: Items.RUNE_PICKAXE, levelReq: 41, shopKey: '' }
+];
 
 // Fishing gear grouped by method
 export const FishingGearByMethod: Record<string, ToolRequirement[]> = {
@@ -765,8 +1238,10 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 0.65,
             itemGained: Items.WILLOW_LOGS
         },
+        { minLevel: 45, maxLevel: 59, action: 'woodcut', location: Locations.MAPLES_SEERS, toolItemIds: [Items.STEEL_AXE], xpPerAction: 1000, ticksPerAction: 5, successRate: 0.5, itemGained: Items.MAPLE_LOGS },
         { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_VARROCK, toolItemIds: [Items.STEEL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.4, itemGained: Items.YEW_LOGS },
-        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_FALADOR, toolItemIds: [Items.STEEL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.4, itemGained: Items.YEW_LOGS }
+        { minLevel: 60, maxLevel: 99, action: 'woodcut', location: Locations.YEWS_FALADOR, toolItemIds: [Items.STEEL_AXE], xpPerAction: 1750, ticksPerAction: 7, successRate: 0.4, itemGained: Items.YEW_LOGS },
+        { minLevel: 75, maxLevel: 99, action: 'woodcut', location: Locations.MAGICS_SEERS, toolItemIds: [Items.STEEL_AXE], xpPerAction: 2500, ticksPerAction: 10, successRate: 0.3, itemGained: Items.MAGIC_LOGS }
     ],
 
     // ── Fishing ──────────────────────────────────────────────────────────────
@@ -810,7 +1285,9 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         // Level 40-49: cage — lobster at Karamja (boat-routed via Port Sarim)
         { minLevel: 40, maxLevel: 49, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.LOBSTER_POT], xpPerAction: 900, ticksPerAction: 5, successRate: 0.5, itemGained: Items.RAW_LOBSTER },
         // Level 50-99: harpoon — swordfish at Karamja (boat-routed via Port Sarim)
-        { minLevel: 50, maxLevel: 99, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.HARPOON], xpPerAction: 1000, ticksPerAction: 5, successRate: 0.45, itemGained: Items.RAW_SWORDFISH }
+        { minLevel: 50, maxLevel: 99, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.HARPOON], xpPerAction: 1000, ticksPerAction: 5, successRate: 0.45, itemGained: Items.RAW_SWORDFISH },
+        // Level 76-99: harpoon — shark at Catherby
+        { minLevel: 76, maxLevel: 99, action: 'fish', location: Locations.FISH_SHARK, toolItemIds: [Items.HARPOON], xpPerAction: 1100, ticksPerAction: 10, successRate: 0.35, itemGained: Items.RAW_SHARK }
     ],
 
     // ── Mining ───────────────────────────────────────────────────────────────
@@ -868,7 +1345,11 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // Level 30+: coal at Barbarian Village mine (surface accessible!)
         { minLevel: 30, maxLevel: 99, action: 'mine', location: Locations.MINE_DWARVEN, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 500, ticksPerAction: 6, successRate: 0.45, itemGained: Items.COAL },
-        { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE }
+        { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE },
+        { minLevel: 1, maxLevel: 99, action: 'mine', location: Locations.MINE_RIMMINGTON, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 50, ticksPerAction: 4, successRate: 0.8, itemGained: Items.CLAY },
+        { minLevel: 55, maxLevel: 99, action: 'mine', location: Locations.MINE_MITHRIL, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 800, ticksPerAction: 8, successRate: 0.4, itemGained: Items.MITHRIL_ORE },
+        { minLevel: 70, maxLevel: 99, action: 'mine', location: Locations.MINE_ADAMANT, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 950, ticksPerAction: 10, successRate: 0.35, itemGained: Items.ADAMANTITE_ORE },
+        { minLevel: 85, maxLevel: 99, action: 'mine', location: Locations.MINE_RUNITE, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 1250, ticksPerAction: 15, successRate: 0.25, itemGained: Items.RUNITE_ORE }
     ],
 
     // ── Firemaking ───────────────────────────────────────────────────────────
@@ -885,12 +1366,12 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // ── Cooking ──────────────────────────────────────────────────────────────
     // XP from cooking_generic.dbrow experience, levels from levelrequired.
     COOKING: [
-        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
-        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
-        { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
-        { minLevel: 25, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 900, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_SALMON, itemGained: Items.SALMON },
-        { minLevel: 40, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.8, itemConsumed: Items.RAW_LOBSTER, itemGained: Items.LOBSTER },
-        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.ALKHRAID_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
+        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
+        { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
+        { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
+        { minLevel: 25, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 900, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_SALMON, itemGained: Items.SALMON },
+        { minLevel: 40, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.8, itemConsumed: Items.RAW_LOBSTER, itemGained: Items.LOBSTER },
+        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.AL_KHARID_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
         { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 300, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SHRIMP, itemGained: Items.SHRIMP },
         { minLevel: 1, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 400, ticksPerAction: 4, successRate: 0.65, itemConsumed: Items.RAW_SARDINE, itemGained: Items.SARDINE },
         { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.FALADOR_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
@@ -902,7 +1383,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         { minLevel: 15, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 700, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_TROUT, itemGained: Items.TROUT },
         { minLevel: 25, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 900, ticksPerAction: 4, successRate: 0.7, itemConsumed: Items.RAW_SALMON, itemGained: Items.SALMON },
         { minLevel: 40, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 1200, ticksPerAction: 4, successRate: 0.8, itemConsumed: Items.RAW_LOBSTER, itemGained: Items.LOBSTER },
-        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH }
+        { minLevel: 45, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 1400, ticksPerAction: 4, successRate: 0.85, itemConsumed: Items.RAW_SWORDFISH, itemGained: Items.SWORDFISH },
+        { minLevel: 80, maxLevel: 99, action: 'cook', location: Locations.VARROCK_RANGE, toolItemIds: [], xpPerAction: 2100, ticksPerAction: 4, successRate: 0.9, itemConsumed: Items.RAW_SHARK, itemGained: Items.SHARK }
     ],
 
     // ── Combat — Attack ──────────────────────────────────────────────────────
@@ -1501,6 +1983,32 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.STEEL_BAR,
             itemGained: Items.STEEL_PLATEBODY,
             extra: { barCount: 5 }
+        },
+        {
+            minLevel: 83,
+            maxLevel: 99,
+            action: 'smith',
+            location: Locations.VARROCK_ANVIL,
+            toolItemIds: [Items.HAMMER],
+            xpPerAction: 1560,
+            ticksPerAction: 6,
+            successRate: 1.0,
+            itemConsumed: Items.ADAMANT_BAR,
+            itemGained: Items.ADAMANT_PLATEBODY,
+            extra: { barCount: 5 }
+        },
+        {
+            minLevel: 98,
+            maxLevel: 99,
+            action: 'smith',
+            location: Locations.VARROCK_ANVIL,
+            toolItemIds: [Items.HAMMER],
+            xpPerAction: 1875,
+            ticksPerAction: 6,
+            successRate: 1.0,
+            itemConsumed: Items.RUNE_BAR,
+            itemGained: Items.RUNE_PLATEBODY,
+            extra: { barCount: 5 }
         }
     ],
 
@@ -1509,11 +2017,29 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // Pickpocket man/woman in Lumbridge/Varrock until 99
     THIEVING: [
         // Level 1-9: Lumbridge man
-        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 200, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
-      
-        // Level 25-49: Lumbridge woman (higher success rate)
-        { minLevel: 1, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_WOMAN, toolItemIds: [], xpPerAction: 450, ticksPerAction: 4, successRate: 0.9, itemGained: Items.COINS, extra: { npcName: 'woman' } },
-        // Level 50-99: Varrock woman (best silver/tokens)
+        { minLevel: 1, maxLevel: 9, action: 'thieve', location: Locations.THIEVE_LUMBRIDGE_MAN, toolItemIds: [], xpPerAction: 80, ticksPerAction: 4, successRate: 0.85, itemGained: Items.COINS, extra: { npcName: 'man' } },
+        // Level 5-19: Baker's stall (Seers/Ardougne)
+        { minLevel: 5, maxLevel: 19, action: 'thieve_stall', location: Locations.BAKER_STALL, toolItemIds: [], xpPerAction: 160, ticksPerAction: 4, successRate: 1.0, itemGained: Items.CAKE, extra: { stallId: 2561, npcType: 'Baker' } },
+        // Level 25-39: Warrior
+        { minLevel: 25, maxLevel: 39, action: 'thieve', location: Locations.THIEVE_ALKHARID_WARRIOR, toolItemIds: [], xpPerAction: 260, ticksPerAction: 4, successRate: 0.7, itemGained: Items.COINS, extra: { npcName: 'warrior' } },
+        // Level 20-41: Silk stall
+        { minLevel: 20, maxLevel: 41, action: 'thieve_stall', location: Locations.SILK_STALL, toolItemIds: [], xpPerAction: 240, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SILK, extra: { stallId: 2560, npcType: 'Silk merchant' } },
+        // Level 40-54: Guard
+        { minLevel: 40, maxLevel: 54, action: 'thieve', location: Locations.THIEVE_VARROCK_GUARD, toolItemIds: [], xpPerAction: 468, ticksPerAction: 4, successRate: 0.65, itemGained: Items.COINS, extra: { npcName: 'guard' } },
+        // Level 42-64: Silver stall
+        { minLevel: 42, maxLevel: 64, action: 'thieve_stall', location: Locations.SILVER_STALL, toolItemIds: [], xpPerAction: 540, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SILVER_ORE, extra: { stallId: 2562, npcType: 'Silver merchant' } },
+        // Level 35-41: Fur stall
+        { minLevel: 35, maxLevel: 41, action: 'thieve_stall', location: Locations.FUR_STALL, toolItemIds: [], xpPerAction: 360, ticksPerAction: 4, successRate: 1.0, itemGained: Items.GREY_WOLF_FUR, extra: { stallId: 2563, npcType: 'Fur merchant' } },
+        // Level 55-99: Knight
+        { minLevel: 55, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_ARDY_KNIGHT, toolItemIds: [], xpPerAction: 843, ticksPerAction: 4, successRate: 0.6, itemGained: Items.COINS, extra: { npcName: 'knight' } },
+        // Level 65-74: Spice stall
+        { minLevel: 65, maxLevel: 74, action: 'thieve_stall', location: Locations.SPICE_STALL, toolItemIds: [], xpPerAction: 810, ticksPerAction: 4, successRate: 1.0, itemGained: Items.SPICE, extra: { stallId: 2564, npcType: 'Spice seller' } },
+        // Level 70-79: Paladin
+        { minLevel: 70, maxLevel: 79, action: 'thieve', location: Locations.THIEVE_PALADIN, toolItemIds: [], xpPerAction: 1518, ticksPerAction: 4, successRate: 0.5, itemGained: Items.COINS, extra: { npcName: 'paladin' } },
+        // Level 75-99: Gem stall
+        { minLevel: 75, maxLevel: 99, action: 'thieve_stall', location: Locations.GEM_STALL, toolItemIds: [], xpPerAction: 1600, ticksPerAction: 4, successRate: 1.0, itemGained: Items.UNCUT_SAPPHIRE, extra: { stallId: 2565, npcType: 'Gem merchant' } },
+        // Level 80-99: Hero
+        { minLevel: 80, maxLevel: 99, action: 'thieve', location: Locations.THIEVE_HERO, toolItemIds: [], xpPerAction: 2733, ticksPerAction: 4, successRate: 0.4, itemGained: Items.COINS, extra: { npcName: 'hero' } }
     ],
 
     // ── Crafting ─────────────────────────────────────────────────────────────
@@ -1554,6 +2080,248 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.GOLD_RING,
             itemConsumed: Items.GOLD_BAR
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'pick_flax',
+            location: Locations.FLAX_FIELD,
+            toolItemIds: [],
+            xpPerAction: 0,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.FLAX
+        },
+        {
+            minLevel: 10,
+            maxLevel: 99,
+            action: 'spin_flax',
+            location: Locations.LUMBRIDGE_POTTERS_WHEEL,
+            toolItemIds: [],
+            xpPerAction: 150, // 15 XP × 10
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BOW_STRING,
+            itemConsumed: Items.FLAX
+        },
+        {
+            minLevel: 1,
+            maxLevel: 6,
+            action: 'craft_leather_gloves',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 138,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_GLOVES,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 7,
+            maxLevel: 10,
+            action: 'craft_leather_boots',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 163,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_BOOTS,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 11,
+            maxLevel: 13,
+            action: 'craft_leather_vambraces',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 185,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_VAMBRACES,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 14,
+            maxLevel: 17,
+            action: 'craft_leather_chaps',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 250,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_CHAPS,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 18,
+            maxLevel: 27,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 270,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.LEATHER_BODY,
+            itemConsumed: Items.LEATHER
+        },
+        {
+            minLevel: 28,
+            maxLevel: 99,
+            action: 'craft_hard_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 350,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.HARD_LEATHER_BODY,
+            itemConsumed: Items.HARD_LEATHER
+        },
+        {
+            minLevel: 20,
+            maxLevel: 26,
+            action: 'cut_sapphire',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.CHISEL],
+            xpPerAction: 500,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.SAPPHIRE,
+            itemConsumed: Items.UNCUT_SAPPHIRE
+        },
+        {
+            minLevel: 27,
+            maxLevel: 33,
+            action: 'cut_emerald',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.CHISEL],
+            xpPerAction: 675,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.EMERALD,
+            itemConsumed: Items.UNCUT_EMERALD
+        },
+        {
+            minLevel: 34,
+            maxLevel: 42,
+            action: 'cut_ruby',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.CHISEL],
+            xpPerAction: 850,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.RUBY,
+            itemConsumed: Items.UNCUT_RUBY
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'soften_clay',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 0,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.SOFT_CLAY,
+            itemConsumed: Items.CLAY,
+            extra: { waterItem: Items.BUCKET_OF_WATER }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'craft_pot',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 63,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.POT,
+            itemConsumed: Items.SOFT_CLAY
+        },
+        {
+            minLevel: 43,
+            maxLevel: 99,
+            action: 'cut_diamond',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.CHISEL],
+            xpPerAction: 1075,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.DIAMOND,
+            itemConsumed: Items.UNCUT_DIAMOND
+        },
+        {
+            minLevel: 41,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 650,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.STUDDED_BODY,
+            itemConsumed: Items.LEATHER_BODY,
+            extra: { secondConsumed: Items.STUDS }
+        },
+        {
+            minLevel: 44,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [],
+            xpPerAction: 650,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.STUDDED_CHAPS,
+            itemConsumed: Items.LEATHER_CHAPS,
+            extra: { secondConsumed: Items.STUDS }
+        },
+        {
+            minLevel: 57,
+            maxLevel: 65,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 620,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_GREEN,
+            itemConsumed: Items.DRAGON_LEATHER_GREEN
+        },
+        {
+            minLevel: 66,
+            maxLevel: 72,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 700,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_BLUE,
+            itemConsumed: Items.DRAGON_LEATHER_BLUE
+        },
+        {
+            minLevel: 73,
+            maxLevel: 78,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 780,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_RED,
+            itemConsumed: Items.DRAGON_LEATHER_RED
+        },
+        {
+            minLevel: 79,
+            maxLevel: 99,
+            action: 'craft_leather_body',
+            location: Locations.AL_KHARID_BANK,
+            toolItemIds: [Items.NEEDLE, Items.THREAD],
+            xpPerAction: 860,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.DRAGON_BODY_BLACK,
+            itemConsumed: Items.DRAGON_LEATHER_BLACK
         }
     ],
 
@@ -1570,7 +2338,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     HERBLORE: [
         {
             minLevel: 1,
-            maxLevel: 99,
+            maxLevel: 4,
             action: 'herblore_attack',
             location: Locations.AEMAD_SUPPLIES,   // placeholder — task uses teleJump
             toolItemIds: [],                       // no persistent tool needed
@@ -1579,11 +2347,63 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemConsumed: Items.CLEAN_GUAM,        // consumed per batch
             itemGained:   Items.ATTACK_POTION_3    // 3-dose attack potion (freshly brewed)
+        },
+        {
+            minLevel: 5,
+            maxLevel: 11,
+            action: 'herblore_antipoison',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 375,                      // 37.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_MARRENTILL,
+            itemGained:   Items.ANTIPOISON_POTION_3
+        },
+        {
+            minLevel: 12,
+            maxLevel: 21,
+            action: 'herblore_strength',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 500,                      // 50.0 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_TARROMIN,
+            itemGained:   Items.STRENGTH_POTION_3
+        },
+        {
+            minLevel: 22,
+            maxLevel: 37,
+            action: 'herblore_restore',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 625,                      // 62.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_HARRALANDER,
+            itemGained:   Items.RESTORE_POTION_3
+        },
+        {
+            minLevel: 38,
+            maxLevel: 99,
+            action: 'herblore_prayer',
+            location: Locations.AEMAD_SUPPLIES,
+            toolItemIds: [],
+            xpPerAction: 875,                      // 87.5 XP
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemConsumed: Items.CLEAN_RANARR,
+            itemGained:   Items.PRAYER_POTION_3
         }
     ],
 
-    // ── Stubs ─────────────────────────────────────────────────────────────────
-    AGILITY: [], // requires course loc sequences
+    // ── Agility ────────────────────────────────────────────────────────────────
+    AGILITY: [
+        { minLevel: 1, maxLevel: 34, action: 'agility', location: Locations.GNOME_AGILITY, toolItemIds: [], xpPerAction: 865, ticksPerAction: 45, successRate: 1.0, extra: { course: 'GNOME' } },
+        { minLevel: 35, maxLevel: 51, action: 'agility', location: Locations.BARBARIAN_AGILITY, toolItemIds: [], xpPerAction: 1533, ticksPerAction: 60, successRate: 0.9, extra: { course: 'BARBARIAN' } },
+        { minLevel: 52, maxLevel: 99, action: 'agility', location: Locations.WILDERNESS_AGILITY, toolItemIds: [], xpPerAction: 5714, ticksPerAction: 80, successRate: 0.8, extra: { course: 'WILDERNESS' } }
+    ],
 
     // Fletching — use knife on logs near bank
     // XP from cut_logs.dbrow (productexp field × 10)
@@ -1650,24 +2470,250 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 1.0,
             itemGained: Items.UNSTRUNG_WILLOW_LONGBOW,
             itemConsumed: Items.WILLOW_LOGS
+        },
+        {
+            minLevel: 50,
+            maxLevel: 54,
+            action: 'fletch_maple_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 500,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_MAPLE_SHORTBOW,
+            itemConsumed: Items.MAPLE_LOGS
+        },
+        {
+            minLevel: 55,
+            maxLevel: 69,
+            action: 'fletch_maple_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 583,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_MAPLE_LONGBOW,
+            itemConsumed: Items.MAPLE_LOGS
+        },
+        {
+            minLevel: 70,
+            maxLevel: 84,
+            action: 'fletch_yew_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 675,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_YEW_SHORTBOW,
+            itemConsumed: Items.YEW_LOGS
+        },
+        {
+            minLevel: 75,
+            maxLevel: 84,
+            action: 'fletch_yew_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 750,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_YEW_LONGBOW,
+            itemConsumed: Items.YEW_LOGS
+        },
+        {
+            minLevel: 80,
+            maxLevel: 99,
+            action: 'fletch_magic_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 833,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_MAGIC_SHORTBOW,
+            itemConsumed: Items.MAGIC_LOGS
+        },
+        {
+            minLevel: 85,
+            maxLevel: 99,
+            action: 'fletch_magic_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [Items.KNIFE],
+            xpPerAction: 915,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.UNSTRUNG_MAGIC_LONGBOW,
+            itemConsumed: Items.MAGIC_LOGS
+        },
+        {
+            minLevel: 5,
+            maxLevel: 9,
+            action: 'string_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 50,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 10,
+            maxLevel: 19,
+            action: 'string_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 100,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.LONGBOW,
+            itemConsumed: Items.UNSTRUNG_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 24,
+            action: 'string_oak_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 165,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.OAK_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_OAK_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 25,
+            maxLevel: 34,
+            action: 'string_oak_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 250,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.OAK_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_OAK_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 35,
+            maxLevel: 39,
+            action: 'string_willow_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 333,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.WILLOW_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_WILLOW_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 40,
+            maxLevel: 49,
+            action: 'string_willow_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 415,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.WILLOW_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_WILLOW_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 50,
+            maxLevel: 54,
+            action: 'string_maple_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 500,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.MAPLE_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_MAPLE_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 55,
+            maxLevel: 69,
+            action: 'string_maple_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 583,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.MAPLE_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_MAPLE_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 70,
+            maxLevel: 84,
+            action: 'string_yew_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 675,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.YEW_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_YEW_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 75,
+            maxLevel: 84,
+            action: 'string_yew_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 750,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.YEW_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_YEW_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 80,
+            maxLevel: 99,
+            action: 'string_magic_shortbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 833,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.MAGIC_SHORTBOW,
+            itemConsumed: Items.UNSTRUNG_MAGIC_SHORTBOW,
+            extra: { stringItem: Items.BOW_STRING }
+        },
+        {
+            minLevel: 85,
+            maxLevel: 99,
+            action: 'string_magic_longbow',
+            location: Locations.DRAYNOR_BANK,
+            toolItemIds: [],
+            xpPerAction: 915,
+            ticksPerAction: 3,
+            successRate: 1.0,
+            itemGained: Items.MAGIC_LONGBOW,
+            itemConsumed: Items.UNSTRUNG_MAGIC_LONGBOW,
+            extra: { stringItem: Items.BOW_STRING }
         }
     ],
 
     // Runecrafting — progression is handled inside RunecraftingTask itself.
-    // A single placeholder step here keeps RUNECRAFT in SKILLS_WITH_CONTENT
-    // so the goal planner includes it in the weighted rotation.
+    // Explicit steps help the planner visualize the tiers.
     RUNECRAFT: [
-        {
-            minLevel: 1,
-            maxLevel: 99,
-            action: 'runecraft',
-            location: Locations.AIR_ALTAR, // placeholder; actual altar chosen by task
-            toolItemIds: [], // talisman is a combat drop, not purchased
-            xpPerAction: 50, // 5.0 XP base (air); actual XP computed per altar
-            ticksPerAction: 10,
-            successRate: 1.0,
-            itemGained: Items.AIR_RUNE // placeholder
-        }
+        { minLevel: 1, maxLevel: 1, action: 'runecraft', location: Locations.AIR_ALTAR, toolItemIds: [], xpPerAction: 50, ticksPerAction: 10, successRate: 1.0, itemGained: Items.AIR_RUNE },
+        { minLevel: 2, maxLevel: 4, action: 'runecraft', location: Locations.MIND_ALTAR, toolItemIds: [], xpPerAction: 55, ticksPerAction: 10, successRate: 1.0, itemGained: Items.MIND_RUNE },
+        { minLevel: 5, maxLevel: 8, action: 'runecraft', location: Locations.WATER_ALTAR, toolItemIds: [], xpPerAction: 60, ticksPerAction: 10, successRate: 1.0, itemGained: Items.WATER_RUNE },
+        { minLevel: 9, maxLevel: 13, action: 'runecraft', location: Locations.EARTH_ALTAR, toolItemIds: [], xpPerAction: 65, ticksPerAction: 10, successRate: 1.0, itemGained: Items.EARTH_RUNE },
+        { minLevel: 14, maxLevel: 19, action: 'runecraft', location: Locations.FIRE_ALTAR, toolItemIds: [], xpPerAction: 70, ticksPerAction: 10, successRate: 1.0, itemGained: Items.FIRE_RUNE },
+        { minLevel: 20, maxLevel: 26, action: 'runecraft', location: Locations.BODY_ALTAR, toolItemIds: [], xpPerAction: 75, ticksPerAction: 10, successRate: 1.0, itemGained: Items.BODY_RUNE },
+        { minLevel: 27, maxLevel: 34, action: 'runecraft', location: Locations.COSMIC_ALTAR, toolItemIds: [], xpPerAction: 80, ticksPerAction: 10, successRate: 1.0, itemGained: Items.COSMIC_RUNE },
+        { minLevel: 35, maxLevel: 43, action: 'runecraft', location: Locations.CHAOS_ALTAR, toolItemIds: [], xpPerAction: 85, ticksPerAction: 10, successRate: 1.0, itemGained: Items.CHAOS_RUNE },
+        { minLevel: 44, maxLevel: 53, action: 'runecraft', location: Locations.NATURE_ALTAR, toolItemIds: [], xpPerAction: 90, ticksPerAction: 10, successRate: 1.0, itemGained: Items.NATURE_RUNE },
+        { minLevel: 54, maxLevel: 99, action: 'runecraft', location: Locations.LAW_ALTAR, toolItemIds: [], xpPerAction: 95, ticksPerAction: 10, successRate: 1.0, itemGained: Items.LAW_RUNE }
     ]
 };
 
@@ -1730,7 +2776,7 @@ export function bestAxe(wcLevel: number): ToolRequirement {
     return [...AxesByLevel].reverse().find(t => wcLevel >= t.levelReq) ?? AxesByLevel[0];
 }
 
-/** Best pickaxe available at a given mining level (only bronze sold in shops). */
-export function bestPickaxe(_miningLevel: number): ToolRequirement {
-    return PickaxesByLevel[0];
+/** Best pickaxe available at a given mining level. */
+export function bestPickaxe(miningLevel: number): ToolRequirement {
+    return [...PickaxesByLevel].reverse().find(t => miningLevel >= t.levelReq) ?? PickaxesByLevel[0];
 }

@@ -19,10 +19,12 @@ import {
     interactUseLocOp,
     interactUseObjNpcOp,
     botInteractUseObjNpc,
+    findNpcNear,
     findNpcByName,
     findNpcByNameExcluding,
     findNpcByPrefix,
     findNpcBySuffix,
+    findLocNear,
     findLocByPrefix,
     findLocByName,
     hasItem,
@@ -36,11 +38,13 @@ import {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOp,
+    interactHeldOpU,
     openNearbyGate,
     isAdjacentToLoc,
     botTeleport
 } from '#/engine/bot/BotAction.js';
-import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP } from '#/engine/bot/BotKnowledge.js';
+import { Items, Shops, Locations, getProgressionStep, GRIMY_HERB_MAP, FOOD_IDS } from '#/engine/bot/BotKnowledge.js';
 import { isMapBlocked, isZoneAllocated } from '#/engine/GameMap.js';
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { getMissingPurchases, STARTING_COINS } from '#/engine/bot/BotNeeds.js';
@@ -108,7 +112,20 @@ export function teleportNear(player: Player, x: number, z: number): void {
  * climb stairs.  Al Kharid bank is included; the GATEWAY_REGIONS routing in
  * walkTo handles the gate automatically.
  */
-const BOT_BANKS: ReadonlyArray<[number, number, number]> = [Locations.DRAYNOR_BANK, Locations.VARROCK_WEST_BANK, Locations.VARROCK_EAST_BANK, Locations.AL_KHARID_BANK, Locations.FALADOR_EAST_BANK];
+const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
+    Locations.DRAYNOR_BANK,
+    Locations.VARROCK_WEST_BANK,
+    Locations.VARROCK_EAST_BANK,
+    Locations.AL_KHARID_BANK,
+    Locations.FALADOR_WEST_BANK,
+    Locations.FALADOR_EAST_BANK,
+    Locations.SEERS_BANK,
+    Locations.EDGEVILLE_BANK,
+    Locations.YANILLE_BANK,
+    Locations.CATHERBY_BANK,
+    Locations.ARDOUGNE_NORTH_BANK,
+    Locations.ARDOUGNE_SOUTH_BANK
+];
 
 /**
  * Returns the [x, z, level] tuple of the bank closest to the player's
@@ -203,9 +220,11 @@ export {
     interactLoc,
     interactLocOp,
     interactUseLocOp,
+    findNpcNear,
     findNpcByName,
     findNpcByPrefix,
     findNpcBySuffix,
+    findLocNear,
     findLocByPrefix,
     findLocByName,
     hasItem,
@@ -219,10 +238,13 @@ export {
     addXp,
     setCombatStyle,
     setAutocastWindStrike,
+    interactHeldOp,
+    interactHeldOpU,
     Items,
     Shops,
     Locations,
     getProgressionStep,
+    FOOD_IDS,
     getMissingPurchases,
     STARTING_COINS,
     openNearbyGate,

@@ -219,6 +219,9 @@ export class BotPlayer {
         }
 
         this.rescanTimer = RESCAN_TICKS;
+
+        // Socialize: announce level up to nearby bots and players
+        this.player.sendMessageToNearbyBots(this.name, `level up! just got ${newLevel} ${statName.toLowerCase()}!`);
     }
 
     snapshot() {
