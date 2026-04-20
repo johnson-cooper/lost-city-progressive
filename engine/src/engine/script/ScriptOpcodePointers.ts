@@ -24,6 +24,14 @@ const ScriptOpcodePointers: {
     [ScriptOpcode.READYANIM]: {
         require: ['active_player']
     },
+      [ScriptOpcode.P_BOT_INTERACT_TRADE]: {
+        require: ['active_player'],
+        require2: ['active_player2']
+    },
+       [ScriptOpcode.P_ISBOT]: {
+        require: ['active_player'],
+        require2: ['active_player2']
+    },
     [ScriptOpcode.RUNANIM]: {
         require: ['active_player']
     },
