@@ -12,6 +12,7 @@ const scripts: ScriptMap = {
   login: ["bun", "run", "login"],
   build: ["bun", "run", "build"],
   clean: ["bun", "run", "clean"],
+  setup: ["bun", "setup"],
 };
 
 const runningProcesses: Record<string, any> = {};
@@ -47,17 +48,18 @@ function showMenu() {
   console.log(`
 === Bun Launcher ===
 
-1. Start Server (bun start)
-2. Run Hiscores (parallel)
-3. Dev Mode
-4. Friend
-5. Logger
-6. Login
-7. Build
-8. Clean
-9. Stop Hiscores
+1.  Start Server (bun start)
+2.  Run Hiscores (parallel)
+3.  Dev Mode
+4.  Friend
+5.  Logger
+6.  Login
+7.  Build
+8.  Clean
+9.  Stop Hiscores
 10. Start Server & Hiscores (Best Option)
-0. Exit
+11. Setup (bun setup)
+0.  Exit
 
 Choose an option:
 `);
@@ -75,7 +77,7 @@ function handleInput(input: string) {
       break;
 
     case "2":
-      runScript("hiscores", true); // 🔥 parallel
+      runScript("hiscores", true);
       break;
 
     case "3":
@@ -111,9 +113,13 @@ function handleInput(input: string) {
       }
       break;
 
-      case "10":
+    case "10":
       runScript("start");
       runScript("hiscores", true);
+      break;
+
+    case "11":
+      runScript("setup");
       break;
 
     case "0":
