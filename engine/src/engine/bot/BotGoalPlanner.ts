@@ -36,6 +36,8 @@ import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
 import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
 import { BankstandTask } from '#/engine/bot/tasks/BankstandTask.js';
+import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
+import { WaterFillingTask } from '#/engine/bot/tasks/WaterFillingTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -59,7 +61,7 @@ export const Personalities: Record<string, BotPersonality> = {
             CRAFTING: 12,
             FLETCHING: 17,   // 65% share of the fletch/FM pair
             RUNECRAFT: 5,    // unlocks once a talisman drops
-            HERBLORE: 8      // requires guams (chaos druid drops) + coins for vials/newts
+            HERBLORE: 8,     // requires guams (chaos druid drops) + coins for vials/newts
         }
     },
     FIGHTER: {
@@ -91,7 +93,7 @@ export const Personalities: Record<string, BotPersonality> = {
             CRAFTING: 6,
             FLETCHING: 24,   // 65% share of the fletch/FM pair
             RUNECRAFT: 8,    // unlocks once a talisman drops
-            HERBLORE: 6      // requires guams (chaos druid drops) + coins
+            HERBLORE: 6,     // requires guams (chaos druid drops) + coins
         }
     }
 };
@@ -113,7 +115,6 @@ const SKILL_STAT: Record<string, PlayerStat> = {
     CRAFTING: PlayerStat.CRAFTING,
     SMITHING: PlayerStat.SMITHING,
     MINING: PlayerStat.MINING,
-    AGILITY: PlayerStat.AGILITY,
     THIEVING: PlayerStat.THIEVING,
     RUNECRAFT: PlayerStat.RUNECRAFT,
     HERBLORE: PlayerStat.HERBLORE
@@ -507,6 +508,20 @@ export class BotGoalPlanner {
 
         const steps = SkillProgression['CRAFTING'];
         if (!steps || steps.length === 0) return null;
+
+        const craftLevel = getBaseLevel(player, PlayerStat.CRAFTING);
+
+        // ── Flax picking: runs when crafting level qualifies ──────────────────
+        const flaxStep = steps.find(s => s.action === 'pick_flax' && craftLevel >= Math.max(s.minLevel, 10) && craftLevel <= s.maxLevel);
+        if (flaxStep) {
+            return new FlaxPickingTask(flaxStep);
+        }
+
+        // ── Soften clay: if bot has buckets but no bucket-of-water ────────────
+        const softenStep = steps.find(s => s.action === 'soften_clay' && craftLevel >= s.minLevel && craftLevel <= s.maxLevel);
+        if (softenStep && hasItem(player, Items.BUCKET) && !hasItem(player, Items.BUCKET_OF_WATER)) {
+            return new WaterFillingTask(Items.BUCKET, Items.BUCKET_OF_WATER);
+        }
 
         if (!phase2Unlocked) {
             // ── Phase 1: wool spinning ────────────────────────────────────────

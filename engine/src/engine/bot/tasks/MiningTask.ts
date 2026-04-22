@@ -280,8 +280,14 @@ export class MiningTask extends BotTask {
     private _getAvailableOrePrefixes(player: Player): string[] {
         const prefixes: string[] = [];
 
+        // Special case: if we are at Rimmington mine, always prioritize clay if that's what we are there for
+        if (this.step.location === Locations.MINE_RIMMINGTON) {
+            prefixes.push('clayrock');
+            return prefixes;
+        }
+
         // Get player's actual mining level using base level
-        const miningLevel = player.baseLevels[PlayerStat.MINING];
+        const miningLevel = getBaseLevel(player, PlayerStat.MINING);
 
         // Level 1-14: copper and tin available
         if (miningLevel <= 14) {
@@ -292,8 +298,20 @@ export class MiningTask extends BotTask {
             prefixes.push('ironrock');
         }
         // Level 30+: coal (and iron for some mines)
-        else {
+        else if (miningLevel <= 54) {
             prefixes.push('coalrock', 'ironrock');
+        }
+        // Level 55+: Mithril
+        else if (miningLevel <= 69) {
+            prefixes.push('mithrilrock', 'coalrock');
+        }
+        // Level 70+: Adamant
+        else if (miningLevel <= 84) {
+            prefixes.push('adamantrock', 'mithrilrock');
+        }
+        // Level 85+: Runite
+        else {
+            prefixes.push('runiterock', 'adamantrock');
         }
 
         return prefixes;

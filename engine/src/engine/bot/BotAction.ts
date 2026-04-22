@@ -154,35 +154,40 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         //
         // The gate charges a 10-coin toll and opens a dialog that bots cannot
         // handle.  Once the bot reaches the approach tile it is teleported
-        // directly to the inside (3271, 3228) — the first open tile past the wall.
+        // directly to the inside (3269, 3227) — the first open tile past the wall.
+        //
+        // Bug fix: approach tile must be at x=3264 (west of the wall), NOT x=3267.
+        // playerInRegion used x >= 3267 which matched the old approach tile itself,
+        // so the bot arrived at the approach, was immediately classified as "already
+        // inside", and the teleport never fired.
         name: 'AlKharid',
-        destInRegion: (x, z) => x >= 3265 && z >= 3155 && z <= 3242,
-        playerInRegion: (x, z) => x >= 3267 && z >= 3155 && z <= 3242,
-        approachX: 3267,
-        approachZ: 3228,
-        arrivalRadius: 4,
-        teleportDestX: 3271,
-        teleportDestZ: 3228
+        destInRegion: (x, z) => x >= 3269 && z >= 3155 && z <= 3242,
+        playerInRegion: (x, _z) => x >= 3269,
+        approachX: 3265,
+        approachZ: 3227,
+        arrivalRadius: 3,
+        teleportDestX: 3275,
+        teleportDestZ: 3227
     },
     {
         // ── Al Kharid exit (inside → Lumbridge) ──────────────────────────────
-        // Reverse of AlKharid: bots inside Al Kharid (x >= 3267) heading west
+        // Reverse of AlKharid: bots inside Al Kharid (x >= 3269) heading west
         // back toward Lumbridge or Draynor hit the same toll wall.  Approach
-        // the inside gate tile (3270, 3228) and teleport to the Lumbridge side
-        // (3265, 3228) — one tile west of the wall opening.
+        // the inside gate tile (3270, 3227) and teleport to the Lumbridge side
+        // (3264, 3227) — four tiles west of the wall.
         //
         // No z-range constraint on destInRegion: a bot heading to any destination
-        // with x < 3267 (e.g. Barbarian Village via waypoint z=3340, Draynor bank
+        // with x < 3269 (e.g. Barbarian Village via waypoint z=3340, Draynor bank
         // z=3245) must still exit through the west gate regardless of how far
         // north the final destination is.
         name: 'AlKharidExit',
-        destInRegion: (x, _z) => x < 3267,
-        playerInRegion: (x, _z) => x < 3267,
+        destInRegion: (x, _z) => x <= 3267,
+        playerInRegion: (x, _z) => x <= 3267,
         approachX: 3270,
-        approachZ: 3228,
+        approachZ: 3227,
         arrivalRadius: 4,
-        teleportDestX: 3265,
-        teleportDestZ: 3228
+        teleportDestX: 3261,
+        teleportDestZ: 3227
     },
     {
         // ── Port Sarim → Karamja (boat) ───────────────────────────────────────
@@ -191,8 +196,8 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // (2956, 3143).  The boat costs 30 coins and triggers a dialog that
         // bots cannot handle natively, so teleport is used instead.
         name: 'PortSarimToKaramja',
-        destInRegion: (x, _z) => x < 2970,
-        playerInRegion: (x, _z) => x < 2970,
+        destInRegion: (x, z) => x < 2970 && z < 3250,
+        playerInRegion: (x, z) => x < 2970 && z < 3250,
         approachX: 3031,
         approachZ: 3217,
         arrivalRadius: 5,
@@ -206,7 +211,7 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // teleported to the Port Sarim arrival tile (3047, 3235).
         name: 'KaramjaToPortSarim',
         destInRegion: (x, _z) => x >= 2990,
-        playerInRegion: (x, _z) => x >= 2990,
+        playerInRegion: (x, z) => x >= 2990 || z > 3250,
         approachX: 2956,
         approachZ: 3145,
         arrivalRadius: 5,
@@ -214,16 +219,140 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         teleportDestZ: 3235
     },
     {
+        // ── Port Sarim → Entrana (boat) ───────────────────────────────────────
+        // Bots heading to Entrana (gathering herblore supplies or woodcutting)
+        // walk to the Port Sarim northern docks and teleport to Entrana.
+        name: 'PortSarimToEntrana',
+        destInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        playerInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        approachX: 3048,
+        approachZ: 3234,
+        arrivalRadius: 5,
+        teleportDestX: 2834,
+        teleportDestZ: 3335
+    },
+    {
+        // ── Entrana → Port Sarim (boat return) ────────────────────────────────
+        name: 'EntranaToPortSarim',
+        destInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        playerInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        approachX: 2834,
+        approachZ: 3335,
+        arrivalRadius: 5,
+        teleportDestX: 3048,
+        teleportDestZ: 3234
+    },
+    {
+        // ── Shantay Pass (Mainland → Desert) ──────────────────────────────────
+        // Access to the Kharidian desert via Shantay Pass.  Requires a toll/pass
+        // so bots teleport through the gate.
+        name: 'ShantayPass',
+        destInRegion: (x, z) => x >= 3200 && x <= 3400 && z <= 3115,
+        playerInRegion: (x, z) => z <= 3115,
+        approachX: 3303,
+        approachZ: 3123,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3115
+    },
+    {
+        // ── Shantay Pass Exit (Desert → Mainland) ─────────────────────────────
+        name: 'ShantayPassExit',
+        destInRegion: (x, z) => z >= 3117,
+        playerInRegion: (x, z) => z >= 3117,
+        approachX: 3303,
+        approachZ: 3116,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3123
+    },
+    {
+        // ── Taverley Gate (Falador → Taverley) ────────────────────────────────
+        // The long wall between Falador and Taverley.
+        name: 'TaverleyGate',
+        destInRegion: (x, z) => x < 2933 && z > 3250,
+        playerInRegion: (x, z) => x < 2933 && z > 3250,
+        approachX: 2936,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Taverley Gate Exit (Taverley → Falador) ───────────────────────────
+        name: 'TaverleyGateExit',
+        destInRegion: (x, _z) => x >= 2933,
+        playerInRegion: (x, _z) => x >= 2933,
+        approachX: 2932,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate (East → West) ─────────────────────────────────
+        name: 'ArdougneNorthGate',
+        destInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        playerInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        approachX: 2636,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate Exit (West → East) ────────────────────────────
+        name: 'ArdougneNorthGateExit',
+        destInRegion: (x, _z) => x >= 2634,
+        playerInRegion: (x, _z) => x >= 2634,
+        approachX: 2633,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Gate (East → West) ──────────────────────────────────
+        // Gate between East and West Ardougne.
+        name: 'WestArdougneGate',
+        destInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        playerInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        approachX: 2555,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Exit (West → East) ──────────────────────────────────
+        name: 'WestArdougneExit',
+        destInRegion: (x, z) => x >= 2551,
+        playerInRegion: (x, z) => x >= 2551,
+        approachX: 2551,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── Draynor Manor (Mainland → Manor) ──────────────────────────────────
+        // Fenced grounds of Draynor Manor.
+        name: 'DraynorManor',
+        destInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        playerInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        approachX: 3108,
+        approachZ: 3329,
+        arrivalRadius: 4
+    },
+    {
+        // ── Hemenster (Mainland → Hemenster) ──────────────────────────────────
+        // Fenced fishing village.
+        name: 'Hemenster',
+        destInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        playerInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        approachX: 2643,
+        approachZ: 3433,
+        arrivalRadius: 4
+    },
+    {
         // ── Lumbridge sheep pen ───────────────────────────────────────────────
-        // Fenced enclosure NE of Lumbridge castle.  East gate at ~[3197-3198, 3282].
+        // Fenced enclosure NE of Lumbridge castle.  East gate at ~[3199, 3282].
         // Bots walking directly to the interior hit the east fence unless they
         // approach from the east side and open the gate.
         name: 'SheepPen',
         destInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
         playerInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
-        approachX: 3213,
-        approachZ: 3261,
-        arrivalRadius: 4
+        approachX: 3202,
+        approachZ: 3282,
+        arrivalRadius: 3
     },
     {
         // ── Lumbridge cow pen ─────────────────────────────────────────────────
@@ -299,6 +428,27 @@ const ROUTE_CORRIDORS: RouteCorridor[] = [
         playerCleared: (x, _z) => x <= 3200,
         viaX: 3194,
         viaZ: 3226
+    },
+    {
+        // ── White Wolf Mountain — westbound bypass ────────────────────────────
+        // Bots heading from Taverley/Falador (x > 2870) toward Catherby/Seers
+        // (x < 2800) must route through the mountain pass at (2848, 3497).
+        // The BFS often gets lost in the mountain crags.
+        name: 'WhiteWolfMountainWest',
+        playerInZone: (x, z) => x > 2860 && x < 3000 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x < 2810,
+        playerCleared: (x, _z) => x <= 2850,
+        viaX: 2848,
+        viaZ: 3497
+    },
+    {
+        // ── White Wolf Mountain — eastbound bypass ────────────────────────────
+        name: 'WhiteWolfMountainEast',
+        playerInZone: (x, z) => x < 2830 && x > 2700 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x > 2880,
+        playerCleared: (x, _z) => x >= 2845,
+        viaX: 2848,
+        viaZ: 3497
     }
 ];
 
@@ -1595,8 +1745,13 @@ function _hasGateInteractionPending(player: Player): boolean {
     return ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
 }
 
+// Toll gates that bots must never try to open — crossing is handled by the
+// GATEWAY_REGIONS teleport in walkTo instead.
+const TOLL_GATE_TYPE_IDS = new Set([2882, 2883]); // border_gate_toll_left/right
+
 /** Internal: returns true if `loc` passes the closed-gate predicate. */
 function _isClosedGate(loc: Loc): boolean {
+    if (TOLL_GATE_TYPE_IDS.has(loc.type)) return false;
     const t = LocType.get(loc.type);
     if (BARRIER_NAME_PREFIXES.some(p => t.debugname?.startsWith(p))) return true;
     if (BIG_DOOR_PREFIXES.some(p => t.debugname?.toLowerCase().includes(p))) return true;
