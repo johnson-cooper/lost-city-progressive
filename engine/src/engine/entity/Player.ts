@@ -2416,9 +2416,11 @@ botTradeTargetChatMessage: string = '';
         if (!mes?.length) return;
         for (const bot of World.players) {
             if (!bot) continue;
-            if (bot.botTradeTargetPid != -1) { //We must check if the name matches the uid
-                bot.botTradeTargetChatName = name;
-                bot.botTradeTargetChatMessage = mes;
+            if (bot.botTradeTargetPid != -1) { 
+                if(bot.botTradeTargetPid === this.uid) { // <- check if the name matches the uid
+                    bot.botTradeTargetChatName = name;
+                    bot.botTradeTargetChatMessage = mes;
+                }
             } else {
                 bot.botTradeTargetChatName = '';
                 bot.botTradeTargetChatMessage = '';
@@ -2428,9 +2430,11 @@ botTradeTargetChatMessage: string = '';
         //Both lists
         for (const bot of World.newPlayers) {
             if (!bot) continue;
-            if (bot.botTradeTargetPid != -1) { //We must check if the name matches the uid
-                bot.botTradeTargetChatName = name;
-                bot.botTradeTargetChatMessage = mes;
+            if (bot.botTradeTargetPid != -1) {
+                if(bot.botTradeTargetPid === this.uid) {
+                    bot.botTradeTargetChatName = name;
+                    bot.botTradeTargetChatMessage = mes;
+                }
             } else {
                 bot.botTradeTargetChatName = '';
                 bot.botTradeTargetChatMessage = '';
@@ -2535,6 +2539,8 @@ botTradeTargetChatMessage: string = '';
         }
     }
 
+
+    
     processIntent(message: string, memory: BotMemory, bot: Player): string {
         if (memory.context.length > 6) {
             memory.topic = undefined;

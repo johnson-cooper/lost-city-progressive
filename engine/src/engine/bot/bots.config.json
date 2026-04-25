@@ -1,52 +1,502 @@
 [
-  { "username": "araxxor_prime", "planner": "skiller", "description": "Skiller" },
-  { "username": "zulrah_walker", "planner": "fighter", "description": "Fighter" },
-  { "username": "vorkathslayer", "planner": "balanced", "description": "Balanced" },
-  { "username": "bandos_warborn", "planner": "fighter", "description": "Random" },
-  { "username": "armadyl_zephyr", "planner": "skiller", "description": "Skiller 2" },
-  { "username": "saradominwrath", "planner": "fighter", "description": "Fighter 2" },
-  { "username": "zamorak_furyx", "planner": "random", "description": "Random" },
-
-  { "username": "soulja_grinder", "planner": "skiller", "description": "Skiller" },
-  { "username": "lil_xp_dropz", "planner": "balanced", "description": "Balanced" },
-  { "username": "rickross_maxcash", "planner": "fighter", "description": "Fighter" },
-  { "username": "drake_bankloot", "planner": "random", "description": "Random" },
-  { "username": "future_skiller", "planner": "skiller", "description": "Skiller 2" },
-  { "username": "liluzivault", "planner": "fighter", "description": "Fighter 2" },
-  { "username": "travis_scotted", "planner": "balanced", "description": "Balanced" },
-  { "username": "metroboominxp", "planner": "random", "description": "Random" },
-
-  { "username": "xX_DragonScape_Xx", "planner": "skiller", "description": "Skiller" },
-  { "username": "NoScopeRunePure", "planner": "fighter", "description": "Fighter" },
-  { "username": "ii_AncientMage_ii", "planner": "balanced", "description": "Balanced" },
-  { "username": "PkR_4_Lyfe", "planner": "random", "description": "Random" },
-  { "username": "o0_SlayerGod_0o", "planner": "fighter", "description": "Fighter 2" },
-  { "username": "DarkPkzZ", "planner": "skiller", "description": "Skiller 2" },
-  { "username": "Pure_OwnzU", "planner": "fighter", "description": "Fighter 2" },
-
-  { "username": "xXxSouljaXPxXx", "planner": "skiller", "description": "Skiller" },
-  { "username": "LilGrindz", "planner": "balanced", "description": "Balanced" },
-  { "username": "xxDripLootxx", "planner": "fighter", "description": "Fighter" },
-  { "username": "NoCapMercher", "planner": "random", "description": "Random" },
-  { "username": "CashStackzHD", "planner": "skiller", "description": "Skiller 2" },
-  { "username": "TrapLordScape", "planner": "fighter", "description": "Fighter 2" },
-
-  { "username": "BarrowsGhostX", "planner": "balanced", "description": "Balanced" },
-  { "username": "AbyssRuneX", "planner": "skiller", "description": "Skiller" },
-  { "username": "WhipSpecDemon", "planner": "fighter", "description": "Fighter" },
-  { "username": "MaxCapeDreamz", "planner": "random", "description": "Random" },
-  { "username": "Ironman420v2", "planner": "balanced", "description": "Balanced" },
-
-  { "username": "xbox360_legend", "planner": "skiller", "description": "Skiller" },
-  { "username": "xXxNoScope420xXx", "planner": "fighter", "description": "Fighter" },
-  { "username": "iiToxicSlayerii", "planner": "balanced", "description": "Balanced" },
-  { "username": "xProGamerTagx", "planner": "random", "description": "Random" },
-  { "username": "iiDarkSn1perii", "planner": "fighter", "description": "Fighter 2" },
-  { "username": "xxEliteLootxx", "planner": "skiller", "description": "Skiller 2" },
-
-  { "username": "GodswordPker", "planner": "fighter", "description": "Fighter" },
-  { "username": "RuneDefPure", "planner": "balanced", "description": "Balanced" },
-  { "username": "MysticStaffMain", "planner": "skiller", "description": "Skiller" },
-  { "username": "F2PWarriorX", "planner": "random", "description": "Random" },
-  { "username": "PKHonorBound", "planner": "fighter", "description": "Fighter 2" }
+  {
+    "username": "rax1",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex2",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen3",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk4",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax5",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv6",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz7",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor8",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex9",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv10",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul11",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax12",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo13",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin14",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz15",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex16",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax17",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex18",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen19",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk20",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax21",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv22",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz23",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor24",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex25",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv26",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul27",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax28",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo29",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin30",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz31",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex32",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax33",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex34",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen35",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk36",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax37",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv38",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz39",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor40",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex41",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv42",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul43",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax44",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo45",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin46",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz47",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex48",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax49",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex50",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen51",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk52",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax53",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv54",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz55",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor56",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex57",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv58",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul59",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax60",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo61",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin62",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz63",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex64",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax65",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex66",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen67",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk68",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax69",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv70",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz71",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor72",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex73",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv74",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul75",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax76",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo77",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin78",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz79",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex80",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax81",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex82",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen83",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk84",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "pax85",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "miv86",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "taz87",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "qor88",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "nex89",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "jiv90",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "sul91",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "dax92",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "kyo93",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "brin94",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "caz95",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "fex96",
+    "planner": "random",
+    "description": "Random"
+  },
+  {
+    "username": "rax97",
+    "planner": "skiller",
+    "description": "Skiller"
+  },
+  {
+    "username": "vex98",
+    "planner": "fighter",
+    "description": "Fighter"
+  },
+  {
+    "username": "zen99",
+    "planner": "balanced",
+    "description": "Balanced"
+  },
+  {
+    "username": "lyk100",
+    "planner": "random",
+    "description": "Random"
+  }
 ]

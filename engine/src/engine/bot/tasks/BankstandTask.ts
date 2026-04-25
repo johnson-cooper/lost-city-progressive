@@ -466,12 +466,12 @@ export class BankstandTask extends BotTask {
         this.watchdog.notifyActivity();
         player.botTradeTargetStage = 0;
         this.state = 'trade_stage1';
-        this.cooldown = randInt(2, 4);
+        this.cooldown = randInt(4, 6);
     }
 
 private intentCooldown = 0;
  
-    private handleTradeStage1(player: Player): void {
+      private handleTradeStage1(player: Player): void {
         const target = this.getTradeTarget(player);
         if (!target) return this.resetTrade(player, 'Target lost');
 
@@ -479,24 +479,35 @@ private intentCooldown = 0;
             case 0: {
                 // Waiting for items
                 // Bot offers player all their items
-                const itemId = this.getItemFromSlot(player, this.currentOfferSlot);
-                if(itemId != -1) {
-                    interactIF_UseOp(player, Interfaces.TRADE_SIDE_INV, itemId, this.currentOfferSlot, 4);
-                }
-                this.currentOfferSlot++;
-                if(this.currentOfferSlot > 27) {
-                    player.botTradeTargetStage = 1;
-                    this.currentOfferSlot = 0; //always reset
+                for(let i = 29; i > this.currentOfferSlot; this.currentOfferSlot++) { //This can be done in one action.
+                    const itemId = this.getItemFromSlot(player, this.currentOfferSlot);
+                    if (itemId != -1) {
+                        interactIF_UseOp(player, Interfaces.TRADE_SIDE_INV, itemId, this.currentOfferSlot, 4);
+                    }
+                    if (this.currentOfferSlot > 27) {
+                        player.botTradeTargetStage = 1;
+                        this.currentOfferSlot = 0; //always reset
+                        break;
+                    }
                 }
                 break;
             }
 
             case 1:
-                player.say('Any?');
+                if(randInt(0, 2) === 0) {
+                    player.say('Any?');
+                } else {
+                    if(randInt(0, 2) === 0) {
+                        player.say('Want any?');
+                    } else {
+                        player.say('Anything?');
+                    }
+                }
                 player.botTradeTargetStage = 2;
                 this.state = 'trade_stage2';
                 break;
         }
+        this.cooldown = randInt(2, 4);
     }
 
     private handleTradeStage2(player: Player): void {
