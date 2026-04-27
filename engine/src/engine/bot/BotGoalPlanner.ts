@@ -38,6 +38,9 @@ import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
 import { BankstandTask } from '#/engine/bot/tasks/BankstandTask.js';
 import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
 import { WaterFillingTask } from '#/engine/bot/tasks/WaterFillingTask.js';
+import { SocialTask } from '#/engine/bot/tasks/SocialTask.js';
+import { VendorTask } from '#/engine/bot/tasks/VendorTask.js';
+import { PKerTask } from '#/engine/bot/tasks/PKerTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -756,4 +759,44 @@ export function makeRandom(): BotGoalPlanner {
     const weights: Record<string, number> = {};
     for (const s of allSkills) weights[s] = Math.floor(Math.random() * 20) + 1;
     return new BotGoalPlanner({ name: 'Random', weights });
+}
+
+// ── Extras personalities ───────────────────────────────────────────────────────
+
+export type ExtrasType = 'social' | 'vendor' | 'pker';
+
+/**
+ * Goal planner for "extras" bots — social, vendor, and wilderness PKer.
+ * These bots skip all skilling logic and run a single specialised task.
+ */
+export class ExtrasGoalPlanner extends BotGoalPlanner {
+    private readonly extrasType: ExtrasType;
+    private extrasInit = false;
+
+    constructor(type: ExtrasType) {
+        super({ name: `Extras-${type}`, weights: {} });
+        this.extrasType = type;
+    }
+
+    override pickTask(_player: Player): BotTask | null {
+        if (!this.extrasInit) {
+            this.extrasInit = true;
+            // Extras bots skip the normal InitTask — their tasks self-initialise.
+        }
+        switch (this.extrasType) {
+            case 'social': return new SocialTask();
+            case 'vendor': return new VendorTask();
+            case 'pker':   return new PKerTask();
+        }
+    }
+}
+
+export function makeExtrasSocial(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('social');
+}
+export function makeExtrasVendor(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('vendor');
+}
+export function makeExtrasPKer(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('pker');
 }

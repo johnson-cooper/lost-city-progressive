@@ -498,5 +498,100 @@
     "username": "lyk100",
     "planner": "random",
     "description": "Random"
+  },
+  {
+    "username": "soc101",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "soc102",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "soc103",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "ven104",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "ven105",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "ven106",
+    "planner": "extras_vendor",
+    "description": "Extras Vendor"
+  },
+  {
+    "username": "pk107",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+  {
+    "username": "pk108",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk110",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk111",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk112",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk113",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk114",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk115",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+      {
+    "username": "pk116",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk117",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk118",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+    {
+    "username": "pk119",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
+  },
+  {
+    "username": "pk120",
+    "planner": "extras_pker",
+    "description": "Extras PKer"
   }
 ]
