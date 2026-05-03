@@ -1651,6 +1651,13 @@ const BARRIER_NAME_PREFIXES = ['loc_1528']; // Al Kharid palace curtain (closed 
 const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
 
 /**
+ * Substrings of loc debugnames that are NEVER gates — purely decorative objects.
+ * These are excluded so bots don't try to "open" or interact with them while
+ * navigating past them (e.g. picking flowers at Varrock West Bank).
+ */
+const DECORATIVE_LOC_FRAGMENTS = ['flower', 'fern', 'plant', 'bush', 'thistle', 'nettle', 'cabbage', 'tulip', 'daisy', 'sunflower'];
+
+/**
  * Directly executes the OPLOC1 script for a gate/door Loc.
  *
  * This bypasses processInteraction, which fails for Locs because:
@@ -1747,14 +1754,18 @@ function _hasGateInteractionPending(player: Player): boolean {
 
 // Toll gates that bots must never try to open — crossing is handled by the
 // GATEWAY_REGIONS teleport in walkTo instead.
-const TOLL_GATE_TYPE_IDS = new Set([2882, 2883]); // border_gate_toll_left/right
+const TOLL_GATE_TYPE_IDS = new Set([2882, 2883, 1298, 1299, 1300, 1173]); // border_gate_toll_left/right
 
 /** Internal: returns true if `loc` passes the closed-gate predicate. */
 function _isClosedGate(loc: Loc): boolean {
     if (TOLL_GATE_TYPE_IDS.has(loc.type)) return false;
     const t = LocType.get(loc.type);
+    // Decorative vegetation — never a gate regardless of any ops.
+    const debugLower = t.debugname?.toLowerCase() ?? '';
+    const nameLower  = (t.name ?? '').toLowerCase();
+    if (DECORATIVE_LOC_FRAGMENTS.some(f => debugLower.includes(f) || nameLower.includes(f))) return false;
     if (BARRIER_NAME_PREFIXES.some(p => t.debugname?.startsWith(p))) return true;
-    if (BIG_DOOR_PREFIXES.some(p => t.debugname?.toLowerCase().includes(p))) return true;
+    if (BIG_DOOR_PREFIXES.some(p => debugLower.includes(p))) return true;
     const ops = (t.op ?? []).filter((o): o is string => typeof o === 'string').map(o => o.toLowerCase());
     const hasOpenOp = ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
     const hasCloseOp = ops.some(op => GATE_CLOSE_KEYWORDS.some(kw => op === kw));

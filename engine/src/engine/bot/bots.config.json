@@ -1,597 +1,207 @@
 [
-  {
-    "username": "rax1",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex2",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen3",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk4",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax5",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv6",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz7",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor8",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex9",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv10",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul11",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax12",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo13",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin14",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz15",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex16",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax17",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex18",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen19",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk20",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax21",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv22",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz23",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor24",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex25",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv26",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul27",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax28",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo29",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin30",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz31",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex32",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax33",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex34",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen35",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk36",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax37",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv38",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz39",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor40",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex41",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv42",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul43",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax44",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo45",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin46",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz47",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex48",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax49",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex50",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen51",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk52",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax53",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv54",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz55",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor56",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex57",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv58",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul59",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax60",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo61",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin62",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz63",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex64",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax65",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex66",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen67",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk68",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax69",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv70",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz71",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor72",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex73",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv74",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul75",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax76",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo77",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin78",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz79",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex80",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax81",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex82",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen83",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk84",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "pax85",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "miv86",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "taz87",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "qor88",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "nex89",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "jiv90",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "sul91",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "dax92",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "kyo93",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "brin94",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "caz95",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "fex96",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "rax97",
-    "planner": "skiller",
-    "description": "Skiller"
-  },
-  {
-    "username": "vex98",
-    "planner": "fighter",
-    "description": "Fighter"
-  },
-  {
-    "username": "zen99",
-    "planner": "balanced",
-    "description": "Balanced"
-  },
-  {
-    "username": "lyk100",
-    "planner": "random",
-    "description": "Random"
-  },
-  {
-    "username": "soc101",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "soc102",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "soc103",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "ven104",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "ven105",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "ven106",
-    "planner": "extras_vendor",
-    "description": "Extras Vendor"
-  },
-  {
-    "username": "pk107",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-  {
-    "username": "pk108",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk110",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk111",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk112",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk113",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk114",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk115",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-      {
-    "username": "pk116",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk117",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk118",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-    {
-    "username": "pk119",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  },
-  {
-    "username": "pk120",
-    "planner": "extras_pker",
-    "description": "Extras PKer"
-  }
+  {"username":"sk1","planner":"skiller","description":"Skiller"},
+  {"username":"sk2","planner":"skiller","description":"Skiller"},
+  {"username":"sk3","planner":"skiller","description":"Skiller"},
+  {"username":"sk4","planner":"skiller","description":"Skiller"},
+  {"username":"sk5","planner":"skiller","description":"Skiller"},
+  {"username":"sk6","planner":"skiller","description":"Skiller"},
+  {"username":"sk7","planner":"skiller","description":"Skiller"},
+  {"username":"sk8","planner":"skiller","description":"Skiller"},
+  {"username":"sk9","planner":"skiller","description":"Skiller"},
+  {"username":"sk10","planner":"skiller","description":"Skiller"},
+  {"username":"sk11","planner":"skiller","description":"Skiller"},
+  {"username":"sk12","planner":"skiller","description":"Skiller"},
+  {"username":"sk13","planner":"skiller","description":"Skiller"},
+  {"username":"sk14","planner":"skiller","description":"Skiller"},
+  {"username":"sk15","planner":"skiller","description":"Skiller"},
+  {"username":"sk16","planner":"skiller","description":"Skiller"},
+  {"username":"sk17","planner":"skiller","description":"Skiller"},
+  {"username":"sk18","planner":"skiller","description":"Skiller"},
+  {"username":"sk19","planner":"skiller","description":"Skiller"},
+  {"username":"sk20","planner":"skiller","description":"Skiller"},
+  {"username":"sk21","planner":"skiller","description":"Skiller"},
+  {"username":"sk22","planner":"skiller","description":"Skiller"},
+  {"username":"sk23","planner":"skiller","description":"Skiller"},
+  {"username":"sk24","planner":"skiller","description":"Skiller"},
+  {"username":"sk25","planner":"skiller","description":"Skiller"},
+
+  {"username":"fi1","planner":"fighter","description":"Fighter"},
+  {"username":"fi2","planner":"fighter","description":"Fighter"},
+  {"username":"fi3","planner":"fighter","description":"Fighter"},
+  {"username":"fi4","planner":"fighter","description":"Fighter"},
+  {"username":"fi5","planner":"fighter","description":"Fighter"},
+  {"username":"fi6","planner":"fighter","description":"Fighter"},
+  {"username":"fi7","planner":"fighter","description":"Fighter"},
+  {"username":"fi8","planner":"fighter","description":"Fighter"},
+  {"username":"fi9","planner":"fighter","description":"Fighter"},
+  {"username":"fi10","planner":"fighter","description":"Fighter"},
+  {"username":"fi11","planner":"fighter","description":"Fighter"},
+  {"username":"fi12","planner":"fighter","description":"Fighter"},
+  {"username":"fi13","planner":"fighter","description":"Fighter"},
+  {"username":"fi14","planner":"fighter","description":"Fighter"},
+  {"username":"fi15","planner":"fighter","description":"Fighter"},
+  {"username":"fi16","planner":"fighter","description":"Fighter"},
+  {"username":"fi17","planner":"fighter","description":"Fighter"},
+  {"username":"fi18","planner":"fighter","description":"Fighter"},
+  {"username":"fi19","planner":"fighter","description":"Fighter"},
+  {"username":"fi20","planner":"fighter","description":"Fighter"},
+  {"username":"fi21","planner":"fighter","description":"Fighter"},
+  {"username":"fi22","planner":"fighter","description":"Fighter"},
+  {"username":"fi23","planner":"fighter","description":"Fighter"},
+  {"username":"fi24","planner":"fighter","description":"Fighter"},
+  {"username":"fi25","planner":"fighter","description":"Fighter"},
+
+  {"username":"ba1","planner":"balanced","description":"Balanced"},
+  {"username":"ba2","planner":"balanced","description":"Balanced"},
+  {"username":"ba3","planner":"balanced","description":"Balanced"},
+  {"username":"ba4","planner":"balanced","description":"Balanced"},
+  {"username":"ba5","planner":"balanced","description":"Balanced"},
+  {"username":"ba6","planner":"balanced","description":"Balanced"},
+  {"username":"ba7","planner":"balanced","description":"Balanced"},
+  {"username":"ba8","planner":"balanced","description":"Balanced"},
+  {"username":"ba9","planner":"balanced","description":"Balanced"},
+  {"username":"ba10","planner":"balanced","description":"Balanced"},
+  {"username":"ba11","planner":"balanced","description":"Balanced"},
+  {"username":"ba12","planner":"balanced","description":"Balanced"},
+  {"username":"ba13","planner":"balanced","description":"Balanced"},
+  {"username":"ba14","planner":"balanced","description":"Balanced"},
+  {"username":"ba15","planner":"balanced","description":"Balanced"},
+  {"username":"ba16","planner":"balanced","description":"Balanced"},
+  {"username":"ba17","planner":"balanced","description":"Balanced"},
+  {"username":"ba18","planner":"balanced","description":"Balanced"},
+  {"username":"ba19","planner":"balanced","description":"Balanced"},
+  {"username":"ba20","planner":"balanced","description":"Balanced"},
+  {"username":"ba21","planner":"balanced","description":"Balanced"},
+  {"username":"ba22","planner":"balanced","description":"Balanced"},
+  {"username":"ba23","planner":"balanced","description":"Balanced"},
+  {"username":"ba24","planner":"balanced","description":"Balanced"},
+  {"username":"ba25","planner":"balanced","description":"Balanced"},
+
+  {"username":"ra1","planner":"random","description":"Random"},
+  {"username":"ra2","planner":"random","description":"Random"},
+  {"username":"ra3","planner":"random","description":"Random"},
+  {"username":"ra4","planner":"random","description":"Random"},
+  {"username":"ra5","planner":"random","description":"Random"},
+  {"username":"ra6","planner":"random","description":"Random"},
+  {"username":"ra7","planner":"random","description":"Random"},
+  {"username":"ra8","planner":"random","description":"Random"},
+  {"username":"ra9","planner":"random","description":"Random"},
+  {"username":"ra10","planner":"random","description":"Random"},
+  {"username":"ra11","planner":"random","description":"Random"},
+  {"username":"ra12","planner":"random","description":"Random"},
+  {"username":"ra13","planner":"random","description":"Random"},
+  {"username":"ra14","planner":"random","description":"Random"},
+  {"username":"ra15","planner":"random","description":"Random"},
+  {"username":"ra16","planner":"random","description":"Random"},
+  {"username":"ra17","planner":"random","description":"Random"},
+  {"username":"ra18","planner":"random","description":"Random"},
+  {"username":"ra19","planner":"random","description":"Random"},
+  {"username":"ra20","planner":"random","description":"Random"},
+  {"username":"ra21","planner":"random","description":"Random"},
+  {"username":"ra22","planner":"random","description":"Random"},
+  {"username":"ra23","planner":"random","description":"Random"},
+  {"username":"ra24","planner":"random","description":"Random"},
+  {"username":"ra25","planner":"random","description":"Random"},
+
+  {"username":"ven1","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven2","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven3","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven4","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven5","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven6","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven7","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven8","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven9","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven10","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven11","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven12","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven13","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven14","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven15","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven16","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven17","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven18","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven19","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven20","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven21","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven22","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven23","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven24","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven25","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven26","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven27","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven28","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven29","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven30","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven31","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven32","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven33","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven34","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven35","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven36","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven37","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven38","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven39","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven40","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven41","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven42","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven43","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven44","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven45","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven46","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven47","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven48","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven49","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven50","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven51","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven52","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven53","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven54","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven55","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven56","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven57","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven58","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven59","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven60","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven61","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven62","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven63","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven64","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven65","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven66","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven67","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven68","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven69","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven70","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven71","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven72","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven73","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven74","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven75","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven76","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven77","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven78","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven79","planner":"extras_vendor","description":"Extras Vendor"},
+  {"username":"ven80","planner":"extras_vendor","description":"Extras Vendor"},
+
+  {"username":"pk1","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk2","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk3","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk4","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk5","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk6","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk7","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk8","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk9","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk10","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk11","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk12","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk13","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk14","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk15","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk16","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk17","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk18","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk19","planner":"extras_pker","description":"Extras PKer"},
+  {"username":"pk20","planner":"extras_pker","description":"Extras PKer"}
 ]

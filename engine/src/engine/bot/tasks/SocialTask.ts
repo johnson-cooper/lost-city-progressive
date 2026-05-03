@@ -5,11 +5,18 @@
  * Approaches real players, chats, then leads them on a short walking tour.
  *
  * Pathfinding strategy:
- *  - Destinations are filtered to those within ~120 tiles of the bot's current
- *    position, so the bot never tries to cross the map.
- *  - Walking uses short 5-tile steps. If the bot gets stuck it tries a
- *    perpendicular detour (go around the wall). Only as a last resort does it
- *    do a tiny 6-tile hop forward — never a full teleport to the destination.
+ *  - Scan areas use safe OUTDOOR spawn coords — never inside buildings.
+ *  - Wander during scan uses pre-defined outdoor waypoints, not random offsets.
+ *  - Floor-level 0 is enforced every tick — if the bot ends up upstairs it is
+ *    immediately teleported back to the safe spawn and the sequence resets.
+ *  - Lead walking uses 5-tile steps. Stuck phases escalate quickly:
+ *      phase 1 (0-3 ticks)  — direct step toward target
+ *      phase 2 (4-9 ticks)  — perpendicular left detour
+ *      phase 3 (10-16 ticks) — perpendicular right detour
+ *      phase 4 (17+ ticks)  — small 6-tile forward hop (teleport), then reset
+ *  - BLOCKED_ZONES prevents steps toward known permanently impassable tiles.
+ *  - Destinations are filtered to within [15, 120] tiles of the bot so it
+ *    never tries to cross the map.
  */
 
 import {
@@ -35,22 +42,66 @@ import World from '#/engine/World.js';
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SCAN_RADIUS     = 20;
-const FOLLOW_RADIUS   = 14;   // tiles — "player is keeping up"
-// Tiles the bot must never walk toward — permanently locked doors, etc.
-// Each entry is [x, z, avoidRadius].
+const SCAN_RADIUS      = 20;
+const FOLLOW_RADIUS    = 14;    // tiles — "player is keeping up"
+const DEST_MIN_DIST    = 15;    // don't pick a destination closer than this
+const DEST_MAX_DIST    = 120;   // don't pick a destination further than this
+const LEAD_STEP        = 5;     // tiles per step when walking
+const STUCK_PERP_TICK  = 4;     // ticks before trying perpendicular detour
+const STUCK_PERP2_TICK = 10;    // ticks before trying opposite perpendicular
+const STUCK_HOP_TICK   = 17;    // ticks before tiny teleport hop forward
+const ARRIVE_LINGER    = 120;   // ticks to hang around after arriving
+const MISS_LIMIT       = 4;     // consecutive missed follow-checks before giving up
+
+// Tiles the bot must never step toward — permanently locked doors, bank interiors, etc.
+// Each entry is [centerX, centerZ, avoidRadius].
 const BLOCKED_ZONES: [number, number, number][] = [
-    [3216, 3381, 4],  // south Varrock permanently locked door
+    [3216, 3381, 4],   // south Varrock permanently locked door
+    [3186, 3446, 3],   // Varrock West Bank teller zone (behind counter)
 ];
 
-const DEST_MIN_DIST   = 20;   // don't pick a destination this close
-const DEST_MAX_DIST   = 120;  // don't pick a destination this far
-const LEAD_STEP       = 5;    // tiles per step when walking
-const STUCK_PERP_TICK = 5;    // ticks before trying perpendicular detour
-const STUCK_PERP2_TICK = 13;  // ticks before trying opposite perpendicular
-const STUCK_HOP_TICK  = 22;   // ticks before tiny teleport hop
-const ARRIVE_LINGER   = 120;  // ticks to hang around after arriving
-const MISS_LIMIT      = 4;    // consecutive missed follow-checks before giving up
+// ── Scan areas ────────────────────────────────────────────────────────────────
+// x/z    — scan-center used for isNear proximity check only
+// spawnX/Z — guaranteed safe OUTDOOR position used for all teleportation
+// wanderPoints — pre-defined outdoor spots the bot cycles through when idle;
+//                NEVER uses random offsets from bank interior coords
+
+interface ScanArea {
+    x: number; z: number;
+    spawnX: number; spawnZ: number;
+    wanderPoints: [number, number][];
+}
+
+const SCAN_AREAS: ScanArea[] = [
+    {
+        // Varrock West Bank — bot stays on the road south of the building.
+        // Bank interior is at z≈3444; road outside starts at z≈3434.
+        x: 3185, z: 3444,
+        spawnX: 3185, spawnZ: 3433,
+        wanderPoints: [
+            [3185, 3433], [3178, 3434], [3192, 3434],
+            [3173, 3436], [3197, 3432], [3182, 3428], [3190, 3430],
+        ],
+    },
+    {
+        // Draynor Village Bank — road south of the bank.
+        x: 3092, z: 3245,
+        spawnX: 3092, spawnZ: 3240,
+        wanderPoints: [
+            [3092, 3240], [3087, 3242], [3097, 3241],
+            [3085, 3237], [3100, 3238], [3090, 3234], [3095, 3244],
+        ],
+    },
+    {
+        // Varrock East Bank — road south of the building.
+        x: 3253, z: 3420,
+        spawnX: 3253, spawnZ: 3415,
+        wanderPoints: [
+            [3253, 3415], [3259, 3417], [3246, 3416],
+            [3255, 3411], [3262, 3413], [3248, 3412], [3257, 3419],
+        ],
+    },
+];
 
 // ── Destinations ──────────────────────────────────────────────────────────────
 
@@ -59,8 +110,7 @@ interface Destination {
     x: number;
     z: number;
     radius: number;
-    // Road waypoints the bot walks through in order before reaching the
-    // final coord. Keeps it on open ground and away from known obstacles.
+    // Road waypoints the bot walks through in order before reaching the final coord.
     waypoints: [number, number][];
     approachPhrases: string[];
     arrivalPhrases:  string[];
@@ -72,7 +122,9 @@ const DESTINATIONS: Destination[] = [
     {
         name: 'Grand Exchange',
         x: 3165, z: 3420, radius: 8,
-        waypoints: [],
+        waypoints: [
+            [3175, 3433],  // road west from Varrock West Bank
+        ],
         approachPhrases: ['follow me to the GE!', 'lets check the marketplace', 'heading to GE, u coming?', 'marketplace is just up here'],
         arrivalPhrases:  ['here we are!', 'GE, always busy', 'love this spot'],
         idlePhrases:     ['u ever trade here?', 'prices are alright', 'busy place', 'what do u usually buy?', 'I come here loads'],
@@ -80,7 +132,9 @@ const DESTINATIONS: Destination[] = [
     {
         name: 'Varrock Square',
         x: 3212, z: 3446, radius: 5,
-        waypoints: [[3196, 3440]],
+        waypoints: [
+            [3196, 3440],  // east along south road
+        ],
         approachPhrases: ['come see varrock square', 'follow me to the fountain', 'this way!', 'varrock centre, follow'],
         arrivalPhrases:  ['the fountain!', 'classic varrock square', 'nice spot right'],
         idlePhrases:     ['people always hang here', 'varrock is my fave town', 'chill spot tbh', 'u been here before?', 'pretty central'],
@@ -88,7 +142,10 @@ const DESTINATIONS: Destination[] = [
     {
         name: 'Varrock Palace',
         x: 3213, z: 3468, radius: 6,
-        waypoints: [[3210, 3450]],
+        waypoints: [
+            [3196, 3440],  // east road
+            [3210, 3452],  // through the square, heading north
+        ],
         approachPhrases: ['wanna see the palace?', 'follow me north', 'come check the palace out', 'just up here, follow'],
         arrivalPhrases:  ['the palace!', 'pretty big right', 'guards everywhere lol'],
         idlePhrases:     ['wonder what the king gets up to', 'big fancy building lol', 'lots of guards', 'u done the varrock quest?', 'impressive building'],
@@ -97,9 +154,9 @@ const DESTINATIONS: Destination[] = [
         name: 'Barbarian Village',
         x: 3082, z: 3422, radius: 6,
         waypoints: [
-            [3155, 3437],  // road west out of Varrock
-            [3120, 3437],  // road continuing west
-            [3100, 3428],  // approaching barb village
+            [3155, 3433],  // west road out of Varrock
+            [3120, 3433],  // continuing west
+            [3100, 3425],  // approaching barb village
         ],
         approachPhrases: ['ever been to barb village?', 'follow me west', 'come to barb village with me', 'barb village is west of here'],
         arrivalPhrases:  ['barbarian village!', 'bit sketchy but cool', 'wild spot'],
@@ -111,14 +168,24 @@ const DESTINATIONS: Destination[] = [
         waypoints: [
             [3230, 3404],  // south road from east Varrock
             [3207, 3393],  // main south gate approach (west of locked door at 3216,3381)
-            [3195, 3378],  // outside south wall, clear of the locked door
+            [3195, 3378],  // outside south wall, clear of locked door
         ],
         approachPhrases: ['come see the champions guild', 'follow me south', 'just down here, follow', 'cool building south of varrock'],
         arrivalPhrases:  ['champions guild!', 'u gotta do dragon slayer to get in', 'cool spot'],
         idlePhrases:     ['u done dragon slayer?', 'need 32 qp to enter', 'fancy looking building', 'good goal to work toward', 'classic rs milestone'],
     },
+    {
+        name: 'Varrock Smithy',
+        x: 3188, z: 3426, radius: 5,
+        waypoints: [
+            [3192, 3433],  // east from West Bank, south side of road
+        ],
+        approachPhrases: ['come see the smithy', 'follow me east', 'smithy is just here', 'good spot for smithing'],
+        arrivalPhrases:  ['the smithy!', 'loads of anvils here', 'good spot to train smithing'],
+        idlePhrases:     ['u train smithing?', 'need a lot of ore for this', 'good xp if u got the bars', 'classic training spot', 'u use the ge for bars?'],
+    },
 
-    // ── Draynor area ─────────────────────────────────────────────────────────
+    // ── Draynor / south area ──────────────────────────────────────────────────
     {
         name: 'Draynor Willows',
         x: 3086, z: 3236, radius: 5,
@@ -134,6 +201,17 @@ const DESTINATIONS: Destination[] = [
         approachPhrases: ['come see the market', 'follow me', 'market area, this way', 'just over here'],
         arrivalPhrases:  ['draynor market!', 'small but cosy', 'love draynor tbh'],
         idlePhrases:     ['quiet little town', 'got everything u need here', 'friendly vibe', 'u been to draynor before?', 'nice area'],
+    },
+    {
+        name: 'Lumbridge Road',
+        x: 3148, z: 3271, radius: 7,
+        waypoints: [
+            [3105, 3259],  // road north-east out of Draynor
+            [3130, 3266],  // road toward Lumbridge
+        ],
+        approachPhrases: ['come this way toward lumbridge', 'follow me up the road', 'good walk east', 'road to lumbridge, this way'],
+        arrivalPhrases:  ['nice road this', 'halfway to lumbridge', 'peaceful walk eh'],
+        idlePhrases:     ['lumbridge is not far from here', 'good road to know', 'cows just east of here', 'u been to lumbridge much?', 'classic starter area nearby'],
     },
     {
         name: 'Port Sarim',
@@ -164,20 +242,12 @@ const DESTINATIONS: Destination[] = [
         x: 3013, z: 3356, radius: 5,
         waypoints: [
             [3033, 3390],  // road from east
-            [3020, 3370],  // road south
+            [3020, 3370],  // road south into falador
         ],
         approachPhrases: ['follow me to falador bank', 'falador bank is just here', 'come this way', 'heading to the bank'],
         arrivalPhrases:  ['falador east bank!', 'handy bank', 'solid spot'],
         idlePhrases:     ['decent bank location', 'mining guild is nearby', 'u mine at all?', 'good central bank', 'falador is underrated tbh'],
     },
-];
-
-// ── Scan areas ────────────────────────────────────────────────────────────────
-
-const SCAN_AREAS: [number, number][] = [
-    [Locations.VARROCK_WEST_BANK[0], Locations.VARROCK_WEST_BANK[1]],
-    [Locations.DRAYNOR_BANK[0],      Locations.DRAYNOR_BANK[1]],
-    [Locations.VARROCK_EAST_BANK[0], Locations.VARROCK_EAST_BANK[1]],
 ];
 
 // ── Phrase banks ──────────────────────────────────────────────────────────────
@@ -224,6 +294,7 @@ export class SocialTask extends BotTask {
     private areaIndex = 0;
     private scanFail  = 0;
     private chatPhase = 0;
+    private wanderIdx = 0;    // cycles through scan-area outdoor wander points
 
     // Lead state
     private waypointIndex       = 0;
@@ -231,7 +302,7 @@ export class SocialTask extends BotTask {
     private leadCommentTick     = 0;
     private missedFollowChecks  = 0;
 
-    // Smart pathfinding — stuck detection
+    // Smart pathfinding — position-change stuck detection
     private leadLastX    = 0;
     private leadLastZ    = 0;
     private leadStuckTick = 0;
@@ -251,6 +322,20 @@ export class SocialTask extends BotTask {
 
     tick(player: Player): void {
         if (this.interrupted) return;
+
+        // ── Floor-level guard ─────────────────────────────────────────────────
+        // Social bots always operate at ground level (level 0).
+        // If the bot somehow ends up upstairs or inside a restricted area on a
+        // different floor, teleport it back to the current scan area's safe
+        // outdoor spawn immediately.
+        if (player.level !== 0) {
+            const area = SCAN_AREAS[this.areaIndex]!;
+            teleportNear(player, area.spawnX, area.spawnZ);
+            this._resetTarget();   // also sets state = 'scan'
+            this.cooldown = 3;
+            return;
+        }
+
         if (this.cooldown > 0) { this.cooldown--; return; }
 
         switch (this.state) {
@@ -271,25 +356,32 @@ export class SocialTask extends BotTask {
         this._resetTarget();
         this.areaIndex = 0;
         this.scanFail  = 0;
+        this.wanderIdx = 0;
     }
 
     // ── States ────────────────────────────────────────────────────────────────
 
     private handleScan(player: Player): void {
-        const [ax, az] = SCAN_AREAS[this.areaIndex]!;
+        const area = SCAN_AREAS[this.areaIndex]!;
 
-        if (!isNear(player, ax, az, 12)) {
-            if (Math.abs(player.x - ax) > 60 || Math.abs(player.z - az) > 60) {
-                teleportNear(player, ax, az);
+        // Navigate to this area if not already nearby.
+        // Use the safe spawn coord — never the bank interior center.
+        if (!isNear(player, area.x, area.z, 14)) {
+            if (Math.abs(player.x - area.spawnX) > 60 || Math.abs(player.z - area.spawnZ) > 60) {
+                teleportNear(player, area.spawnX, area.spawnZ);
             } else {
-                this._stuckWalk(player, ax + randInt(-5, 5), az + randInt(-5, 5));
+                this._stuckWalk(player, area.spawnX, area.spawnZ);
             }
             this.cooldown = 2;
             return;
         }
 
+        // Idle wander: cycle through pre-defined outdoor waypoints so the bot
+        // never randomly walks into a building or behind a bank counter.
         if (Math.random() < 0.3) {
-            walkTo(player, ax + randInt(-8, 8), az + randInt(-6, 6));
+            const wp = area.wanderPoints[this.wanderIdx % area.wanderPoints.length]!;
+            this.wanderIdx++;
+            walkTo(player, wp[0], wp[1]);
         }
 
         const found = findNearbyRealPlayer(player, SCAN_RADIUS);
@@ -339,15 +431,15 @@ export class SocialTask extends BotTask {
             return;
         }
 
-        // Pick a destination that's actually near the bot's current position.
-        this.destination     = this._pickNearbyDest(player);
-        this.waypointIndex   = 0;
-        this.leadTicks       = 0;
-        this.leadCommentTick = 0;
+        // Pick a destination near the bot's current position.
+        this.destination        = this._pickNearbyDest(player);
+        this.waypointIndex      = 0;
+        this.leadTicks          = 0;
+        this.leadCommentTick    = 0;
         this.missedFollowChecks = 0;
-        this.leadLastX = player.x;
-        this.leadLastZ = player.z;
-        this.leadStuckTick = 0;
+        this.leadLastX          = player.x;
+        this.leadLastZ          = player.z;
+        this.leadStuckTick      = 0;
 
         player.say(pickRandom(FOLLOW_PROMPTS));
         this.state    = 'lead';
@@ -355,16 +447,14 @@ export class SocialTask extends BotTask {
     }
 
     /**
-     * Lead state — walks toward the destination using road waypoints.
+     * Lead state — walks toward destination via road waypoints.
      *
-     * Movement uses _leadWalk which:
-     *   1. Walks in 5-tile steps normally.
-     *   2. Tries a perpendicular detour when stuck (go around the wall).
-     *   3. Tries the opposite perpendicular if still stuck.
-     *   4. Takes a small 6-tile hop as a last resort (tiny, not to the destination).
-     *
-     * The bot only advances past each waypoint when it has physically walked there.
-     * It pauses and calls out if the player isn't keeping up.
+     * Navigation:
+     *  - Each waypoint must be physically reached (within 5 tiles) before
+     *    advancing to the next. leadStuckTick resets when advancing.
+     *  - Movement is delegated to _leadWalk which handles obstacles.
+     *  - Pauses and calls out when the player falls behind.
+     *  - Gives up and says farewell if player disappears for MISS_LIMIT checks.
      */
     private handleLead(player: Player): void {
         const t    = this.target;
@@ -379,7 +469,7 @@ export class SocialTask extends BotTask {
 
         this.leadTicks++;
 
-        // Arrived at destination.
+        // Arrived at destination?
         if (isNear(player, dest.x, dest.z, dest.radius)) {
             player.say(pickRandom(dest.arrivalPhrases));
             this.arrivedTicks    = 0;
@@ -389,7 +479,7 @@ export class SocialTask extends BotTask {
             return;
         }
 
-        // Current nav target: next waypoint or final dest.
+        // Determine current navigation target: next waypoint or final dest.
         const waypoints = dest.waypoints;
         let navX = dest.x;
         let navZ = dest.z;
@@ -397,7 +487,10 @@ export class SocialTask extends BotTask {
         while (this.waypointIndex < waypoints.length) {
             const [wx, wz] = waypoints[this.waypointIndex]!;
             if (chebyshev(player.x, player.z, wx, wz) <= 5) {
+                // Reached this waypoint — advance and reset stuck counter so
+                // the new leg starts with a clean slate.
                 this.waypointIndex++;
+                this.leadStuckTick = 0;
             } else {
                 navX = wx;
                 navZ = wz;
@@ -432,7 +525,7 @@ export class SocialTask extends BotTask {
             this.leadCommentTick = 0;
         }
 
-        // Pause and wait if player has fallen behind.
+        // Pause and wait if the player has fallen behind.
         if (!playerFollowing && this.missedFollowChecks >= 2) {
             this.cooldown = 3;
             return;
@@ -452,7 +545,7 @@ export class SocialTask extends BotTask {
         const t            = this.target;
         const playerNearby = t && chebyshev(player.x, player.z, t.x, t.z) <= 20;
 
-        // Give coin reward via trade once when player is nearby.
+        // Trigger coin-reward trade once when player is nearby.
         if (playerNearby && t && !this.rewardGiven) {
             this.rewardGiven = true;
             this.rewardStage = 0;
@@ -462,6 +555,7 @@ export class SocialTask extends BotTask {
             return;
         }
 
+        // Idle wander within the destination radius.
         if (Math.random() < 0.35) {
             const r = dest.radius + 3;
             walkTo(player, dest.x + randInt(-r, r), dest.z + randInt(-r, r));
@@ -535,11 +629,12 @@ export class SocialTask extends BotTask {
 
     private handleMoveArea(player: Player): void {
         this.areaIndex = (this.areaIndex + 1) % SCAN_AREAS.length;
-        const [tx, tz] = SCAN_AREAS[this.areaIndex]!;
-        if (Math.abs(player.x - tx) > 70 || Math.abs(player.z - tz) > 70) {
-            teleportNear(player, tx, tz);
+        const area = SCAN_AREAS[this.areaIndex]!;
+        // Always teleport/walk to the safe outdoor spawn, not the scan center.
+        if (Math.abs(player.x - area.spawnX) > 70 || Math.abs(player.z - area.spawnZ) > 70) {
+            teleportNear(player, area.spawnX, area.spawnZ);
         } else {
-            walkTo(player, tx + randInt(-6, 6), tz + randInt(-4, 4));
+            this._stuckWalk(player, area.spawnX, area.spawnZ);
         }
         this.state    = 'scan';
         this.cooldown = randInt(8, 16);
@@ -550,16 +645,22 @@ export class SocialTask extends BotTask {
     /**
      * Smart walker used during the lead phase.
      *
-     * Phase 1 (not stuck): direct 5-tile step toward target.
-     * Phase 2 (stuck 5+ ticks): perpendicular left — route around the wall.
-     * Phase 3 (stuck 13+ ticks): perpendicular right — try the other side.
-     * Phase 4 (stuck 22+ ticks): tiny 6-tile hop in the travel direction — last resort.
+     * Uses the bot's actual position change each tick to detect being stuck,
+     * then escalates through four phases:
      *
-     * The hop is small enough (6 tiles forward) that it's barely noticeable and
-     * only triggers after the bot has genuinely tried both sides of an obstacle.
+     *   Phase 1 (0–3 ticks)   direct 5-tile step toward the nav target.
+     *                          If the step would land in a BLOCKED_ZONE, deflect
+     *                          perpendicular-left instead.
+     *   Phase 2 (4–9 ticks)   perpendicular-left detour — route around the wall.
+     *   Phase 3 (10–16 ticks) perpendicular-right detour — try the other side.
+     *   Phase 4 (17+ ticks)   tiny 6-tile teleport hop in the travel direction,
+     *                          then reset the stuck counter to phase 1.
+     *
+     * The stuck counter is also reset whenever the bot advances to the next
+     * waypoint (handled in handleLead).
      */
     private _leadWalk(player: Player, tx: number, tz: number): void {
-        // Detect if the bot hasn't moved since the last tick.
+        // Update stuck counter based on whether position changed since last call.
         if (player.x === this.leadLastX && player.z === this.leadLastZ) {
             this.leadStuckTick++;
         } else {
@@ -570,33 +671,43 @@ export class SocialTask extends BotTask {
 
         const dx = tx - player.x;
         const dz = tz - player.z;
-        // Normalised direction signs for perpendicular calculation.
-        const sx = Math.sign(dx) || 1;
-        const sz = Math.sign(dz) || 1;
+        const sx = Math.sign(dx);   // -1, 0, or 1
+        const sz = Math.sign(dz);   // -1, 0, or 1
+
+        // If already at target nothing to do.
+        if (sx === 0 && sz === 0) return;
 
         if (this.leadStuckTick < STUCK_PERP_TICK) {
-            // Normal: step directly toward target.
-            let stepX = player.x + sx * Math.min(Math.abs(dx), LEAD_STEP);
-            let stepZ = player.z + sz * Math.min(Math.abs(dz), LEAD_STEP);
-            // If that step lands near a blocked zone, deflect perpendicular instead.
+            // Phase 1: step directly toward the target.
+            let stepX = player.x + (sx !== 0 ? sx * Math.min(Math.abs(dx), LEAD_STEP) : 0);
+            let stepZ = player.z + (sz !== 0 ? sz * Math.min(Math.abs(dz), LEAD_STEP) : 0);
+
+            // If that step would land near a known blocked zone, deflect left.
             if (BLOCKED_ZONES.some(([bx, bz, r]) => chebyshev(stepX, stepZ, bx, bz) <= r)) {
-                stepX = player.x + (-sz) * LEAD_STEP;
-                stepZ = player.z + sx  * LEAD_STEP;
+                const psx = sx !== 0 ? sx : 1;
+                const psz = sz !== 0 ? sz : 1;
+                stepX = player.x + (-psz) * LEAD_STEP;
+                stepZ = player.z + psx  * LEAD_STEP;
             }
             walkTo(player, stepX, stepZ);
 
         } else if (this.leadStuckTick < STUCK_PERP2_TICK) {
-            // Stuck: try perpendicular left to route around the obstacle.
-            // Perpendicular left of (dx, dz) = (-dz, dx).
-            walkTo(player, player.x + (-sz) * LEAD_STEP, player.z + sx * LEAD_STEP);
+            // Phase 2: perpendicular-left = (-sz, sx).
+            const psx = sx !== 0 ? sx : 1;
+            const psz = sz !== 0 ? sz : 1;
+            walkTo(player, player.x + (-psz) * LEAD_STEP, player.z + psx * LEAD_STEP);
 
         } else if (this.leadStuckTick < STUCK_HOP_TICK) {
-            // Still stuck: try perpendicular right = (dz, -dx).
-            walkTo(player, player.x + sz * LEAD_STEP, player.z + (-sx) * LEAD_STEP);
+            // Phase 3: perpendicular-right = (sz, -sx).
+            const psx = sx !== 0 ? sx : 1;
+            const psz = sz !== 0 ? sz : 1;
+            walkTo(player, player.x + psz * LEAD_STEP, player.z + (-psx) * LEAD_STEP);
 
         } else {
-            // Desperately stuck: tiny hop forward — not to dest, just past the wall.
-            teleportNear(player, player.x + sx * 6, player.z + sz * 6);
+            // Phase 4: small forward hop — just enough to get past the wall.
+            const psx = sx !== 0 ? sx : 1;
+            const psz = sz !== 0 ? sz : 1;
+            teleportNear(player, player.x + psx * 6, player.z + psz * 6);
             this.leadStuckTick = 0;
         }
     }
@@ -604,9 +715,8 @@ export class SocialTask extends BotTask {
     // ── General helpers ───────────────────────────────────────────────────────
 
     /**
-     * Pick a destination that is within walking distance of the bot's current
-     * position. This prevents the bot from trying to lead a player from Draynor
-     * to Varrock (or similar cross-map trips that cause pathfinding failures).
+     * Pick a destination within walking distance of the bot's current position.
+     * Prevents cross-map trips that guarantee pathfinding failures.
      */
     private _pickNearbyDest(player: Player): Destination {
         const nearby = DESTINATIONS.filter(d => {
@@ -617,7 +727,7 @@ export class SocialTask extends BotTask {
     }
 
     private _resetTarget(): void {
-        if (this.target) this._clearTrade(null);
+        if (this.target) this._clearTrade(this.target);
         this.target      = null;
         this.destination = null;
         this.chatPhase          = 0;
