@@ -46,29 +46,30 @@ const VENDOR_ITEMS: VendorStock[] = [
 ];
 
 /**
- * Fixed stall positions spread across Varrock West Bank.
- * Five spots are inside the bank, seven are outside on the road/entrance.
+ * Fixed stall positions spread outside Varrock West Bank.
+ * All spots are on the accessible pavement/road — none inside the bank building.
  * Each vendor bot is assigned one position deterministically from its username
  * so bots never stack on top of each other.
  *
  * Anchor: VARROCK_WEST_BANK = [3185, 3444]  FIRE_VARROCK_ROAD = [3184, 3430]
  */
 const VENDOR_SPOTS: Array<[number, number]> = [
-    // ── Inside bank ──────────────────────────────────────────
-    [3182, 3442],
-    [3185, 3442],
-    [3188, 3442],
-    [3183, 3446],
-    [3188, 3446],
-    // ── Just outside the entrance ────────────────────────────
+    // ── In front of the bank entrance ────────────────────────
+    [3181, 3439],
+    [3181, 3438],
     [3181, 3437],
-    [3186, 3436],
-    [3190, 3437],
-    // ── Road / further out ───────────────────────────────────
-    [3181, 3431],
-    [3184, 3431],
-    [3188, 3431],
-    [3192, 3434],
+    [3194, 3439],
+    // ── West side of the bank ─────────────────────────────────
+    [3176, 3443],
+    [3176, 3440],
+    // ── East side of the bank ────────────────────────────────
+    [3190, 3430],
+    [3192, 3440],
+    // ── Road going south ─────────────────────────────────────
+    [3179, 3429],
+    [3183, 3427],
+    [3176, 3429],
+    [3185, 3429],
 ];
 
 export class VendorTask extends BotTask {

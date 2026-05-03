@@ -1655,7 +1655,7 @@ const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
  * These are excluded so bots don't try to "open" or interact with them while
  * navigating past them (e.g. picking flowers at Varrock West Bank).
  */
-const DECORATIVE_LOC_FRAGMENTS = ['flower', 'fern', 'plant', 'bush', 'thistle', 'nettle', 'cabbage', 'tulip', 'daisy', 'sunflower'];
+const DECORATIVE_LOC_FRAGMENTS = ['flower', 'fern', 'plant', 'bush', 'thistle', 'nettle', 'cabbage', 'tulip', 'daisy', 'sunflower', 'chest', 'open chest', 'closed chest'];
 
 /**
  * Directly executes the OPLOC1 script for a gate/door Loc.
@@ -1754,7 +1754,7 @@ function _hasGateInteractionPending(player: Player): boolean {
 
 // Toll gates that bots must never try to open — crossing is handled by the
 // GATEWAY_REGIONS teleport in walkTo instead.
-const TOLL_GATE_TYPE_IDS = new Set([2882, 2883, 1298, 1299, 1300, 1173]); // border_gate_toll_left/right
+const TOLL_GATE_TYPE_IDS = new Set([2882, 2883, 1298, 1299, 1300, 1173, 375]); // border_gate_toll_left/right
 
 /** Internal: returns true if `loc` passes the closed-gate predicate. */
 function _isClosedGate(loc: Loc): boolean {
