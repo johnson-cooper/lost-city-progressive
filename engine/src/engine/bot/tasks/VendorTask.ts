@@ -11,7 +11,7 @@ import {
     interactIfButtonByName,
     interactPlayerOp,
 } from '#/engine/bot/BotAction.js';
-import { findClosest, Interfaces, Items, Locations } from '#/engine/bot/BotKnowledge.js';
+import { Interfaces, Items, Locations } from '#/engine/bot/BotKnowledge.js';
 import {
     BotTask,
     Player,
@@ -45,6 +45,32 @@ const VENDOR_ITEMS: VendorStock[] = [
     { notedId: Items.RAW_SWORDFISH + 1,  name: 'Swordfish',   priceEach: 300  },
 ];
 
+/**
+ * Fixed stall positions spread across Varrock West Bank.
+ * Five spots are inside the bank, seven are outside on the road/entrance.
+ * Each vendor bot is assigned one position deterministically from its username
+ * so bots never stack on top of each other.
+ *
+ * Anchor: VARROCK_WEST_BANK = [3185, 3444]  FIRE_VARROCK_ROAD = [3184, 3430]
+ */
+const VENDOR_SPOTS: Array<[number, number]> = [
+    // ── Inside bank ──────────────────────────────────────────
+    [3182, 3442],
+    [3185, 3442],
+    [3188, 3442],
+    [3183, 3446],
+    [3188, 3446],
+    // ── Just outside the entrance ────────────────────────────
+    [3181, 3437],
+    [3186, 3436],
+    [3190, 3437],
+    // ── Road / further out ───────────────────────────────────
+    [3181, 3431],
+    [3184, 3431],
+    [3188, 3431],
+    [3192, 3434],
+];
+
 export class VendorTask extends BotTask {
     private state: 'init' | 'walk' | 'idle' | 'trade_init' | 'trade_offer' | 'trade_confirm' | 'trade_finalize' = 'init';
 
@@ -52,6 +78,7 @@ export class VendorTask extends BotTask {
     private itemCount = 0;
     private stockMax = 0;       // original stocked amount — never decremented
     private currentOfferSlot = 0;
+    private assignedSpot: [number, number] | null = null; // deterministic stall position
 
     private requestedCount = 0;
     private requestedTotal = 0;
@@ -117,6 +144,7 @@ export class VendorTask extends BotTask {
         this.stockMax = 0;
         this.duration = 3600;
         this.currentOfferSlot = 0;
+        this.assignedSpot = null;
         this.stuck.reset();
         this.watchdog.reset();
     }
@@ -152,22 +180,20 @@ export class VendorTask extends BotTask {
     }
 
     private handleWalk(player: Player): void {
-        const [bx, bz] = Locations.VARROCK_WEST_BANK;
-        if (Math.abs(player.x - bx) > 80 || Math.abs(player.z - bz) > 80) {
-            teleportNear(player, bx, bz);
+        // Resolve (once) the deterministic stall position for this bot.
+        if (!this.assignedSpot) {
+            this.assignedSpot = VENDOR_SPOTS[this._spotIndex(player.username)];
+        }
+        const [lx, lz] = this.assignedSpot;
+
+        // Teleport if wildly far away.
+        if (Math.abs(player.x - lx) > 80 || Math.abs(player.z - lz) > 80) {
+            teleportNear(player, lx, lz);
             this.cooldown = randInt(2, 3);
             return;
         }
 
-        const dest = findClosest(player, [
-            Locations.VARROCK_WEST_BANK,
-            Locations.FIRE_VARROCK_ROAD,
-        ]);
-
-        if (!dest) return;
-        const [lx, lz] = dest;
-
-        if (!isNear(player, lx, lz, 3)) {
+        if (!isNear(player, lx, lz, 2)) {
             this._stuckWalk(player, lx, lz);
             this.cooldown = 1;
             return;
@@ -183,20 +209,21 @@ export class VendorTask extends BotTask {
             return;
         }
 
-        // Drift slightly around the bank.
-        if (Math.random() < 0.2) {
-            const [bx, bz] = Locations.VARROCK_WEST_BANK;
-            walkTo(player, bx + randInt(-3, 3), bz + randInt(-2, 2));
+        // Drift slightly around the assigned stall — max ±1 tile so bots stay spread out.
+        if (Math.random() < 0.2 && this.assignedSpot) {
+            const [sx, sz] = this.assignedSpot;
+            walkTo(player, sx + randInt(-1, 1), sz + randInt(-1, 1));
         }
 
-        // Announce stock.
+        // Announce stock, always including the bot's name so players know who is selling.
+        const name = player.displayName;
         const roll = Math.random();
         if (roll < 0.3) {
-            player.say(`Selling ${this.itemCount}x noted ${this.stock.name} @ ${this.stock.priceEach}gp ea`);
+            player.say(`${name}: Selling ${this.itemCount}x noted ${this.stock.name} @ ${this.stock.priceEach}gp ea`);
         } else if (roll < 0.5) {
-            player.say(`${this.stock.name} (noted) ${this.stock.priceEach}gp ea | pm me`);
+            player.say(`${name}: ${this.stock.name} (noted) ${this.stock.priceEach}gp ea | trade me`);
         } else if (roll < 0.65) {
-            player.say(`WTS ${this.itemCount} noted ${this.stock.name}`);
+            player.say(`${name} WTS ${this.itemCount} noted ${this.stock.name} - ${this.stock.priceEach}gp ea`);
         }
 
         this.watchdog.notifyActivity();
@@ -397,6 +424,18 @@ export class VendorTask extends BotTask {
         }
 
         this.state = this.itemCount > 0 ? 'idle' : 'init';
+    }
+
+    /**
+     * Maps a username string to a consistent index into VENDOR_SPOTS.
+     * Uses a simple djb2-style hash so the same bot always lands on the same spot.
+     */
+    private _spotIndex(username: string): number {
+        let h = 5381;
+        for (let i = 0; i < username.length; i++) {
+            h = (Math.imul(h, 33) ^ username.charCodeAt(i)) | 0;
+        }
+        return Math.abs(h) % VENDOR_SPOTS.length;
     }
 
     private _stuckWalk(player: Player, tx: number, tz: number): void {
