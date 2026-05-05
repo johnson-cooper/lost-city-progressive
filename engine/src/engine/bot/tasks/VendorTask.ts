@@ -33,16 +33,114 @@ interface VendorStock {
 }
 
 const VENDOR_ITEMS: VendorStock[] = [
-    { notedId: Items.IRON_ORE + 1,      name: 'Iron ore',    priceEach: 350  },
-    { notedId: Items.COAL + 1,           name: 'Coal',        priceEach: 650  },
-    { notedId: Items.LOGS + 1,           name: 'Logs',        priceEach: 150  },
-    { notedId: Items.OAK_LOGS + 1,       name: 'Oak logs',    priceEach: 50   },
-    { notedId: Items.WILLOW_LOGS + 1,    name: 'Willow logs', priceEach: 50   },
-    { notedId: Items.YEW_LOGS + 1,       name: 'Yew logs',    priceEach: 400  },
-    { notedId: Items.RAW_LOBSTER + 1,    name: 'Raw lobster', priceEach: 200  },
-    { notedId: Items.BIG_BONES + 1,      name: 'Big bones',   priceEach: 300  },
-    { notedId: Items.MITHRIL_ORE + 1,    name: 'Mithril ore', priceEach: 500  },
-    { notedId: Items.RAW_SWORDFISH + 1,  name: 'Swordfish',   priceEach: 300  },
+// 🔥 High-tier weapons & gear
+{ notedId: Items.RUNE_SCIMITAR + 1, name: 'Rune scimitar', priceEach: 25000 },
+{ notedId: Items.RUNE_2H_SWORD + 1, name: 'Rune 2h sword', priceEach: 40000 },
+{ notedId: Items.RUNE_LONGSWORD + 1, name: 'Rune longsword', priceEach: 32000 },
+{ notedId: Items.RUNE_KITESHIELD + 1, name: 'Rune kiteshield', priceEach: 35000 },
+
+{ notedId: Items.DRAGON_DAGGER + 1, name: 'Dragon dagger', priceEach: 60000 },
+{ notedId: Items.DRAGON_MED_HELM + 1, name: 'Dragon med helm', priceEach: 100000 },
+{ notedId: Items.DRAGON_SQ_SHIELD + 1, name: 'Dragon sq shield', priceEach: 150000 },
+
+// 🏹 Ranged BIS
+{ notedId: Items.MAGIC_SHORTBOW + 1, name: 'Magic shortbow', priceEach: 30000 },
+{ notedId: Items.MAGIC_LONGBOW + 1, name: 'Magic longbow', priceEach: 25000 },
+{ notedId: Items.RUNE_ARROWHEADS + 1, name: 'Rune arrowheads', priceEach: 400 },
+{ notedId: Items.ADAMANT_ARROWHEADS + 1, name: 'Adamant arrowheads', priceEach: 200 },
+
+// 🧙 Magic essentials
+{ notedId: Items.DEATH_RUNE + 1, name: 'Death rune', priceEach: 400 },
+{ notedId: Items.BLOOD_RUNE + 1, name: 'Blood rune', priceEach: 500 },
+{ notedId: Items.CHAOS_RUNE + 1, name: 'Chaos rune', priceEach: 120 },
+{ notedId: Items.NATURE_RUNE + 1, name: 'Nature rune', priceEach: 250 },
+{ notedId: Items.LAW_RUNE + 1, name: 'Law rune', priceEach: 300 },
+{ notedId: Items.COSMIC_RUNE + 1, name: 'Cosmic rune', priceEach: 150 },
+
+// 🧪 Potions (huge utility)
+{ notedId: Items.PRAYER_POTION_3 + 1, name: 'Prayer potion (3)', priceEach: 8000 },
+{ notedId: Items.STRENGTH_POTION_3 + 1, name: 'Strength potion (3)', priceEach: 3000 },
+{ notedId: Items.ATTACK_POTION_3 + 1, name: 'Attack potion (3)', priceEach: 1500 },
+{ notedId: Items.ANTIPOISON_POTION_3 + 1, name: 'Antipoison (3)', priceEach: 2000 },
+{ notedId: Items.RESTORE_POTION_3 + 1, name: 'Restore potion (3)', priceEach: 2500 },
+
+// 🍖 Food meta
+{ notedId: Items.RAW_SHARK + 1, name: 'Raw shark', priceEach: 1000 },
+{ notedId: Items.RAW_MANTA_RAY + 1, name: 'Raw manta ray', priceEach: 1200 },
+{ notedId: Items.RAW_SEA_TURTLE + 1, name: 'Raw sea turtle', priceEach: 1100 },
+{ notedId: Items.SWORDFISH + 1, name: 'Swordfish', priceEach: 400 },
+
+// ⛏️ Skilling core
+{ notedId: Items.RUNE_ESSENCE + 1, name: 'Rune essence', priceEach: 50 },
+{ notedId: Items.COAL + 1, name: 'Coal', priceEach: 700 },
+{ notedId: Items.MITHRIL_ORE + 1, name: 'Mithril ore', priceEach: 600 },
+{ notedId: Items.IRON_ORE + 1, name: 'Iron ore', priceEach: 300 },
+
+// 🌲 Logs progression
+{ notedId: Items.LOGS + 1, name: 'Logs', priceEach: 100 },
+{ notedId: Items.OAK_LOGS + 1, name: 'Oak logs', priceEach: 150 },
+{ notedId: Items.WILLOW_LOGS + 1, name: 'Willow logs', priceEach: 200 },
+{ notedId: Items.MAPLE_LOGS + 1, name: 'Maple logs', priceEach: 300 },
+{ notedId: Items.YEW_LOGS + 1, name: 'Yew logs', priceEach: 500 },
+{ notedId: Items.MAGIC_LOGS + 1, name: 'Magic logs', priceEach: 1000 },
+
+// 💎 Crafting / money makers
+{ notedId: Items.UNCUT_DIAMOND + 1, name: 'Uncut diamond', priceEach: 2000 },
+{ notedId: Items.UNCUT_RUBY + 1, name: 'Uncut ruby', priceEach: 1200 },
+{ notedId: Items.UNCUT_EMERALD + 1, name: 'Uncut emerald', priceEach: 800 },
+{ notedId: Items.UNCUT_SAPPHIRE + 1, name: 'Uncut sapphire', priceEach: 500 },
+{ notedId: Items.DRAGONSTONE + 1, name: 'Dragonstone', priceEach: 10000 },
+
+// 🧪 Herblore secondaries (high demand)
+{ notedId: Items.EYE_OF_NEWT + 1, name: 'Eye of newt', priceEach: 300 },
+{ notedId: Items.SNAPE_GRASS + 1, name: 'Snape grass', priceEach: 800 },
+{ notedId: Items.LIMPWURT_ROOT + 1, name: 'Limpwurt root', priceEach: 700 },
+{ notedId: Items.RED_SPIDERS_EGGS + 1, name: 'Red spiders eggs', priceEach: 900 },
+
+// 🌿 High-tier herbs
+{ notedId: Items.GRIMY_RANARR + 1, name: 'Grimy ranarr', priceEach: 8000 },
+{ notedId: Items.GRIMY_KWUARM + 1, name: 'Grimy kwuarm', priceEach: 5000 },
+{ notedId: Items.GRIMY_CADANTINE + 1, name: 'Grimy cadantine', priceEach: 6000 },
+{ notedId: Items.GRIMY_TORSTOL + 1, name: 'Grimy torstol', priceEach: 10000 },
+
+// 🦴 Prayer training
+{ notedId: Items.DRAGON_BONES + 1, name: 'Dragon bones', priceEach: 3000 },
+{ notedId: Items.BABYDRAGON_BONES + 1, name: 'Babydragon bones', priceEach: 1500 },
+{ notedId: Items.BIG_BONES + 1, name: 'Big bones', priceEach: 300 },
+
+// 🧵 Fletching essentials
+{ notedId: Items.BOW_STRING + 1, name: 'Bow string', priceEach: 200 },
+{ notedId: Items.ARROW_SHAFT + 1, name: 'Arrow shaft', priceEach: 20 },
+
+// 🛡️ Mid-tier gear (progression)
+{ notedId: Items.ADAMANT_PLATEBODY + 1, name: 'Adamant platebody', priceEach: 40000 },
+{ notedId: Items.MITHRIL_PLATEBODY + 1, name: 'Mithril platebody', priceEach: 20000 },
+{ notedId: Items.BLACK_PLATEBODY + 1, name: 'Black platebody', priceEach: 10000 },
+
+{ notedId: Items.ADAMANT_SCIMITAR + 1, name: 'Adamant scimitar', priceEach: 12000 },
+{ notedId: Items.MITHRIL_SCIMITAR + 1, name: 'Mithril scimitar', priceEach: 6000 },
+
+// 🎯 Extra economy fillers (useful bulk items)
+{ notedId: Items.CAKE + 1, name: 'Cake', priceEach: 100 },
+
+// 🧪 Supplies
+{ notedId: Items.VIAL_OF_WATER + 1, name: 'Vial of water', priceEach: 50 },
+
+{ notedId: Items.SOFT_CLAY + 1, name: 'Soft clay', priceEach: 200 },
+{ notedId: Items.BUCKET_OF_WATER + 1, name: 'Bucket of water', priceEach: 50 },
+{ notedId: Items.JUG_OF_WATER + 1, name: 'Jug of water', priceEach: 50 },
+    { notedId: Items.BLUE_PARTYHAT + 1,  name: 'Blue Partyhat',   priceEach: 100000000  },
+    { notedId: Items.RED_PARTYHAT + 1,  name: 'Red Partyhat',   priceEach: 100000000   },
+    { notedId: Items.WHITE_PARTYHAT + 1,  name: 'White Partyhat',   priceEach: 100000000   },
+    { notedId: Items.PURPLE_PARTYHAT + 1,  name: 'Purple Partyhat',   priceEach: 100000000   },
+    { notedId: Items.GREEN_PARTYHAT + 1,  name: 'Green Partyhat',   priceEach: 100000000  },
+    { notedId: Items.WHITE_PARTYHAT + 1,  name: 'White Partyhat',   priceEach: 100000000   },
+    { notedId: Items.YELLOW_PARTYHAT + 1,  name: 'Yellow Partyhat',   priceEach: 100000000  },
+    { notedId: Items.RED_HALLOWEEN_MASK + 1,  name: 'Red Halloween Mask',   priceEach: 100000000  },
+    { notedId: Items.BLUE_HALLOWEEN_MASK + 1,  name: 'Blue Halloween Mask',   priceEach: 100000000 },
+    { notedId: Items.GREEN_HALLOWEEN_MASK + 1,  name: 'Green Halloween Mask',   priceEach: 100000000 },
+    { notedId: Items.SANTA_HAT + 1,  name: 'Santa Hat',   priceEach: 100000000   },
+    
 ];
 
 /**
