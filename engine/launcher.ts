@@ -16,6 +16,15 @@ const scripts: ScriptMap = {
 };
 
 const runningProcesses: Record<string, any> = {};
+let rl: readline.Interface;
+
+function createReadline() {
+  rl = readline.createInterface({
+    input: process.stdin,
+    output: process.stdout,
+  });
+  rl.on("line", handleInput);
+}
 
 function runScript(name: string, detached = false) {
   if (!scripts[name]) {
@@ -44,6 +53,35 @@ function runScript(name: string, detached = false) {
   }
 }
 
+// For processes that need full stdin control (interactive prompts).
+// Closes readline so the child owns stdin, then restores it on exit.
+async function runInteractive(name: string) {
+  if (!scripts[name]) {
+    console.log(`❌ Script "${name}" not found`);
+    return;
+  }
+
+  console.log(`🚀 Starting ${name}...`);
+
+  rl.close();
+
+  const proc = spawn({
+    cmd: scripts[name],
+    stdout: "inherit",
+    stderr: "inherit",
+    stdin: "inherit",
+  });
+
+  runningProcesses[name] = proc;
+  await proc.exited;
+
+  console.log(`🛑 ${name} stopped`);
+  delete runningProcesses[name];
+
+  createReadline();
+  showMenu();
+}
+
 function showMenu() {
   console.log(`
 === Bun Launcher ===
@@ -65,12 +103,7 @@ Choose an option:
 `);
 }
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout,
-});
-
-function handleInput(input: string) {
+async function handleInput(input: string) {
   switch (input.trim()) {
     case "1":
       runScript("start");
@@ -119,8 +152,8 @@ function handleInput(input: string) {
       break;
 
     case "11":
-      runScript("setup");
-      break;
+      await runInteractive("setup");
+      return; // runInteractive shows the menu after exit
 
     case "0":
       console.log("👋 Exiting...");
@@ -131,4 +164,4 @@ function handleInput(input: string) {
 }
 
 showMenu();
-rl.on("line", handleInput);
+createReadline();
