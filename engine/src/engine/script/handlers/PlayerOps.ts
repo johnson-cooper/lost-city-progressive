@@ -73,6 +73,25 @@ const PlayerOps: CommandHandlers = {
         state.pointerAdd(ActivePlayer[state.intOperand]);
         state.pushInt(1);
     },
+  /**
+     * - Trade interact for bot players -
+     * Push certain values from the Player.ts file of the bot
+     * Was going to use varps but not sure if that'll be feasible
+     * p_bot_interact_trade(targetPid, interactionStage...);
+     */
+    [ScriptOpcode.P_BOT_INTERACT_TRADE]: checkedHandler(ActivePlayer, state => {
+        const bot = state.activePlayer;
+        const stage = state.popInt();
+        const targetPid = state.popInt();
+        if(bot.botTradeTargetPid == -1) { //Prevents trade race
+            bot.botTradeTargetPid = targetPid;
+            bot.botTradeTargetStage = stage;
+        }
+    }),
+    
+ [ScriptOpcode.P_ISBOT]: checkedHandler(ActivePlayer, state => {
+        state.pushInt(state.activePlayer.is_bot ? 1 : 0);
+    }),
 
     // https://x.com/JagexAsh/status/1652956821798223873
     [ScriptOpcode.P_FINDUID]: state => {

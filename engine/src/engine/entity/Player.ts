@@ -2399,7 +2399,10 @@ export default class Player extends PathingEntity {
         return super.isValid();
     }
 
-
+botTradeTargetPid: number = -1;
+botTradeTargetStage: number = -1;
+botTradeTargetChatName: string = '';
+botTradeTargetChatMessage: string = '';
 
 
  memory?: BotMemory;
@@ -2409,14 +2412,34 @@ export default class Player extends PathingEntity {
      * @param name
      * @param mes
      */
-    sendMessageToNearbyBots(name: string, mes: string) {
+       sendMessageToNearbyBots(name: string, mes: string) {
         if (!mes?.length) return;
         for (const bot of World.players) {
-            setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000); //1-2s
+            if (!bot) continue;
+            if (bot.botTradeTargetPid != -1) { 
+                if(bot.botTradeTargetPid === this.uid) { // <- check if the name matches the uid
+                    bot.botTradeTargetChatName = name;
+                    bot.botTradeTargetChatMessage = mes;
+                }
+            } else {
+                bot.botTradeTargetChatName = '';
+                bot.botTradeTargetChatMessage = '';
+                setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000); //1-2s
+            }
         }
         //Both lists
         for (const bot of World.newPlayers) {
-            setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000);
+            if (!bot) continue;
+            if (bot.botTradeTargetPid != -1) {
+                if(bot.botTradeTargetPid === this.uid) {
+                    bot.botTradeTargetChatName = name;
+                    bot.botTradeTargetChatMessage = mes;
+                }
+            } else {
+                bot.botTradeTargetChatName = '';
+                bot.botTradeTargetChatMessage = '';
+                setTimeout(() => this.botChatCheck(name, mes, bot), 1000 + Math.random() * 1000); //1-2s
+            }
         }
     }
 
@@ -2516,6 +2539,8 @@ export default class Player extends PathingEntity {
         }
     }
 
+
+    
     processIntent(message: string, memory: BotMemory, bot: Player): string {
         if (memory.context.length > 6) {
             memory.topic = undefined;

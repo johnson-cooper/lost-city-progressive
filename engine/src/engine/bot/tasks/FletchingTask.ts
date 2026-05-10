@@ -35,7 +35,7 @@ import {
 import type { SkillStep } from '#/engine/bot/BotKnowledge.js';
 import { interactHeldOpU, interactIfButtonByName } from '#/engine/bot/BotAction.js';
 
-type FletchState = 'bank_walk' | 'withdraw_logs' | 'fletch' | 'fletch_dialog' | 'bank_deposit';
+type FletchState = 'bank_walk' | 'withdraw_logs' | 'fletch' | 'fletch_dialog' | 'bank_deposit' | 'withdraw_unstrung' | 'perform_stringing';
 
 const FAIL_LIMIT = 6;
 const BATCH_SIZE = 27;
@@ -114,6 +114,12 @@ export class FletchingTask extends BotTask {
                 if (!hasItem(player, Items.KNIFE)) {
                     this._withdrawKnife(player);
                 }
+
+                if (this.step.action.startsWith('string_')) {
+                    this.state = 'withdraw_unstrung';
+                    return;
+                }
+
                 const logId = this.step.itemConsumed!;
                 const withdrawn = this._withdrawLogs(player, logId);
                 if (!withdrawn) {
@@ -123,6 +129,69 @@ export class FletchingTask extends BotTask {
                 }
                 this.state = 'fletch';
                 this.lastCount = 0;
+                return;
+            }
+
+            case 'withdraw_unstrung': {
+                const unstrungId = this.step.itemConsumed!;
+                const stringId = (this.step.extra?.stringItem as number) ?? Items.BOW_STRING;
+
+                const bid = bankInvId();
+                if (bid === -1) { this.interrupt(); return; }
+                const bank = player.getInventory(bid);
+                const inv = player.getInventory(InvType.INV);
+                if (!bank || !inv) { this.interrupt(); return; }
+
+                // Withdraw strings (14) and unstrung bows (14)
+                let stringsWithdrawn = countItem(player, stringId);
+                let unstrungWithdrawn = countItem(player, unstrungId);
+
+                if (stringsWithdrawn < 14) {
+                    const moved = bank.remove(stringId, 14 - stringsWithdrawn);
+                    inv.add(stringId, moved.completed);
+                    stringsWithdrawn += moved.completed;
+                }
+
+                if (unstrungWithdrawn < 14) {
+                    const moved = bank.remove(unstrungId, 14 - unstrungWithdrawn);
+                    inv.add(unstrungId, moved.completed);
+                    unstrungWithdrawn += moved.completed;
+                }
+
+                if (stringsWithdrawn === 0 || unstrungWithdrawn === 0) {
+                    this.interrupt();
+                    return;
+                }
+
+                this.state = 'perform_stringing';
+                return;
+            }
+
+            case 'perform_stringing': {
+                const unstrungId = this.step.itemConsumed!;
+                const stringId = (this.step.extra?.stringItem as number) ?? Items.BOW_STRING;
+
+                if (countItem(player, unstrungId) === 0 || countItem(player, stringId) === 0) {
+                    this.state = 'bank_deposit';
+                    return;
+                }
+
+                const inv = player.getInventory(InvType.INV);
+                if (!inv) return;
+
+                const unstrungSlot = this._findItemSlot(player, unstrungId);
+                const stringSlot = this._findItemSlot(player, stringId);
+
+                if (unstrungSlot === -1 || stringSlot === -1) {
+                    this.state = 'bank_deposit';
+                    return;
+                }
+
+                const ok = interactHeldOpU(player, inv, unstrungId, unstrungSlot, stringId, stringSlot);
+                if (ok) {
+                    this.watchdog.notifyActivity();
+                    this.cooldown = randInt(2, 4);
+                }
                 return;
             }
 
@@ -260,7 +329,15 @@ export class FletchingTask extends BotTask {
         if (!bank || !inv) return;
 
         const keepIds = new Set<number>([Items.COINS, Items.KNIFE]);
-        if (this.step.itemConsumed) keepIds.add(this.step.itemConsumed);
+        // Keep logs if we are fletching them
+        if (this.step.itemConsumed && !this.step.action.startsWith('string_')) {
+            keepIds.add(this.step.itemConsumed);
+        }
+        // Keep strings and unstrung bows if we are stringing
+        if (this.step.action.startsWith('string_')) {
+            if (this.step.itemConsumed) keepIds.add(this.step.itemConsumed);
+            if (this.step.extra?.stringItem) keepIds.add(this.step.extra.stringItem as number);
+        }
 
         for (let slot = 0; slot < inv.capacity; slot++) {
             const item = inv.get(slot);
@@ -290,12 +367,16 @@ export class FletchingTask extends BotTask {
     }
 
     private _findLogSlot(player: Player, logId: number): number {
+        return this._findItemSlot(player, logId);
+    }
+
+    private _findItemSlot(player: Player, itemId: number): number {
         const inv = player.getInventory(InvType.INV);
         if (!inv) return -1;
 
         for (let i = 0; i < inv.capacity; i++) {
             const item = inv.get(i);
-            if (item && item.id === logId) return i;
+            if (item && item.id === itemId) return i;
         }
         return -1;
     }
@@ -358,6 +439,12 @@ export class FletchingTask extends BotTask {
             case 'fletch_oak_longbow':     return 'multiobj2:objtext2';    // longbow      (option 2)
             case 'fletch_willow_shortbow': return 'multiobj2:objtext1';    // shortbow     (option 1)
             case 'fletch_willow_longbow':  return 'multiobj2:objtext2';    // longbow      (option 2)
+            case 'fletch_maple_shortbow':  return 'multiobj2:objtext1';    // shortbow     (option 1)
+            case 'fletch_maple_longbow':   return 'multiobj2:objtext2';    // longbow      (option 2)
+            case 'fletch_yew_shortbow':    return 'multiobj2:objtext1';    // shortbow     (option 1)
+            case 'fletch_yew_longbow':     return 'multiobj2:objtext2';    // longbow      (option 2)
+            case 'fletch_magic_shortbow':  return 'multiobj2:objtext1';    // shortbow     (option 1)
+            case 'fletch_magic_longbow':   return 'multiobj2:objtext2';    // longbow      (option 2)
             default: return '';
         }
     }

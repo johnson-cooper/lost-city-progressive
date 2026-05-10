@@ -31,7 +31,7 @@ import {
     advanceBankWalk
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
-import { getNpcCombatLevel, findAggressorNpc } from '#/engine/bot/BotAction.js';
+import { getNpcCombatLevel, findAggressorNpc, interactHeldOp } from '#/engine/bot/BotAction.js';
 
 const THIEVE_COOLDOWN_MIN = 8;
 const THIEVE_COOLDOWN_MAX = 12;
@@ -169,7 +169,7 @@ export class ThievingTask extends BotTask {
         }
 
         // ── Bank walk ────────────────────────────────────────────────────
-        if (this.state === 'bank_walk' || this.state === 'bank_done') {
+        if (this.state === 'bank_walk') {
             const result = advanceBankWalk(player, this.stuck);
             if (result === 'walk') return;
             this.debug(player, `advanceBankWalk returned ${result}`);
@@ -374,7 +374,8 @@ export class ThievingTask extends BotTask {
         const inv = player.getInventory(InvType.INV);
         if (!inv) return;
 
-        // Find food in inventory - use raw numbers (higher = more healing)
+        // Find food in inventory — higher healing items first.
+        // op 1 = eat, which fires the server-side opheld1 script and properly heals.
         const foodIds = [373, 379, 329, 333, 325, 315];
 
         for (const foodId of foodIds) {
@@ -382,17 +383,16 @@ export class ThievingTask extends BotTask {
                 const item = inv.get(slot);
                 if (!item || item.id !== foodId) continue;
 
-                // Eat the food
-                inv.remove(foodId, 1);
-                this.debug(player, `ate ${item.id} to heal`);
+                interactHeldOp(player, inv, foodId, slot, 1);
+                this.debug(player, `ate ${item.id} (slot ${slot}) to heal`);
 
-                this.cooldown = 2;
+                this.cooldown = 3;
                 this.state = 'pickpocket';
                 return;
             }
         }
 
-        // No food found
+        // No food found — go to bank.
         this.debug(player, `no food to eat`);
         this.state = 'bank_walk';
     }

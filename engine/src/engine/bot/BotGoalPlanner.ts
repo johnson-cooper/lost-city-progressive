@@ -35,6 +35,12 @@ import { RangedMagicTask, MIN_COINS_TO_SHOP as RM_MIN_COINS } from '#/engine/bot
 import { RunecraftingTask } from '#/engine/bot/tasks/RunecraftingTask.js';
 import { FletchingTask } from '#/engine/bot/tasks/FletchingTask.js';
 import { HerbloreTask } from '#/engine/bot/tasks/HerbloreTask.js';
+import { BankstandTask } from '#/engine/bot/tasks/BankstandTask.js';
+import { FlaxPickingTask } from '#/engine/bot/tasks/FlaxPickingTask.js';
+import { WaterFillingTask } from '#/engine/bot/tasks/WaterFillingTask.js';
+import { SocialTask } from '#/engine/bot/tasks/SocialTask.js';
+import { VendorTask } from '#/engine/bot/tasks/VendorTask.js';
+import { PKerTask } from '#/engine/bot/tasks/PKerTask.js';
 
 // ── Personality ───────────────────────────────────────────────────────────────
 
@@ -58,7 +64,7 @@ export const Personalities: Record<string, BotPersonality> = {
             CRAFTING: 12,
             FLETCHING: 17,   // 65% share of the fletch/FM pair
             RUNECRAFT: 5,    // unlocks once a talisman drops
-            HERBLORE: 8      // requires guams (chaos druid drops) + coins for vials/newts
+            HERBLORE: 8,     // requires guams (chaos druid drops) + coins for vials/newts
         }
     },
     FIGHTER: {
@@ -90,7 +96,7 @@ export const Personalities: Record<string, BotPersonality> = {
             CRAFTING: 6,
             FLETCHING: 24,   // 65% share of the fletch/FM pair
             RUNECRAFT: 8,    // unlocks once a talisman drops
-            HERBLORE: 6      // requires guams (chaos druid drops) + coins
+            HERBLORE: 6,     // requires guams (chaos druid drops) + coins
         }
     }
 };
@@ -112,7 +118,6 @@ const SKILL_STAT: Record<string, PlayerStat> = {
     CRAFTING: PlayerStat.CRAFTING,
     SMITHING: PlayerStat.SMITHING,
     MINING: PlayerStat.MINING,
-    AGILITY: PlayerStat.AGILITY,
     THIEVING: PlayerStat.THIEVING,
     RUNECRAFT: PlayerStat.RUNECRAFT,
     HERBLORE: PlayerStat.HERBLORE
@@ -135,6 +140,9 @@ const NEARBY_SHOPS = new Set(['BOB_AXES', 'LUMBRIDGE_GENERAL', 'AL_KHARID_SCIMIT
 export class BotGoalPlanner {
     readonly personality: BotPersonality;
     private initialised = false;
+    // Counts pickTask calls remaining before bankstand is eligible again.
+    // Initialised with a random offset so bots don't all bankstand at once.
+    private bankstandCooldown = Math.floor(Math.random() * 20) + 10;
 
     constructor(personality: BotPersonality = Personalities.BALANCED) {
         this.personality = personality;
@@ -178,6 +186,16 @@ export class BotGoalPlanner {
             }
             return new BankTask([...keepIds]);
         }
+
+        // ── BANKSTAND: periodic sell session at Varrock West Bank ────────────
+        // Triggered every ~20-40 planner calls (roughly once every 30-60 min at
+        // the default 150-tick rescan interval). Skipped when inventory is full
+        // so the bot banks first.
+        if (this.bankstandCooldown <= 0) {
+            this.bankstandCooldown = Math.floor(Math.random() * 20) + 20;
+            return new BankstandTask();
+        }
+        this.bankstandCooldown--;
 
         // ── COOKING priority: cook whenever any fish are available ───────────
         // Without this, FISHING (weight 25) almost always beats COOKING (weight 15)
@@ -494,6 +512,20 @@ export class BotGoalPlanner {
         const steps = SkillProgression['CRAFTING'];
         if (!steps || steps.length === 0) return null;
 
+        const craftLevel = getBaseLevel(player, PlayerStat.CRAFTING);
+
+        // ── Flax picking: runs when crafting level qualifies ──────────────────
+        const flaxStep = steps.find(s => s.action === 'pick_flax' && craftLevel >= Math.max(s.minLevel, 10) && craftLevel <= s.maxLevel);
+        if (flaxStep) {
+            return new FlaxPickingTask(flaxStep);
+        }
+
+        // ── Soften clay: if bot has buckets but no bucket-of-water ────────────
+        const softenStep = steps.find(s => s.action === 'soften_clay' && craftLevel >= s.minLevel && craftLevel <= s.maxLevel);
+        if (softenStep && hasItem(player, Items.BUCKET) && !hasItem(player, Items.BUCKET_OF_WATER)) {
+            return new WaterFillingTask(Items.BUCKET, Items.BUCKET_OF_WATER);
+        }
+
         if (!phase2Unlocked) {
             // ── Phase 1: wool spinning ────────────────────────────────────────
             const step = steps.find(s => s.action === 'craft_wool');
@@ -727,4 +759,44 @@ export function makeRandom(): BotGoalPlanner {
     const weights: Record<string, number> = {};
     for (const s of allSkills) weights[s] = Math.floor(Math.random() * 20) + 1;
     return new BotGoalPlanner({ name: 'Random', weights });
+}
+
+// ── Extras personalities ───────────────────────────────────────────────────────
+
+export type ExtrasType = 'social' | 'vendor' | 'pker';
+
+/**
+ * Goal planner for "extras" bots — social, vendor, and wilderness PKer.
+ * These bots skip all skilling logic and run a single specialised task.
+ */
+export class ExtrasGoalPlanner extends BotGoalPlanner {
+    private readonly extrasType: ExtrasType;
+    private extrasInit = false;
+
+    constructor(type: ExtrasType) {
+        super({ name: `Extras-${type}`, weights: {} });
+        this.extrasType = type;
+    }
+
+    override pickTask(_player: Player): BotTask | null {
+        if (!this.extrasInit) {
+            this.extrasInit = true;
+            // Extras bots skip the normal InitTask — their tasks self-initialise.
+        }
+        switch (this.extrasType) {
+            case 'social': return new SocialTask();
+            case 'vendor': return new VendorTask();
+            case 'pker':   return new PKerTask();
+        }
+    }
+}
+
+export function makeExtrasSocial(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('social');
+}
+export function makeExtrasVendor(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('vendor');
+}
+export function makeExtrasPKer(): ExtrasGoalPlanner {
+    return new ExtrasGoalPlanner('pker');
 }

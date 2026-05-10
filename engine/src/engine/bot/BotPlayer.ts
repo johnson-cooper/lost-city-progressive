@@ -198,7 +198,7 @@ export class BotPlayer {
         if (++this.gateCheckTimer >= 5) {
             this.gateCheckTimer = 0;
             if (!this.player.delayed && !this.player.hasInteraction()) {
-                openNearbyGate(this.player, 10);
+                openNearbyGate(this.player, 5);
             }
         }
 

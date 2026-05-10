@@ -154,35 +154,40 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         //
         // The gate charges a 10-coin toll and opens a dialog that bots cannot
         // handle.  Once the bot reaches the approach tile it is teleported
-        // directly to the inside (3271, 3228) — the first open tile past the wall.
+        // directly to the inside (3269, 3227) — the first open tile past the wall.
+        //
+        // Bug fix: approach tile must be at x=3264 (west of the wall), NOT x=3267.
+        // playerInRegion used x >= 3267 which matched the old approach tile itself,
+        // so the bot arrived at the approach, was immediately classified as "already
+        // inside", and the teleport never fired.
         name: 'AlKharid',
-        destInRegion: (x, z) => x >= 3265 && z >= 3155 && z <= 3242,
-        playerInRegion: (x, z) => x >= 3267 && z >= 3155 && z <= 3242,
-        approachX: 3267,
-        approachZ: 3228,
-        arrivalRadius: 4,
-        teleportDestX: 3271,
-        teleportDestZ: 3228
+        destInRegion: (x, z) => x >= 3269 && z >= 3155 && z <= 3242,
+        playerInRegion: (x, _z) => x >= 3269,
+        approachX: 3265,
+        approachZ: 3227,
+        arrivalRadius: 3,
+        teleportDestX: 3275,
+        teleportDestZ: 3227
     },
     {
         // ── Al Kharid exit (inside → Lumbridge) ──────────────────────────────
-        // Reverse of AlKharid: bots inside Al Kharid (x >= 3267) heading west
+        // Reverse of AlKharid: bots inside Al Kharid (x >= 3269) heading west
         // back toward Lumbridge or Draynor hit the same toll wall.  Approach
-        // the inside gate tile (3270, 3228) and teleport to the Lumbridge side
-        // (3265, 3228) — one tile west of the wall opening.
+        // the inside gate tile (3270, 3227) and teleport to the Lumbridge side
+        // (3264, 3227) — four tiles west of the wall.
         //
         // No z-range constraint on destInRegion: a bot heading to any destination
-        // with x < 3267 (e.g. Barbarian Village via waypoint z=3340, Draynor bank
+        // with x < 3269 (e.g. Barbarian Village via waypoint z=3340, Draynor bank
         // z=3245) must still exit through the west gate regardless of how far
         // north the final destination is.
         name: 'AlKharidExit',
-        destInRegion: (x, _z) => x < 3267,
-        playerInRegion: (x, _z) => x < 3267,
+        destInRegion: (x, _z) => x <= 3267,
+        playerInRegion: (x, _z) => x <= 3267,
         approachX: 3270,
-        approachZ: 3228,
+        approachZ: 3227,
         arrivalRadius: 4,
-        teleportDestX: 3265,
-        teleportDestZ: 3228
+        teleportDestX: 3261,
+        teleportDestZ: 3227
     },
     {
         // ── Port Sarim → Karamja (boat) ───────────────────────────────────────
@@ -191,8 +196,8 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // (2956, 3143).  The boat costs 30 coins and triggers a dialog that
         // bots cannot handle natively, so teleport is used instead.
         name: 'PortSarimToKaramja',
-        destInRegion: (x, _z) => x < 2970,
-        playerInRegion: (x, _z) => x < 2970,
+        destInRegion: (x, z) => x < 2970 && z < 3250,
+        playerInRegion: (x, z) => x < 2970 && z < 3250,
         approachX: 3031,
         approachZ: 3217,
         arrivalRadius: 5,
@@ -206,7 +211,7 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         // teleported to the Port Sarim arrival tile (3047, 3235).
         name: 'KaramjaToPortSarim',
         destInRegion: (x, _z) => x >= 2990,
-        playerInRegion: (x, _z) => x >= 2990,
+        playerInRegion: (x, z) => x >= 2990 || z > 3250,
         approachX: 2956,
         approachZ: 3145,
         arrivalRadius: 5,
@@ -214,16 +219,140 @@ const GATEWAY_REGIONS: GatewayRegion[] = [
         teleportDestZ: 3235
     },
     {
+        // ── Port Sarim → Entrana (boat) ───────────────────────────────────────
+        // Bots heading to Entrana (gathering herblore supplies or woodcutting)
+        // walk to the Port Sarim northern docks and teleport to Entrana.
+        name: 'PortSarimToEntrana',
+        destInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        playerInRegion: (x, z) => x >= 2800 && x <= 2870 && z >= 3320 && z <= 3390,
+        approachX: 3048,
+        approachZ: 3234,
+        arrivalRadius: 5,
+        teleportDestX: 2834,
+        teleportDestZ: 3335
+    },
+    {
+        // ── Entrana → Port Sarim (boat return) ────────────────────────────────
+        name: 'EntranaToPortSarim',
+        destInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        playerInRegion: (x, z) => x > 2870 || x < 2800 || z > 3390 || z < 3320,
+        approachX: 2834,
+        approachZ: 3335,
+        arrivalRadius: 5,
+        teleportDestX: 3048,
+        teleportDestZ: 3234
+    },
+    {
+        // ── Shantay Pass (Mainland → Desert) ──────────────────────────────────
+        // Access to the Kharidian desert via Shantay Pass.  Requires a toll/pass
+        // so bots teleport through the gate.
+        name: 'ShantayPass',
+        destInRegion: (x, z) => x >= 3200 && x <= 3400 && z <= 3115,
+        playerInRegion: (x, z) => z <= 3115,
+        approachX: 3303,
+        approachZ: 3123,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3115
+    },
+    {
+        // ── Shantay Pass Exit (Desert → Mainland) ─────────────────────────────
+        name: 'ShantayPassExit',
+        destInRegion: (x, z) => z >= 3117,
+        playerInRegion: (x, z) => z >= 3117,
+        approachX: 3303,
+        approachZ: 3116,
+        arrivalRadius: 4,
+        teleportDestX: 3303,
+        teleportDestZ: 3123
+    },
+    {
+        // ── Taverley Gate (Falador → Taverley) ────────────────────────────────
+        // The long wall between Falador and Taverley.
+        name: 'TaverleyGate',
+        destInRegion: (x, z) => x < 2933 && z > 3250,
+        playerInRegion: (x, z) => x < 2933 && z > 3250,
+        approachX: 2936,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Taverley Gate Exit (Taverley → Falador) ───────────────────────────
+        name: 'TaverleyGateExit',
+        destInRegion: (x, _z) => x >= 2933,
+        playerInRegion: (x, _z) => x >= 2933,
+        approachX: 2932,
+        approachZ: 3450,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate (East → West) ─────────────────────────────────
+        name: 'ArdougneNorthGate',
+        destInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        playerInRegion: (x, z) => x < 2634 && x > 2551 && z > 3250,
+        approachX: 2636,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── Ardougne North Gate Exit (West → East) ────────────────────────────
+        name: 'ArdougneNorthGateExit',
+        destInRegion: (x, _z) => x >= 2634,
+        playerInRegion: (x, _z) => x >= 2634,
+        approachX: 2633,
+        approachZ: 3333,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Gate (East → West) ──────────────────────────────────
+        // Gate between East and West Ardougne.
+        name: 'WestArdougneGate',
+        destInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        playerInRegion: (x, z) => x < 2551 && z >= 3260 && z <= 3350,
+        approachX: 2555,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── West Ardougne Exit (West → East) ──────────────────────────────────
+        name: 'WestArdougneExit',
+        destInRegion: (x, z) => x >= 2551,
+        playerInRegion: (x, z) => x >= 2551,
+        approachX: 2551,
+        approachZ: 3320,
+        arrivalRadius: 4
+    },
+    {
+        // ── Draynor Manor (Mainland → Manor) ──────────────────────────────────
+        // Fenced grounds of Draynor Manor.
+        name: 'DraynorManor',
+        destInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        playerInRegion: (x, z) => x >= 3070 && x <= 3130 && z >= 3330 && z <= 3385,
+        approachX: 3108,
+        approachZ: 3329,
+        arrivalRadius: 4
+    },
+    {
+        // ── Hemenster (Mainland → Hemenster) ──────────────────────────────────
+        // Fenced fishing village.
+        name: 'Hemenster',
+        destInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        playerInRegion: (x, z) => x >= 2625 && x <= 2650 && z >= 3435 && z <= 3450,
+        approachX: 2643,
+        approachZ: 3433,
+        arrivalRadius: 4
+    },
+    {
         // ── Lumbridge sheep pen ───────────────────────────────────────────────
-        // Fenced enclosure NE of Lumbridge castle.  East gate at ~[3197-3198, 3282].
+        // Fenced enclosure NE of Lumbridge castle.  East gate at ~[3199, 3282].
         // Bots walking directly to the interior hit the east fence unless they
         // approach from the east side and open the gate.
         name: 'SheepPen',
         destInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
         playerInRegion: (x, z) => x >= 3182 && x <= 3199 && z >= 3267 && z <= 3291,
-        approachX: 3213,
-        approachZ: 3261,
-        arrivalRadius: 4
+        approachX: 3202,
+        approachZ: 3282,
+        arrivalRadius: 3
     },
     {
         // ── Lumbridge cow pen ─────────────────────────────────────────────────
@@ -299,6 +428,27 @@ const ROUTE_CORRIDORS: RouteCorridor[] = [
         playerCleared: (x, _z) => x <= 3200,
         viaX: 3194,
         viaZ: 3226
+    },
+    {
+        // ── White Wolf Mountain — westbound bypass ────────────────────────────
+        // Bots heading from Taverley/Falador (x > 2870) toward Catherby/Seers
+        // (x < 2800) must route through the mountain pass at (2848, 3497).
+        // The BFS often gets lost in the mountain crags.
+        name: 'WhiteWolfMountainWest',
+        playerInZone: (x, z) => x > 2860 && x < 3000 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x < 2810,
+        playerCleared: (x, _z) => x <= 2850,
+        viaX: 2848,
+        viaZ: 3497
+    },
+    {
+        // ── White Wolf Mountain — eastbound bypass ────────────────────────────
+        name: 'WhiteWolfMountainEast',
+        playerInZone: (x, z) => x < 2830 && x > 2700 && z > 3400 && z < 3550,
+        destBeyond: (x, _z) => x > 2880,
+        playerCleared: (x, _z) => x >= 2845,
+        viaX: 2848,
+        viaZ: 3497
     }
 ];
 
@@ -482,32 +632,151 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
     _pathTowards(player, destX, destZ);
 }
 
+
+
+
+/**
+ * Items we wish the bots to sell to real players, namely materials such as logs, ores, bars, etc... In their noted forms.
+ */
+export const viableItemIds:    number[] = [
+    2349, //bronze_bar
+    2350, //cert_bronze_bar
+    2351, //iron_bar
+    2352, //cert_iron_bar
+    2353, //steel_bar
+    2354, //cert_steel_bar
+    2355, //silver_bar
+    2356, //cert_silver_bar
+    2357, //gold_bar
+    2358, //cert_gold_bar
+    2359, //mithril_bar
+    2360, //cert_mithril_bar
+    2361, //adamantite_bar
+    2362, //cert_adamantite_bar
+    2363, //runite_bar
+    2364, //cert_runite_bar
+    39, //bronze_arrowheads
+    40, //iron_arrowheads
+    41, //steel_arrowheads
+    42, //mithril_arrowheads
+    43, //adamant_arrowheads
+    44, //rune_arrowheads
+    221, //eye_of_newt
+    223, //red_spiders_eggs
+    225, //limpwurt_root
+    227, //vial_water
+    229, //vial_empty
+    231, //snape_grass
+    314, //feather
+    317, //raw_shrimp
+    321, //raw_anchovies
+    327, //raw_sardine
+    331, //raw_salmon
+    335, //raw_trout
+    341, //raw_cod
+    345, //raw_herring
+    349, //raw_pike
+    353, //raw_mackerel
+    359, //raw_tuna
+    363, //raw_bass
+    371, //raw_swordfish
+    377, //raw_lobster
+    383, //raw_shark
+    389, //raw_mantaray
+    395, //raw_seaturtle
+    401, //seaweed
+    434, //clay
+    526, //bones
+    530, //bat_bones
+    532, //big_bones
+    534, //babydragon_bones
+    536, //dragon_bones
+    1617, //uncut_diamond
+    1619, //uncut_ruby
+    1621, //uncut_emerald
+    1623, //uncut_sapphire
+    1625, //uncut_opal
+    1627, //uncut_jade
+    1629, //uncut_red_topaz
+    1631, //uncut_dragonstone
+    434, //clay
+    435, //cert_clay
+    436, //copper_ore
+    437, //cert_copper_ore
+    438, //tin_ore
+    439, //cert_tin_ore
+    440, //iron_ore
+    441, //cert_iron_ore
+    442, //silver_ore
+    443, //cert_silver_ore
+    444, //gold_ore
+    445, //cert_gold_ore
+    446, //perfect_gold_ore
+    447, //mithril_ore
+    448, //cert_mithril_ore
+    449, //adamantite_ore
+    450, //cert_adamantite_ore
+    451, //runite_ore
+    452, //cert_runite_ore
+    453, //coal
+    454, //cert_coal
+    1511, //logs
+    1512, //cert_logs
+    1513, //magic_logs
+    1514, //cert_magic_logs
+    1515, //yew_logs
+    1516, //cert_yew_logs
+    1517, //maple_logs
+    1518, //cert_maple_logs
+    1519, //willow_logs
+    1520, //cert_willow_logs
+    1521, //oak_logs
+    1522 //cert_oak_logs
+];
+
+
+
+
 /**
  * interface interface use operation: 1 - 4
  * interfaceId, itemId, itemSlot, operation
  */
-export function interactIF_UseOp(player: Player, intrfce: number, item: number, slot: number, op: 1 | 2 | 3 | 4 | 5): boolean {
+export function interactIF_UseOp(player: Player, intrfce: number, item: number, slot: number, op: number, invId:number = -1): boolean {
     // jagex has if_button1-5
     const com = Component.get(intrfce);
-    if (typeof com === 'undefined' || !com.iop || !com.iop.length || !player.isComponentVisible(com)) {
+    if (typeof com === 'undefined') {
+        console.log('Component undefined');
+        return false;
+    }
+    if(!com.iop || !com.iop.length) {
+        console.log('Cannot find com.inventoryOptions');
         return false;
     }
 
     if (!com.iop[op - 1]) {
         return false;
     }
+    let inv = null;
 
-    const listener = player.invListeners.find(l => l.com === intrfce);
-    if (!listener) {
-        return false;
+    if(invId == -1) {
+        const listener = player.invListeners.find(l => l.com === intrfce);
+        if (!listener) {
+            console.log('No listener active');
+            return false;
+        }
+
+        inv = player.getInventoryFromListener(listener);
+    } else {
+        inv = player.getInventory(invId);
     }
 
-    const inv = player.getInventoryFromListener(listener);
     if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, item)) {
+        console.log('inv or invslot invalid');
         return false;
     }
 
     if (player.delayed) {
+        console.log('Player is busy...');
         return false;
     }
 
@@ -538,7 +807,6 @@ export function interactIF_UseOp(player: Player, intrfce: number, item: number, 
 
     return true;
 }
-
 export function interactHeldOp(player: Player, inv: Inventory, itemId: number, slot: number, op: 1 | 2 | 3 | 4 | 5 | 6): boolean {
     const trigger = (ServerTriggerType.OPHELD1 + (op - 1)) as ServerTriggerType;
     if (!inv || !inv.validSlot(slot) || !inv.hasAt(slot, itemId)) {
@@ -663,9 +931,10 @@ export function interactIfButtonByName(player: Player, comName: string): boolean
     return interactIfButton(player, comId);
 }
 
+//Interface buttons
 export function interactIfButton(player: Player, comId: number): boolean {
     const com = Component.get(comId);
-    if (typeof com === 'undefined' || !player.isComponentVisible(com)) {
+    if (typeof com === 'undefined') { // || !player.isComponentVisible(com)) {
         return false;
     }
 
@@ -689,26 +958,22 @@ export function interactIfButton(player: Player, comId: number): boolean {
     return true;
 }
 
+
+
+//Player op
 /**
  * Usage:
  * @param player - Player from botPlayer
- * @param pid - Target Player PID (Maybe slot in 254?)
+ * @param slot - Target Player PID (Maybe slot in 254?)
  * @param op  - op 1-4
+ * op 1 duel
+ * op 2 attack
+ * op 3 follow
+ * op 4 trade
  */
-export function interactPlayerOp(player: Player, pid: number, op: number): boolean {
-    if (player.delayed) {
-        player.write(new UnsetMapFlag());
-        return false;
-    }
-
-    const other = World.getPlayer(pid);
+export function interactPlayerOp(player: Player, slot: number, op: number): boolean {
+    const other = World.getPlayer(slot);
     if (!other) {
-        player.write(new UnsetMapFlag());
-        player.clearPendingAction();
-        return false;
-    }
-
-    if (!rsbuf.hasPlayer(player.slot, other.slot)) {
         player.write(new UnsetMapFlag());
         player.clearPendingAction();
         return false;
@@ -1386,6 +1651,13 @@ const BARRIER_NAME_PREFIXES = ['loc_1528']; // Al Kharid palace curtain (closed 
 const BIG_DOOR_PREFIXES = ['big door', 'large door', 'double door'];
 
 /**
+ * Substrings of loc debugnames that are NEVER gates — purely decorative objects.
+ * These are excluded so bots don't try to "open" or interact with them while
+ * navigating past them (e.g. picking flowers at Varrock West Bank).
+ */
+const DECORATIVE_LOC_FRAGMENTS = ['flower', 'fern', 'plant', 'bush', 'thistle', 'nettle', 'cabbage', 'tulip', 'daisy', 'sunflower', 'chest', 'open chest', 'closed chest'];
+
+/**
  * Directly executes the OPLOC1 script for a gate/door Loc.
  *
  * This bypasses processInteraction, which fails for Locs because:
@@ -1480,11 +1752,20 @@ function _hasGateInteractionPending(player: Player): boolean {
     return ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
 }
 
+// Toll gates that bots must never try to open — crossing is handled by the
+// GATEWAY_REGIONS teleport in walkTo instead.
+const TOLL_GATE_TYPE_IDS = new Set([2882, 2883, 1298, 1299, 1300, 1173, 375]); // border_gate_toll_left/right
+
 /** Internal: returns true if `loc` passes the closed-gate predicate. */
 function _isClosedGate(loc: Loc): boolean {
+    if (TOLL_GATE_TYPE_IDS.has(loc.type)) return false;
     const t = LocType.get(loc.type);
+    // Decorative vegetation — never a gate regardless of any ops.
+    const debugLower = t.debugname?.toLowerCase() ?? '';
+    const nameLower  = (t.name ?? '').toLowerCase();
+    if (DECORATIVE_LOC_FRAGMENTS.some(f => debugLower.includes(f) || nameLower.includes(f))) return false;
     if (BARRIER_NAME_PREFIXES.some(p => t.debugname?.startsWith(p))) return true;
-    if (BIG_DOOR_PREFIXES.some(p => t.debugname?.toLowerCase().includes(p))) return true;
+    if (BIG_DOOR_PREFIXES.some(p => debugLower.includes(p))) return true;
     const ops = (t.op ?? []).filter((o): o is string => typeof o === 'string').map(o => o.toLowerCase());
     const hasOpenOp = ops.some(op => GATE_OPEN_KEYWORDS.some(kw => op.startsWith(kw)));
     const hasCloseOp = ops.some(op => GATE_CLOSE_KEYWORDS.some(kw => op === kw));
