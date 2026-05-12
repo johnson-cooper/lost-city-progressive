@@ -193,9 +193,19 @@ export class CraftingTask extends BotTask {
                     return;
                 }
 
-                // Locate shears in inventory — required for use-item-on-npc
+                // Check available inventory space before shearing
                 const inv = player.getInventory(InvType.INV);
                 if (!inv) return;
+                let freeSlots = 0;
+                for (let i = 0; i < inv.capacity; i++) {
+                    if (inv.get(i) === null) freeSlots++;
+                }
+                if (freeSlots === 0) {
+                    this.p1State = 'climb';
+                    return;
+                }
+
+                // Locate shears in inventory — required for use-item-on-npc
                 let shearsSlot = -1;
                 for (let i = 0; i < inv.capacity; i++) {
                     if (inv.get(i)?.id === Items.SHEARS) {
