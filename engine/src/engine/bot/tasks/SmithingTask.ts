@@ -109,6 +109,8 @@ export class SmithingTask extends BotTask {
         if (this.watchdog.check(player, banking)) {
             this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
             this.stuck.reset();
+            this.state = 'work_walk';
+            this.workFailTicks = 0;
             return;
         }
 

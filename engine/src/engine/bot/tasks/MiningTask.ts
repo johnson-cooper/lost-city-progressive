@@ -67,6 +67,11 @@ export class MiningTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) {
             this.stuck.reset();
+            this.state = 'walk';
+            this.currentRock = null;
+            this.interactTicks = 0;
+            this.scanFailTicks = 0;
+            this.approachTicks = 0;
             return;
         }
 

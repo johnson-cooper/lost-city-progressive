@@ -120,6 +120,7 @@ private spawnFire(player: Player): void {
 
         if (this.watchdog.check(player, banking)) {
             this.stuck.reset();
+            this.state = 'walk';
             return;
         }
 
