@@ -1503,7 +1503,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // ── Level 20+: hill giants (Edgeville dungeon, big bones) ────────────
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'combat',
             location: Locations.HILL_GIANTS_EDGEVILLE,
@@ -1512,7 +1512,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 4,
             successRate: 1.0,
             itemGained: Items.BIG_BONES,
-            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+            extra: { npcType: 'giant', hitsToKill: 10, dungeon: true }
         },
         // ── Level 35+: moss giants (west Falador, big bones) ─────────────────
         {
@@ -1720,7 +1720,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // ── Level 20+: hill giants ────────────────────────────────────────────
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'combat',
             location: Locations.HILL_GIANTS_EDGEVILLE,
@@ -1729,7 +1729,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 4,
             successRate: 1.0,
             itemGained: Items.BIG_BONES,
-            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+            extra: { npcType: 'giant', hitsToKill: 10, dungeon: true }
         },
         // ── Level 35+: moss giants ────────────────────────────────────────────
         {
@@ -1937,7 +1937,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // ── Level 20+: hill giants ────────────────────────────────────────────
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'combat',
             location: Locations.HILL_GIANTS_EDGEVILLE,
@@ -1946,7 +1946,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 4,
             successRate: 1.0,
             itemGained: Items.BIG_BONES,
-            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+            extra: { npcType: 'giant', hitsToKill: 10, dungeon: true }
         },
         // ── Level 35+: moss giants ────────────────────────────────────────────
         {
@@ -2124,7 +2124,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             extra: { spell: 'wind_strike', npcType: 'chaos_druid', dungeon: true }
         },
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'magic',
             location: Locations.HILL_GIANTS_EDGEVILLE,
@@ -2133,7 +2133,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 5,
             successRate: 0.85,
             itemConsumed: Items.MIND_RUNE,
-            extra: { spell: 'wind_strike', npcType: 'hill_giant', dungeon: true }
+            extra: { spell: 'wind_strike', npcType: 'giant', dungeon: true }
         },
         // Level 40+: moss giants + warriors
         {
@@ -2254,7 +2254,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
         },
         // Level 20+: dark wizards + barbarians + chaos druids + hill giants
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'ranged',
             location: Locations.DARK_WIZARDS_DRAYNOR,
@@ -2303,7 +2303,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             extra: { npcType: 'chaos_druid', dungeon: true }
         },
         {
-            minLevel: 20,
+            minLevel: 30,
             maxLevel: 99,
             action: 'ranged',
             location: Locations.HILL_GIANTS_EDGEVILLE,
@@ -2312,7 +2312,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             ticksPerAction: 5,
             successRate: 0.85,
             itemConsumed: Items.BRONZE_ARROW,
-            extra: { npcType: 'hill_giant', dungeon: true }
+            extra: { npcType: 'giant', dungeon: true }
         },
         // Level 35+: moss giants (oak shortbow + iron arrows)
         {
