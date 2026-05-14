@@ -411,19 +411,19 @@ type RouteCorridor = {
 const ROUTE_CORRIDORS: RouteCorridor[] = [
     {
         // ── Lumbridge castle — westbound bypass ───────────────────────────────
-        // Bots spawning east of the castle (Lumbridge east road, x > 3226) and
-        // heading west toward Draynor village (x < 3185) have the castle walls
-        // directly across their straight-line path.  The BFS can route around
-        // the castle, but the 90-tile midpoint segment often lands on or just
-        // behind the walls, causing the pathfinder to return an empty result and
-        // the bot to loop on the 15-tile compass fallback indefinitely.
+        // Bots anywhere in the castle band (x > 3200, including Lumbridge spawn
+        // at 3222,3219) heading west toward Draynor village (x < 3185) have the
+        // castle walls across their straight-line path.  The BFS can route
+        // around the castle, but the 90-tile midpoint often lands on the wrong
+        // side of the walls and returns empty, leaving the bot looping on the
+        // compass fallback.
         //
-        // Fix: redirect to (3194, 3226) — the open field west of the castle
-        // already used by the level-1 woodcutting bots — before continuing west.
-        // From there the remaining distance to any Draynor destination is ≤ 110
-        // tiles and the pathfinder has a completely clear westward run.
+        // Fix: redirect to (3194, 3226) — the open field west of the castle —
+        // first.  From there any Draynor destination is ≤ 110 tiles with a
+        // completely clear westward run.  Previously capped at x > 3226 which
+        // missed bots spawning at Lumbridge (3222, 3219).
         name: 'LumbridgeCastleWest',
-        playerInZone: (x, z) => x > 3226 && z >= 3200 && z <= 3260,
+        playerInZone: (x, z) => x > 3200 && z >= 3200 && z <= 3260,
         destBeyond: (x, _z) => x < 3185,
         playerCleared: (x, _z) => x <= 3200,
         viaX: 3194,
@@ -559,6 +559,18 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
     // opens, sometimes doesn't" inconsistency — the interaction races against the
     // next bot tick and only survives when the engine processes it first.
     if (_hasGateInteractionPending(player)) return;
+
+    // If the bot already has waypoints queued from a previous call, let the
+    // existing path play out rather than recalculating every tick.  Without this
+    // guard, the compass-sweep fallback picks a direction, then the very next
+    // tick recalculates and picks a different direction, producing the
+    // back-and-forth oscillation seen especially around Draynor Village.
+    // Run/speed are still updated so the bot can toggle run while walking.
+    if (player.hasWaypoints()) {
+        player.run = player.runenergy >= 3000 ? 1 : 0;
+        player.moveSpeed = MoveSpeed.WALK;
+        return;
+    }
 
     // Cancel any active engine interaction (setInteraction target) before setting
     // new waypoints.  Without this, processInteraction() re-routes the player back

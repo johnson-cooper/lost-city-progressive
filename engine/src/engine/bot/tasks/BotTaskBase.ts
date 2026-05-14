@@ -278,6 +278,9 @@ export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): '
             teleportNear(player, bx, bz);
             stuckDetector.reset();
         } else {
+            // Clear existing (bad) waypoints so the hasWaypoints guard in
+            // walkTo() doesn't block the detour recalculation.
+            player.clearWaypoints();
             walkTo(player, bx + randInt(-4, 4), bz + randInt(-4, 4));
         }
         return 'walk';
@@ -328,9 +331,12 @@ export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): '
 export class StuckDetector {
     private readonly window: number;
     private readonly minProgress: number;
+    private readonly freezeRadius: number;
 
     private ticks = 0;
     private snapshotDist = -1;
+    private snapshotX = -1;
+    private snapshotZ = -1;
     private escapeCount = 0;
 
     private readonly escapeLimit: number;
@@ -339,29 +345,46 @@ export class StuckDetector {
      * @param windowTicks       How many ticks between progress checks
      * @param minProgressTiles  Minimum tiles of progress required per window
      * @param escapeLimit       Consecutive failed escape attempts before desperatelyStuck (default 3)
+     * @param freezeRadius      If the bot hasn't moved more than this many tiles from its
+     *                          snapshot position, skip straight to desperatelyStuck (default 3)
      */
-    constructor(windowTicks = 40, minProgressTiles = 5, escapeLimit = 3) {
+    constructor(windowTicks = 40, minProgressTiles = 5, escapeLimit = 3, freezeRadius = 3) {
         this.window = windowTicks;
         this.minProgress = minProgressTiles;
         this.escapeLimit = escapeLimit;
+        this.freezeRadius = freezeRadius;
     }
 
     /**
      * Call once per walk tick. Returns true when the bot is stuck.
+     * If the bot hasn't moved more than freezeRadius tiles from its snapshot
+     * position (oscillating or stationary), desperatelyStuck is set immediately
+     * so the caller teleports without wasting ticks on detour attempts.
      */
     check(player: { x: number; z: number }, destX: number, destZ: number): boolean {
-        const dist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
+        if (this.snapshotDist < 0) {
+            // Seed snapshot on very first call so the window starts immediately.
+            this.snapshotDist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
+            this.snapshotX = player.x;
+            this.snapshotZ = player.z;
+        }
 
         if (++this.ticks < this.window) return false;
         this.ticks = 0;
 
-        if (this.snapshotDist < 0) {
-            this.snapshotDist = dist;
-            return false;
-        }
-
+        const dist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
         const progress = this.snapshotDist - dist;
+        const moved = Math.max(Math.abs(player.x - this.snapshotX), Math.abs(player.z - this.snapshotZ));
+
         this.snapshotDist = dist;
+        this.snapshotX = player.x;
+        this.snapshotZ = player.z;
+
+        // Bot hasn't left a 3-tile area — oscillating or frozen. Skip detours.
+        if (moved <= this.freezeRadius) {
+            this.escapeCount = this.escapeLimit;
+            return true;
+        }
 
         if (progress < this.minProgress) {
             this.escapeCount++;
@@ -379,6 +402,8 @@ export class StuckDetector {
     reset(): void {
         this.ticks = 0;
         this.snapshotDist = -1;
+        this.snapshotX = -1;
+        this.snapshotZ = -1;
         this.escapeCount = 0;
     }
 }

@@ -71,6 +71,9 @@ export class WalkTask extends BotTask {
             }
             if (openNearbyGate(player, 5)) return;
             const dx = this.destX - player.x, dz = this.destZ - player.z;
+            // Clear existing (bad) waypoints so the hasWaypoints guard in
+            // walkTo() doesn't block the detour recalculation.
+            player.clearWaypoints();
             walkTo(
                 player,
                 player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),
