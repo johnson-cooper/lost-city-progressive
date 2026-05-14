@@ -73,18 +73,26 @@ export const Items = {
     RAW_SALMON: 331,
     RAW_LOBSTER: 377,
     RAW_SWORDFISH: 371,
+    
 
     // Cooked fish  (all verified)
     SHRIMP: 315,
     SARDINE: 325,
     HERRING: 343,
+	MACKEREL:  355,
+	ANCHOVIES: 319,
     TROUT: 333,
+	COD:  339,
+	PIKE:  351,
     SALMON: 329,
+	TUNA:  361,
     LOBSTER: 379,
+	BASS:  365,
     SWORDFISH: 373,
+	LAVA_EEL:  2149,
     SHARK: 385,
-    MANTA_RAY: 391,
     SEA_TURTLE: 397,
+    MANTA_RAY: 391,
 
     // Combat drops
     BONES: 526,
@@ -490,7 +498,6 @@ export const Items = {
     RAW_BASS:              363,
     RAW_SHARK:             383,
     RAW_MANTA_RAY:         389,
-    RAW_MANTARAY:          389,
     RAW_SEA_TURTLE:        395,
     SEAWEED:               401,
 
