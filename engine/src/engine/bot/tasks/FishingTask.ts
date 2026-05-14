@@ -347,6 +347,9 @@ export class FishingTask extends BotTask {
                     ? 10
                     : -10);
 
+        // Clear existing (bad) waypoints so the hasWaypoints guard in
+        // walkTo() doesn't block this escape recalculation.
+        player.clearWaypoints();
         walkTo(player, escX, escZ);
     }
 }

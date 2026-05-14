@@ -484,10 +484,10 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
             return;
         }
         // Path is completely blocked — a door or gate is likely in the way.
-        // Try opening one within 6 tiles before falling back to the compass sweep.
+        // Try opening one within 8 tiles before falling back to the compass sweep.
         // openNearbyGate only matches CLOSED doors (locs with Open/Walk-through ops
         // but without Close ops), so an already-open gate is never double-interacted.
-        if (openNearbyGate(player, 6)) return;
+        if (openNearbyGate(player, 8)) return;
     } else {
         // Long distance — try midpoints at the direct heading then sweep outward
         // so the pathfinder can find a clear intermediate tile around any obstacle

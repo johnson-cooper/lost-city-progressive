@@ -272,6 +272,9 @@ export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): '
     if (!isNear(player, bx, bz, 3)) {
         // Still walking — drive bot all the way to the bank coord (which should be
         // inside the building) before the booth search activates.
+
+        
+
         if (!stuckDetector.check(player, bx, bz)) {
             walkTo(player, bx, bz);
         } else if (stuckDetector.desperatelyStuck) {
@@ -433,11 +436,11 @@ export class ProgressWatchdog {
     private stallTicks = 0;
 
     /**
-     * @param stallTickLimit  Ticks without XP before teleport (default 400 ≈ 4 min).
-     *                        Generous enough to cover long walks (Barbarian Village,
-     *                        Karamja ship travel), but catches indefinite oscillation.
+     * @param stallTickLimit  Ticks without XP before teleport (default 100 ≈ 1 min).
+     *                        Short enough to rescue stuck bots quickly, but long enough
+     *                        to cover legitimate bank trips and mid-walk delays.
      */
-    constructor(stallTickLimit = 200) {
+    constructor(stallTickLimit = 100) {
         this.limit = stallTickLimit;
     }
 
