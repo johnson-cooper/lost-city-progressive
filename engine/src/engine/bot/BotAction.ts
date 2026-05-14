@@ -430,6 +430,21 @@ const ROUTE_CORRIDORS: RouteCorridor[] = [
         viaZ: 3226
     },
     {
+        // ── Draynor market fence — northbound bypass ──────────────────────────
+        // The Draynor market has a fence on its east side (x ≈ 3083, z ≈ 3248–
+        // 3261). Bots leaving the Draynor bank (3092, 3245) heading northwest
+        // toward Falador furnace, Falador range, or Barbarian Village willows
+        // find the fence blocking the direct westward path through z ≈ 3248–
+        // 3261. Via (3090, 3263) — just north of the fence top — the bot rounds
+        // the corner and then has a clear westward run.
+        name: 'DraynorMarketFence',
+        playerInZone: (x, z) => x >= 3083 && x <= 3097 && z >= 3243 && z <= 3262,
+        destBeyond: (x, z) => x <= 3082 && z >= 3258,
+        playerCleared: (_x, z) => z >= 3262,
+        viaX: 3090,
+        viaZ: 3263,
+    },
+    {
         // ── White Wolf Mountain — westbound bypass ────────────────────────────
         // Bots heading from Taverley/Falador (x > 2870) toward Catherby/Seers
         // (x < 2800) must route through the mountain pass at (2848, 3497).

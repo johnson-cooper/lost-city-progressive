@@ -1163,7 +1163,6 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     FISHING: [
         // Level 1-19: net fishing — shrimp at Al Kharid shore
         { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_ALKHARID, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
-        { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_DRAYNOR, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
         { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
         // Level 20-29: fly rod — trout at Barbarian Village
         {
@@ -1799,7 +1798,6 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             maxLevel: 14,
             action: 'smelt',
             location: Locations.FALADOR_FURNACE,
-            via: Locations.WILLOWS_BARBARIAN_VIA,
             toolItemIds: [],
             xpPerAction: 7,
             ticksPerAction: 5,
@@ -1815,7 +1813,6 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             maxLevel: 29,
             action: 'smelt',
             location: Locations.FALADOR_FURNACE,
-            via: Locations.WILLOWS_BARBARIAN_VIA,
             toolItemIds: [],
             xpPerAction: 13,
             ticksPerAction: 5,
@@ -1842,7 +1839,6 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             maxLevel: 99,
             action: 'smelt',
             location: Locations.FALADOR_FURNACE,
-            via: Locations.WILLOWS_BARBARIAN_VIA,
             toolItemIds: [],
             xpPerAction: 18,
             ticksPerAction: 5,

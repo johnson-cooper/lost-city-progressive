@@ -129,10 +129,19 @@ const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
  * per banking state entry rather than hard-coding a single bank.
  */
 export function nearestBank(player: Player): [number, number, number] {
+    return nearestBankTo(player.x, player.z);
+}
+
+/**
+ * Returns the bank closest to an arbitrary coordinate — use this when the
+ * relevant reference point is the skill activity location rather than where
+ * the player currently stands (e.g. cooking range, furnace).
+ */
+export function nearestBankTo(x: number, z: number): [number, number, number] {
     let best = BOT_BANKS[0];
     let bestDist = Number.MAX_SAFE_INTEGER;
     for (const bank of BOT_BANKS) {
-        const dist = Math.max(Math.abs(player.x - bank[0]), Math.abs(player.z - bank[1]));
+        const dist = Math.max(Math.abs(x - bank[0]), Math.abs(z - bank[1]));
         if (dist < bestDist) {
             bestDist = dist;
             best = bank;
@@ -266,8 +275,14 @@ export {
  *   'ready'  — interaction queued (or fallback triggered), set cooldown + state
  *   'direct' — fallback: skip interaction, deposit immediately
  */
-export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): 'walk' | 'ready' | 'direct' {
-    const [bx, bz] = nearestBank(player);
+export function advanceBankWalk(
+    player: Player,
+    stuckDetector: StuckDetector,
+    activityCoord?: [number, number, number],
+): 'walk' | 'ready' | 'direct' {
+    const [bx, bz] = activityCoord
+        ? nearestBankTo(activityCoord[0], activityCoord[1])
+        : nearestBank(player);
 
     if (!isNear(player, bx, bz, 3)) {
         // Still walking — drive bot all the way to the bank coord (which should be
