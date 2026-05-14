@@ -44,6 +44,7 @@ export class FlaxPickingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Pick Flax');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {

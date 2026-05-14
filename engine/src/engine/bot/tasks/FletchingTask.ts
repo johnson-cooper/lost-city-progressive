@@ -56,6 +56,7 @@ export class FletchingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Fletching');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {

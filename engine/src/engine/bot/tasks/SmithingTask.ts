@@ -65,6 +65,7 @@ export class SmithingTask extends BotTask {
         super('Smith');
         this.step = step;
         this.viaLocation = step.via;
+        this.watchdog.destination = step.location;
     }
 
     private debug(player: Player, message: string): void {

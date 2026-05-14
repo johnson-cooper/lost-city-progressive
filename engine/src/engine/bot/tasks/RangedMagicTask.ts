@@ -145,6 +145,7 @@ export class RangedMagicTask extends BotTask {
         super('RangedMagic');
         this.step = step;
         this.primaryStat = stat;
+        this.watchdog.destination = step.location;
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────

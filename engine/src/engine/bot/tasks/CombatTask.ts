@@ -126,6 +126,7 @@ export class CombatTask extends BotTask {
         this.step = step;
         this.primaryStat = stat;
         this.stat = TRAIN_CYCLE[0].stat; // always start on attack
+        this.watchdog.destination = step.location;
     }
 
     // ─────────────────────────────────────────────
@@ -284,6 +285,7 @@ export class CombatTask extends BotTask {
         if (newStep && newStep.minLevel > this.step.minLevel) {
             this._log(player, `LEVEL UP → ${this.step.minLevel} → ${newStep.minLevel}`, 'level_up');
             this.step = newStep;
+            this.watchdog.destination = newStep.location;
             this.state = 'walk';
             this.currentNpc = null;
             this.scanFail = 0;
@@ -909,6 +911,7 @@ export class CombatTask extends BotTask {
         const newStep = getProgressionStep(skillName, level, ids => ids.every(id => hasItem(player, id)));
         if (newStep) {
             this.step = newStep;
+            this.watchdog.destination = newStep.location;
             this.patrolTarget = null;
         }
     }

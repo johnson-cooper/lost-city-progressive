@@ -59,6 +59,7 @@ export class WoodcuttingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Woodcut');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {

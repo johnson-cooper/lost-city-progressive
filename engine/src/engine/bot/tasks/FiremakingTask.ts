@@ -40,6 +40,7 @@ export class FiremakingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Firemaking');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(): boolean {

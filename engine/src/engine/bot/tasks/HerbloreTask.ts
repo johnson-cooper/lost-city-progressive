@@ -110,6 +110,7 @@ export class HerbloreTask extends BotTask {
     constructor(step: SkillStep) {
         super('Herblore');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────

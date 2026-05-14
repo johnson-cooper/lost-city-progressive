@@ -54,6 +54,7 @@ export class MiningTask extends BotTask {
         super('Mine');
         this.step = step;
         this.viaLocation = step.via;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {

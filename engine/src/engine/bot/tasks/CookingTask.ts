@@ -49,6 +49,7 @@ export class CookingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Cook');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     private debug(player: Player, message: string): void {

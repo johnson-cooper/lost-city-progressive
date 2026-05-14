@@ -42,6 +42,7 @@ export class FishingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Fish');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {

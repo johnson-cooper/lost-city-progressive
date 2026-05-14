@@ -82,6 +82,7 @@ export class CraftingTask extends BotTask {
         super('Crafting');
         this.step = step;
         this.phase = step.action === 'craft_wool' ? 1 : 2;
+        this.watchdog.destination = step.location;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────

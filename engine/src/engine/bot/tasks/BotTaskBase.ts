@@ -451,6 +451,12 @@ export class ProgressWatchdog {
     private stallTicks = 0;
 
     /**
+     * When set, the watchdog teleports here instead of Lumbridge on stall.
+     * Set to the task's activity location so a rescued bot lands near its target.
+     */
+    destination?: [number, number, number];
+
+    /**
      * @param stallTickLimit  Ticks without XP before teleport (default 100 ≈ 1 min).
      *                        Short enough to rescue stuck bots quickly, but long enough
      *                        to cover legitimate bank trips and mid-walk delays.
@@ -473,7 +479,12 @@ export class ProgressWatchdog {
     check(player: Player, paused = false): boolean {
         if (paused) return false;
         if (++this.stallTicks < this.limit) return false;
-        teleportToSafety(player);
+        if (this.destination) {
+            const [x, z, level] = this.destination;
+            botTeleport(player, x, z, level);
+        } else {
+            teleportToSafety(player);
+        }
         this.reset();
         return true;
     }

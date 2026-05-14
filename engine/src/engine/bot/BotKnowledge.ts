@@ -703,6 +703,16 @@ export const Locations = {
     BARBARIANS_VILLAGE: [3082, 3434, 0] as [number, number, number], // ✅ level 17 barbarians, aggressive, open area
     GUARDS_VARROCK: [3224, 3470, 0] as [number, number, number], // ⛩ level 21 guards, north Varrock
     AL_KHARID_WARRIORS: [3294, 3172, 0] as [number, number, number], // ⛩ Al Kharid palace — AlKharid gateway
+    GUARDS_FALADOR:          [2965, 3395, 0] as [number, number, number], // ✅ Falador guards, open street
+    GUARDS_VARROCK_SOUTH:    [3175, 3428, 0] as [number, number, number], // ✅ Varrock south guards
+    GUARDS_ARDOUGNE:         [2661, 3306, 0] as [number, number, number], // ✅ Ardougne guards
+    MEN_EDGEVILLE:           [3099, 3510, 0] as [number, number, number], // ✅ men near Edgeville
+    MONKS_MONASTERY:         [3052, 3490, 0] as [number, number, number], // ✅ monks at the Monastery (Falador-Edgeville road)
+    DARK_WIZARDS_DRAYNOR:    [3086, 3238, 0] as [number, number, number], // ✅ dark wizards south of Draynor village
+    DARK_WIZARDS_VARROCK:    [3227, 3368, 0] as [number, number, number], // ✅ dark wizards south of Varrock
+    HILL_GIANTS_EDGEVILLE:   [3114, 9840, 0] as [number, number, number], // 🚪 hill giants in Edgeville dungeon (underground)
+    MOSS_GIANTS_WEST:        [2576, 3401, 0] as [number, number, number], // ✅ moss giants west of Falador
+    SCORPIONS_ALKHRAID:      [3299, 3286, 0] as [number, number, number], // ✅ moss giants
     // ── Taverley Dungeon — chaos druids ──────────────────────────────────────
     // Entrance: surface trapdoor at (2884,3450); underground floor at (2884,9848).
     // Chaos druids spawn in the open corridor east of the entrance (parsed from
@@ -1378,8 +1388,94 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.COW_HIDE,
             extra: { npcType: 'cow', hitsToKill: 5, itemsGained: ['bones', 'cow_hide', 'raw_beef'] }
         },
+        // ── Level 1+: men + monks (open areas) ───────────────────────────────
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MEN_EDGEVILLE,
+            toolItemIds: [],
+            xpPerAction: 120,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'man', hitsToKill: 3 }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MONKS_MONASTERY,
+            toolItemIds: [],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'monk', hitsToKill: 4 }
+        },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
-        // ── Level 20-29: cows + barbarians + chaos druids ────────────────────
+        // ── Level 15+: guards (Falador, Varrock, Ardougne) ───────────────────
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_FALADOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_VARROCK_SOUTH,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_ARDOUGNE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        // ── Level 20+: dark wizards + barbarians + chaos druids ───────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_DRAYNOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_VARROCK,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
         {
             minLevel: 20,
             maxLevel: 99,
@@ -1405,8 +1501,33 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.BONES,
             extra: { npcType: 'chaos_druid', hitsToKill: 4, dungeon: true }
         },
-        // ── Level 30-39: cows + barbarians + chaos druids (steel) ────────────
-        // ── Level 40+: Al Kharid warriors (+ barbarian/chaos druid fallback) ─
+        // ── Level 20+: hill giants (Edgeville dungeon, big bones) ────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.HILL_GIANTS_EDGEVILLE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 360,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+        },
+        // ── Level 35+: moss giants (west Falador, big bones) ─────────────────
+        {
+            minLevel: 35,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MOSS_GIANTS_WEST,
+            toolItemIds: [Items.STEEL_SCIMITAR],
+            xpPerAction: 600,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'moss_giant', hitsToKill: 15 }
+        },
+        // ── Level 40+: Al Kharid warriors ─────────────────────────────────────
         {
             minLevel: 40,
             maxLevel: 99,
@@ -1484,8 +1605,94 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.COW_HIDE,
             extra: { npcType: 'cow', hitsToKill: 5 }
         },
+        // ── Level 1+: men + monks ─────────────────────────────────────────────
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MEN_EDGEVILLE,
+            toolItemIds: [],
+            xpPerAction: 120,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'man', hitsToKill: 3 }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MONKS_MONASTERY,
+            toolItemIds: [],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'monk', hitsToKill: 4 }
+        },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
-        // ── Level 20-29: cows + barbarians + chaos druids ────────────────────
+        // ── Level 15+: guards ────────────────────────────────────────────────
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_FALADOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_VARROCK_SOUTH,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_ARDOUGNE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        // ── Level 20+: dark wizards + barbarians + chaos druids ───────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_DRAYNOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_VARROCK,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
         {
             minLevel: 20,
             maxLevel: 99,
@@ -1511,8 +1718,33 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.BONES,
             extra: { npcType: 'chaos_druid', hitsToKill: 4, dungeon: true }
         },
-        // ── Level 30-39: cows + barbarians + chaos druids (steel) ────────────
-        // ── Level 40+: Al Kharid warriors (+ barbarian/chaos druid fallback) ─
+        // ── Level 20+: hill giants ────────────────────────────────────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.HILL_GIANTS_EDGEVILLE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 360,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+        },
+        // ── Level 35+: moss giants ────────────────────────────────────────────
+        {
+            minLevel: 35,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MOSS_GIANTS_WEST,
+            toolItemIds: [Items.STEEL_SCIMITAR],
+            xpPerAction: 600,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'moss_giant', hitsToKill: 15 }
+        },
+        // ── Level 40+: Al Kharid warriors ─────────────────────────────────────
         {
             minLevel: 40,
             maxLevel: 99,
@@ -1590,8 +1822,94 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.COW_HIDE,
             extra: { npcType: 'cow', hitsToKill: 5 }
         },
+        // ── Level 1+: men + monks ─────────────────────────────────────────────
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MEN_EDGEVILLE,
+            toolItemIds: [],
+            xpPerAction: 120,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'man', hitsToKill: 3 }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MONKS_MONASTERY,
+            toolItemIds: [],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'monk', hitsToKill: 4 }
+        },
         // ── Level 10-19: cows ─────────────────────────────────────────────────
-        // ── Level 20-29: cows + barbarians + chaos druids ────────────────────
+        // ── Level 15+: guards ────────────────────────────────────────────────
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_FALADOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_VARROCK_SOUTH,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.GUARDS_ARDOUGNE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 280,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'guard', hitsToKill: 7 }
+        },
+        // ── Level 20+: dark wizards + barbarians + chaos druids ───────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_DRAYNOR,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.DARK_WIZARDS_VARROCK,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 160,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BONES,
+            extra: { npcType: 'dark_wizard', hitsToKill: 4 }
+        },
         {
             minLevel: 20,
             maxLevel: 99,
@@ -1617,8 +1935,33 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.BONES,
             extra: { npcType: 'chaos_druid', hitsToKill: 4, dungeon: true }
         },
-        // ── Level 30-39: cows + barbarians + chaos druids (steel) ────────────
-        // ── Level 40+: Al Kharid warriors (+ barbarian/chaos druid fallback) ─
+        // ── Level 20+: hill giants ────────────────────────────────────────────
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.HILL_GIANTS_EDGEVILLE,
+            toolItemIds: [Items.IRON_SCIMITAR],
+            xpPerAction: 360,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'hill_giant', hitsToKill: 10, dungeon: true }
+        },
+        // ── Level 35+: moss giants ────────────────────────────────────────────
+        {
+            minLevel: 35,
+            maxLevel: 99,
+            action: 'combat',
+            location: Locations.MOSS_GIANTS_WEST,
+            toolItemIds: [Items.STEEL_SCIMITAR],
+            xpPerAction: 600,
+            ticksPerAction: 4,
+            successRate: 1.0,
+            itemGained: Items.BIG_BONES,
+            extra: { npcType: 'moss_giant', hitsToKill: 15 }
+        },
+        // ── Level 40+: Al Kharid warriors ─────────────────────────────────────
         {
             minLevel: 40,
             maxLevel: 99,
@@ -1645,7 +1988,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // wind strike: 5.5 xp = 55 internal (magic_combat_spells.dbrow)
     // Mirrors melee NPC tiers so RangedMagicTask follows the same progression path.
     MAGIC: [
-        // Level 1-19: goblins + chickens (wind strike, no req)
+        // Level 1+: goblins + chickens + men + monks (wind strike, no req)
         {
             minLevel: 1,
             maxLevel: 99,
@@ -1670,7 +2013,91 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.MIND_RUNE,
             extra: { spell: 'wind_strike', npcType: 'chicken' }
         },
-        // Level 20+: barbarians + chaos druids (wind strike)
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.MEN_EDGEVILLE,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'man' }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.MONKS_MONASTERY,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'monk' }
+        },
+        // Level 20+: guards + dark wizards + barbarians + chaos druids
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.GUARDS_FALADOR,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'guard' }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.GUARDS_VARROCK_SOUTH,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'guard' }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.GUARDS_ARDOUGNE,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'guard' }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.DARK_WIZARDS_DRAYNOR,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'dark_wizard' }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.DARK_WIZARDS_VARROCK,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'dark_wizard' }
+        },
         {
             minLevel: 20,
             maxLevel: 99,
@@ -1696,7 +2123,31 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.MIND_RUNE,
             extra: { spell: 'wind_strike', npcType: 'chaos_druid', dungeon: true }
         },
-        // Level 40+: Al Kharid warriors (wind strike)
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.HILL_GIANTS_EDGEVILLE,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'hill_giant', dungeon: true }
+        },
+        // Level 40+: moss giants + warriors
+        {
+            minLevel: 40,
+            maxLevel: 99,
+            action: 'magic',
+            location: Locations.MOSS_GIANTS_WEST,
+            toolItemIds: [Items.STAFF_OF_AIR, Items.MIND_RUNE],
+            xpPerAction: 55,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.MIND_RUNE,
+            extra: { spell: 'wind_strike', npcType: 'moss_giant' }
+        },
         {
             minLevel: 40,
             maxLevel: 99,
@@ -1715,7 +2166,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     // XP: 4.0 per bronze arrow hit = 40 internal
     // Mirrors melee NPC tiers so RangedMagicTask follows the same progression path.
     RANGED: [
-        // Level 1-19: chickens + goblins (shortbow + bronze arrows)
+        // Level 1+: chickens + goblins + men + monks (shortbow + bronze arrows)
         {
             minLevel: 1,
             maxLevel: 99,
@@ -1740,7 +2191,92 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemConsumed: Items.BRONZE_ARROW,
             extra: { npcTypes: ['goblin', 'man'] }
         },
-        // Level 20+: barbarians + chaos druids (oak shortbow + bronze arrows)
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.MEN_EDGEVILLE,
+            toolItemIds: [Items.SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 160,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'man' }
+        },
+        {
+            minLevel: 1,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.MONKS_MONASTERY,
+            toolItemIds: [Items.SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 160,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'monk' }
+        },
+        // Level 15+: guards (oak shortbow + bronze arrows)
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.GUARDS_FALADOR,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 200,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'guard' }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.GUARDS_VARROCK_SOUTH,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 200,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'guard' }
+        },
+        {
+            minLevel: 15,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.GUARDS_ARDOUGNE,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 200,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'guard' }
+        },
+        // Level 20+: dark wizards + barbarians + chaos druids + hill giants
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.DARK_WIZARDS_DRAYNOR,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 160,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'dark_wizard' }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.DARK_WIZARDS_VARROCK,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 160,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'dark_wizard' }
+        },
         {
             minLevel: 20,
             maxLevel: 99,
@@ -1765,6 +2301,31 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 0.85,
             itemConsumed: Items.BRONZE_ARROW,
             extra: { npcType: 'chaos_druid', dungeon: true }
+        },
+        {
+            minLevel: 20,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.HILL_GIANTS_EDGEVILLE,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.BRONZE_ARROW],
+            xpPerAction: 200,
+            ticksPerAction: 5,
+            successRate: 0.85,
+            itemConsumed: Items.BRONZE_ARROW,
+            extra: { npcType: 'hill_giant', dungeon: true }
+        },
+        // Level 35+: moss giants (oak shortbow + iron arrows)
+        {
+            minLevel: 35,
+            maxLevel: 99,
+            action: 'ranged',
+            location: Locations.MOSS_GIANTS_WEST,
+            toolItemIds: [Items.OAK_SHORTBOW, Items.IRON_ARROW],
+            xpPerAction: 220,
+            ticksPerAction: 5,
+            successRate: 0.9,
+            itemConsumed: Items.IRON_ARROW,
+            extra: { npcType: 'moss_giant' }
         },
         // Level 40+: Al Kharid warriors (oak shortbow + iron arrows)
         {
