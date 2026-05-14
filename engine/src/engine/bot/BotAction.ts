@@ -618,16 +618,6 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
         }
     }
 
-    // ── Proactive door/gate check ────────────────────────────────────────────
-    // Scan up to 10 tiles TOWARD the destination for any closed door or gate.
-    // openGateToward filters by direction (positive dot product with the heading)
-    // so only gates between the player and the destination are opened — unrelated
-    // doors behind or beside the bot are ignored.  Radius is capped at dist+2 so
-    // the bot never opens a gate beyond its own destination.
-    // The interaction is preserved across ticks by the _hasGateInteractionPending
-    // guard at the top of this function.
-    if (openGateToward(player, destX, destZ)) return;
-
     // ── Normal pathfinding ──────────────────────────────────────────────────
     _pathTowards(player, destX, destZ);
 }
