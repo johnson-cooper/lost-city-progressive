@@ -56,7 +56,7 @@ export class FlaxPickingTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            this.stuck.reset();
             return;
         }
 

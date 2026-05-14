@@ -76,7 +76,7 @@ export class WoodcuttingTask extends BotTask {
     tick(player: Player): void {
         if (this.interrupted) return;
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
-        if (this.watchdog.check(player, banking)) { this.interrupt(); return; }
+        if (this.watchdog.check(player, banking)) { this.stuck.reset(); return; }
         if (this.cooldown > 0) { this.cooldown--; return; }
 
         // ── Aggressor detection ───────────────────────────────────────────────

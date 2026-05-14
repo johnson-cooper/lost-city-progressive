@@ -119,8 +119,7 @@ private spawnFire(player: Player): void {
         const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
-            console.log(`[Firemaking] ⚠ WATCHDOG TRIGGERED`);
-            this.interrupt();
+            this.stuck.reset();
             return;
         }
 

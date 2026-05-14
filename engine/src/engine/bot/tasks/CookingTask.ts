@@ -93,8 +93,9 @@ export class CookingTask extends BotTask {
             this.state === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.debug(player, 'Watchdog triggered; interrupting task');
-            this.interrupt();
+            this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
+            this.stuck.reset();
+            this.cookFailTicks = 0;
             return;
         }
 

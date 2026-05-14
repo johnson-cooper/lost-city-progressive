@@ -107,8 +107,8 @@ export class SmithingTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'withdraw' || this.state === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.debug(player, 'Watchdog triggered; interrupting task');
-            this.interrupt();
+            this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
+            this.stuck.reset();
             return;
         }
 

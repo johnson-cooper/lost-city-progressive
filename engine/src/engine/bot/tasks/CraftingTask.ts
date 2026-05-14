@@ -133,7 +133,7 @@ export class CraftingTask extends BotTask {
         const banking = this.phase === 1 ? this.p1State === 'bank_walk' || this.p1State === 'bank' : this.p2State === 'bank_walk' || this.p2State === 'withdraw' || this.p2State === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            this.stuck.reset();
             return;
         }
 

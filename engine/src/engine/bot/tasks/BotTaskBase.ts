@@ -83,12 +83,12 @@ export function teleportToSafety(player: Player): void {
 }
 
 /**
- * Teleport bot directly to (x, z) on the same floor.
- * Used when pathfinding consistently fails and the bot must skip to its destination.
- * Plays the magic teleport animation so other players see the cast effect.
+ * Teleport bot to (x, z, level). Defaults to level 0 (ground floor) because
+ * all bot skill destinations and banks are on the ground floor — using
+ * player.level caused bots on floor 2 to land inside roofs.
  */
-export function teleportNear(player: Player, x: number, z: number): void {
-    botTeleport(player, x, z, player.level);
+export function teleportNear(player: Player, x: number, z: number, level = 0): void {
+    botTeleport(player, x, z, level);
 }
 
 /**
@@ -280,7 +280,7 @@ export function advanceBankWalk(
     stuckDetector: StuckDetector,
     activityCoord?: [number, number, number],
 ): 'walk' | 'ready' | 'direct' {
-    const [bx, bz] = activityCoord
+    const [bx, bz, bl] = activityCoord
         ? nearestBankTo(activityCoord[0], activityCoord[1])
         : nearestBank(player);
 
@@ -288,12 +288,12 @@ export function advanceBankWalk(
         // Still walking — drive bot all the way to the bank coord (which should be
         // inside the building) before the booth search activates.
 
-        
+
 
         if (!stuckDetector.check(player, bx, bz)) {
             walkTo(player, bx, bz);
         } else if (stuckDetector.desperatelyStuck) {
-            teleportNear(player, bx, bz);
+            teleportNear(player, bx, bz, bl);
             stuckDetector.reset();
         } else {
             // Clear existing (bad) waypoints so the hasWaypoints guard in
@@ -437,7 +437,7 @@ export class StuckDetector {
  *
  * Usage in a task's tick():
  *   const banking = this.state === 'bank_walk' || this.state === 'bank_done';
- *   if (this.watchdog.check(player, banking)) { this.reset(); return; }
+ *   if (this.watchdog.check(player, banking)) { this.stuck.reset(); return; }
  *
  * When XP is gained:
  *   this.watchdog.notifyActivity();

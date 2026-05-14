@@ -1227,9 +1227,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     //
     // Varrock East [3285, 3365] added as iron variety (open area, near east bank).
     MINING: [
-        // Level 1-14: copper & tin at Barbarian Village mine
-        { minLevel: 1, maxLevel: 14, action: 'mine', location: Locations.MINE_LUMBRIDGE_SWAMP, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 175, ticksPerAction: 4, successRate: 0.65, itemGained: Items.COPPER_ORE },
-        { minLevel: 1, maxLevel: 14, action: 'mine', location: Locations.MINE_LUMBRIDGE_SWAMP, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 175, ticksPerAction: 4, successRate: 0.65, itemGained: Items.TIN_ORE },
+        // Level 1-14: copper & tin at Varrock West mine (open area, no gates)
         { minLevel: 1, maxLevel: 14, action: 'mine', location: Locations.MINE_VARROCK_WEST, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 175, ticksPerAction: 4, successRate: 0.65, itemGained: Items.COPPER_ORE },
         { minLevel: 1, maxLevel: 14, action: 'mine', location: Locations.MINE_VARROCK_WEST, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 175, ticksPerAction: 4, successRate: 0.65, itemGained: Items.TIN_ORE },
         {
