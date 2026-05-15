@@ -1180,7 +1180,6 @@ export const SkillProgression: Record<string, SkillStep[]> = {
     FISHING: [
         // Level 1-19: net fishing — shrimp at Al Kharid shore
         { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_ALKHARID, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
-        { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
         // Level 20-29: fly rod — trout at Barbarian Village
         {
             minLevel: 20,
@@ -1209,6 +1208,7 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             itemGained: Items.RAW_SALMON,
             itemConsumed: Items.FEATHER
         },
+        { minLevel: 1, maxLevel: 19, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.SMALL_FISHING_NET], xpPerAction: 100, ticksPerAction: 5, successRate: 0.6, itemGained: Items.RAW_SHRIMP },
         // Level 40-49: cage — lobster at Karamja (boat-routed via Port Sarim)
         { minLevel: 40, maxLevel: 49, action: 'fish', location: Locations.FISH_KARAMJA, toolItemIds: [Items.LOBSTER_POT], xpPerAction: 900, ticksPerAction: 5, successRate: 0.5, itemGained: Items.RAW_LOBSTER },
         // Level 50-99: harpoon — swordfish at Karamja (boat-routed via Port Sarim)
@@ -1268,7 +1268,8 @@ export const SkillProgression: Record<string, SkillStep[]> = {
             successRate: 0.55,
             itemGained: Items.IRON_ORE
         },
-        // Level 30+: coal at Barbarian Village mine (surface accessible!)
+        // Level 30+: coal at Barbarian Village mine (surface accessible, no gates)
+                // Level 30+: coal at Barbarian Village mine (surface accessible!)
         { minLevel: 30, maxLevel: 99, action: 'mine', location: Locations.MINE_DWARVEN, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 500, ticksPerAction: 6, successRate: 0.45, itemGained: Items.COAL },
         { minLevel: 40, maxLevel: 99, action: 'mine', location: Locations.MINE_KARAMJA, via: Locations.WILLOWS_BARBARIAN_VIA, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 650, ticksPerAction: 6, successRate: 0.45, itemGained: Items.GOLD_ORE },
         { minLevel: 1, maxLevel: 99, action: 'mine', location: Locations.MINE_RIMMINGTON, toolItemIds: [Items.BRONZE_PICKAXE], xpPerAction: 50, ticksPerAction: 4, successRate: 0.8, itemGained: Items.CLAY },

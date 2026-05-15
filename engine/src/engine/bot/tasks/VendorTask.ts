@@ -203,6 +203,8 @@ export class VendorTask extends BotTask {
         if (this.interrupted) return;
 
         if (this.watchdog.check(player, false)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.interrupt();
             return;
         }

@@ -13,6 +13,7 @@ import {
     hasItem,
     isInventoryFull,
     isNear,
+    isAdjacentToLoc,
     getBaseLevel,
     PlayerStat,
     Items,
@@ -66,12 +67,15 @@ export class MiningTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.stuck.reset();
-            this.state = 'walk';
+            this.state = 'approach';
             this.currentRock = null;
             this.interactTicks = 0;
             this.scanFailTicks = 0;
             this.approachTicks = 0;
+            this.cooldown = 3;
             return;
         }
 
@@ -177,9 +181,9 @@ export class MiningTask extends BotTask {
             if (!rock) {
                 this.scanFailTicks++;
 
-                if (this.scanFailTicks > 10) {
+                if (this.scanFailTicks > 3) {
                     const [lx, lz] = this.step.location;
-                    walkTo(player, lx + randInt(-3, 3), lz + randInt(-3, 3));
+                    walkTo(player, lx + randInt(-5, 5), lz + randInt(-5, 5));
                     this.scanFailTicks = 0;
                 }
                 return;
@@ -188,13 +192,16 @@ export class MiningTask extends BotTask {
             this.scanFailTicks = 0;
             this.currentRock = rock;
 
-            if (!isNear(player, rock.x, rock.z, 2)) {
+            if (!isAdjacentToLoc(player, rock)) {
                 this.approachTicks++;
                 walkTo(player, rock.x, rock.z);
 
                 if (this.approachTicks > 25) {
+                    // Can't reach this rock — reposition near the activity center.
                     this.currentRock = null;
                     this.approachTicks = 0;
+                    const [lx, lz] = this.step.location;
+                    walkTo(player, lx + randInt(-5, 5), lz + randInt(-5, 5));
                 }
                 return;
             }
@@ -227,10 +234,20 @@ export class MiningTask extends BotTask {
                 this.lastXp = player.stats[PlayerStat.MINING];
                 this.interactTicks = 0;
                 this.watchdog.notifyActivity();
+                // Find next valid (non-empty) rock — may be the same one or a
+                // closer one that just spawned. Avoids re-queueing on depleted rock.
+                const nextRock = this._findRock(player);
+                if (nextRock && isNear(player, nextRock.x, nextRock.z, 2)) {
+                    this.currentRock = nextRock;
+                    interactLoc(player, nextRock);
+                } else {
+                    this.currentRock = null;
+                    this.state = 'approach';
+                }
                 return;
             }
 
-            if (this.interactTicks >= INTERACT_TIMEOUT) {
+            if (this.interactTicks >= 8) {
                 this.state = 'approach';
                 this.currentRock = null;
                 this.interactTicks = 0;

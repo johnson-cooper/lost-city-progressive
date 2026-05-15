@@ -402,7 +402,8 @@ export class BankstandTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
-            
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.interrupt();
             return;
         }

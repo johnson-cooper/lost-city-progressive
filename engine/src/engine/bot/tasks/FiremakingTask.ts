@@ -119,6 +119,8 @@ private spawnFire(player: Player): void {
         const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.stuck.reset();
             this.state = 'walk';
             return;

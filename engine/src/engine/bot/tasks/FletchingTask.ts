@@ -88,6 +88,8 @@ export class FletchingTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'withdraw_logs' || this.state === 'bank_deposit';
 
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.stuck.reset();
             return;
         }

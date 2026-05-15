@@ -93,6 +93,8 @@ export class CookingTask extends BotTask {
             this.state === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
             this.stuck.reset();
             this.state = 'cook_walk';

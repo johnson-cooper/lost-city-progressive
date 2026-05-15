@@ -77,12 +77,15 @@ export class WoodcuttingTask extends BotTask {
         if (this.interrupted) return;
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.stuck.reset();
-            this.state = 'walk';
+            this.state = 'approach';
             this.currentTree = null;
             this.interactTicks = 0;
             this.scanFailTicks = 0;
             this.approachTicks = 0;
+            this.cooldown = 3;
             return;
         }
         if (this.cooldown > 0) { this.cooldown--; return; }
@@ -229,6 +232,7 @@ export class WoodcuttingTask extends BotTask {
                 this.lastXp        = player.stats[PlayerStat.WOODCUTTING];
                 this.interactTicks = 0;
                 this.watchdog.notifyActivity();
+                if (this.currentTree) interactLoc(player, this.currentTree);
                 return;
             }
 

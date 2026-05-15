@@ -164,6 +164,8 @@ export class HerbloreTask extends BotTask {
 
         const banking = this.state === 'bank_walk';
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.stuck.reset();
             return;
         }

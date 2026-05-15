@@ -190,6 +190,8 @@ export class CombatTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'bank_deposit';
 
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this._log(player, 'WATCHDOG TRIGGERED → teleported to destination, restarting scan', 'watchdog');
             this.stuck.reset();
             this._releaseNpc();
