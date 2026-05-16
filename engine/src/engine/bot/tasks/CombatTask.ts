@@ -719,6 +719,8 @@ export class CombatTask extends BotTask {
 
                 // NPC is dead / despawned — free the claim and go loot.
                 this._releaseNpc();
+                this.trainIndex = (this.trainIndex + 1) % TRAIN_CYCLE.length;
+                this.stat = TRAIN_CYCLE[this.trainIndex].stat;
                 this.state = 'loot';
                 this.interactTicks = 0;
                 this.approachTicks = 0;
