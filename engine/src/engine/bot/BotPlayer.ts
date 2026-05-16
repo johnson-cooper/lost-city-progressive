@@ -265,8 +265,11 @@ export class BotPlayer {
      * (Level 2 threshold is 830 internally = 83.0 displayed XP.)
      */
     private _switchTask(next: BotTask): void {
-        if (this.currentTask && this.currentTask.name !== next.name) {
-            addXp(this.player, PlayerStat.AGILITY, 10); // 50 internal = 5.0 XP displayed
+        if (this.currentTask) {
+            if (this.currentTask.name !== next.name) {
+                addXp(this.player, PlayerStat.AGILITY, 10); // 50 internal = 5.0 XP displayed
+            }
+            this.currentTask.reset(); // allow outgoing task to clean up (e.g. CombatTask unequips armor)
         }
         this.currentTask = next;
     }
