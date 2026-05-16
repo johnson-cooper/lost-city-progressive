@@ -22,6 +22,9 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 import Player from '#/engine/entity/Player.js';
 import { PlayerStat, getBaseLevel } from '#/engine/bot/BotAction.js';
 import { BotPlayer } from '#/engine/bot/BotPlayer.js';
