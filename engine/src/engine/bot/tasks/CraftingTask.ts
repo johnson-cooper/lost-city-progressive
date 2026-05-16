@@ -82,6 +82,7 @@ export class CraftingTask extends BotTask {
         super('Crafting');
         this.step = step;
         this.phase = step.action === 'craft_wool' ? 1 : 2;
+        this.watchdog.destination = step.location;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -132,7 +133,9 @@ export class CraftingTask extends BotTask {
         const banking = this.phase === 1 ? this.p1State === 'bank_walk' || this.p1State === 'bank' : this.p2State === 'bank_walk' || this.p2State === 'withdraw' || this.p2State === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
             return;
         }
 
@@ -193,9 +196,19 @@ export class CraftingTask extends BotTask {
                     return;
                 }
 
-                // Locate shears in inventory — required for use-item-on-npc
+                // Check available inventory space before shearing
                 const inv = player.getInventory(InvType.INV);
                 if (!inv) return;
+                let freeSlots = 0;
+                for (let i = 0; i < inv.capacity; i++) {
+                    if (inv.get(i) === null) freeSlots++;
+                }
+                if (freeSlots === 0) {
+                    this.p1State = 'climb';
+                    return;
+                }
+
+                // Locate shears in inventory — required for use-item-on-npc
                 let shearsSlot = -1;
                 for (let i = 0; i < inv.capacity; i++) {
                     if (inv.get(i)?.id === Items.SHEARS) {

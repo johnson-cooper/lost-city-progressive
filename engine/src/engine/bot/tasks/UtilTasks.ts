@@ -32,6 +32,62 @@ export class InitTask extends BotTask {
         for (const id of this.starterItems) {
             if (!hasItem(player, id)) addItem(player, id, 1);
         }
+
+        const bid = bankInvId();
+        if (bid !== -1) {
+            const bank = player.getInventory(bid);
+            if (bank) {
+                const BANK_SEED: [number, number][] = [
+                    // Scimitars (iron → rune)
+                    [Items.IRON_SCIMITAR,      1],
+                    [Items.STEEL_SCIMITAR,     1],
+                    [Items.BLACK_SCIMITAR,     1],
+                    [Items.MITHRIL_SCIMITAR,   1],
+                    [Items.ADAMANT_SCIMITAR,   1],
+                    [Items.RUNE_SCIMITAR,      1],
+                    // Iron armor set
+                    [Items.IRON_FULL_HELM,     1],
+                    [Items.IRON_PLATEBODY,     1],
+                    [Items.IRON_PLATELEGS,     1],
+                    [Items.IRON_KITESHIELD,    1],
+                    // Steel armor set
+                    [Items.STEEL_FULL_HELM,    1],
+                    [Items.STEEL_PLATEBODY,    1],
+                    [Items.STEEL_PLATELEGS,    1],
+                    [Items.STEEL_KITESHIELD,   1],
+                    // Black armor set
+                    [Items.BLACK_FULL_HELM,    1],
+                    [Items.BLACK_PLATEBODY,    1],
+                    [Items.BLACK_PLATELEGS,    1],
+                    [Items.BLACK_KITESHIELD,   1],
+                    // Mithril armor set
+                    [Items.MITHRIL_FULL_HELM,  1],
+                    [Items.MITHRIL_PLATEBODY,  1],
+                    [Items.MITHRIL_PLATELEGS,  1],
+                    [Items.MITHRIL_KITESHIELD, 1],
+                    // Adamant armor set
+                    [Items.ADAMANT_FULL_HELM,  1],
+                    [Items.ADAMANT_PLATEBODY,  1],
+                    [Items.ADAMANT_PLATELEGS,  1],
+                    [Items.ADAMANT_KITESHIELD, 1],
+                    // Rune armor set
+                    [Items.RUNE_FULL_HELM,     1],
+                    [Items.RUNE_PLATEBODY,     1],
+                    [Items.RUNE_PLATELEGS,     1],
+                    [Items.RUNE_KITESHIELD,    1],
+                    // Food supply
+                    [Items.SHARK,              999999999],
+                ];
+                for (const [itemId, count] of BANK_SEED) {
+                    let found = false;
+                    for (let i = 0; i < bank.capacity; i++) {
+                        if (bank.get(i)?.id === itemId) { found = true; break; }
+                    }
+                    if (!found) bank.add(itemId, count);
+                }
+            }
+        }
+
         this.done = true;
     }
 
@@ -71,6 +127,9 @@ export class WalkTask extends BotTask {
             }
             if (openNearbyGate(player, 5)) return;
             const dx = this.destX - player.x, dz = this.destZ - player.z;
+            // Clear existing (bad) waypoints so the hasWaypoints guard in
+            // walkTo() doesn't block the detour recalculation.
+            player.clearWaypoints();
             walkTo(
                 player,
                 player.x + (Math.abs(dz) > Math.abs(dx) ? randInt(-10, 10) : (dz > 0 ? 10 : -10)),

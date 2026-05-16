@@ -40,6 +40,7 @@ export class FiremakingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Firemaking');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(): boolean {
@@ -118,8 +119,10 @@ private spawnFire(player: Player): void {
         const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
-            console.log(`[Firemaking] ⚠ WATCHDOG TRIGGERED`);
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
+            this.state = 'walk';
             return;
         }
 

@@ -411,23 +411,38 @@ type RouteCorridor = {
 const ROUTE_CORRIDORS: RouteCorridor[] = [
     {
         // ── Lumbridge castle — westbound bypass ───────────────────────────────
-        // Bots spawning east of the castle (Lumbridge east road, x > 3226) and
-        // heading west toward Draynor village (x < 3185) have the castle walls
-        // directly across their straight-line path.  The BFS can route around
-        // the castle, but the 90-tile midpoint segment often lands on or just
-        // behind the walls, causing the pathfinder to return an empty result and
-        // the bot to loop on the 15-tile compass fallback indefinitely.
+        // Bots anywhere in the castle band (x > 3200, including Lumbridge spawn
+        // at 3222,3219) heading west toward Draynor village (x < 3185) have the
+        // castle walls across their straight-line path.  The BFS can route
+        // around the castle, but the 90-tile midpoint often lands on the wrong
+        // side of the walls and returns empty, leaving the bot looping on the
+        // compass fallback.
         //
-        // Fix: redirect to (3194, 3226) — the open field west of the castle
-        // already used by the level-1 woodcutting bots — before continuing west.
-        // From there the remaining distance to any Draynor destination is ≤ 110
-        // tiles and the pathfinder has a completely clear westward run.
+        // Fix: redirect to (3194, 3226) — the open field west of the castle —
+        // first.  From there any Draynor destination is ≤ 110 tiles with a
+        // completely clear westward run.  Previously capped at x > 3226 which
+        // missed bots spawning at Lumbridge (3222, 3219).
         name: 'LumbridgeCastleWest',
-        playerInZone: (x, z) => x > 3226 && z >= 3200 && z <= 3260,
+        playerInZone: (x, z) => x > 3200 && z >= 3200 && z <= 3260,
         destBeyond: (x, _z) => x < 3185,
         playerCleared: (x, _z) => x <= 3200,
         viaX: 3194,
         viaZ: 3226
+    },
+    {
+        // ── Draynor market fence — northbound bypass ──────────────────────────
+        // The Draynor market has a fence on its east side (x ≈ 3083, z ≈ 3248–
+        // 3261). Bots leaving the Draynor bank (3092, 3245) heading northwest
+        // toward Falador furnace, Falador range, or Barbarian Village willows
+        // find the fence blocking the direct westward path through z ≈ 3248–
+        // 3261. Via (3090, 3263) — just north of the fence top — the bot rounds
+        // the corner and then has a clear westward run.
+        name: 'DraynorMarketFence',
+        playerInZone: (x, z) => x >= 3083 && x <= 3097 && z >= 3243 && z <= 3262,
+        destBeyond: (x, z) => x <= 3082 && z >= 3258,
+        playerCleared: (_x, z) => z >= 3262,
+        viaX: 3090,
+        viaZ: 3263,
     },
     {
         // ── White Wolf Mountain — westbound bypass ────────────────────────────
@@ -484,10 +499,10 @@ function _pathTowards(player: Player, destX: number, destZ: number): void {
             return;
         }
         // Path is completely blocked — a door or gate is likely in the way.
-        // Try opening one within 6 tiles before falling back to the compass sweep.
+        // Try opening one within 8 tiles before falling back to the compass sweep.
         // openNearbyGate only matches CLOSED doors (locs with Open/Walk-through ops
         // but without Close ops), so an already-open gate is never double-interacted.
-        if (openNearbyGate(player, 6)) return;
+        if (openNearbyGate(player, 8)) return;
     } else {
         // Long distance — try midpoints at the direct heading then sweep outward
         // so the pathfinder can find a clear intermediate tile around any obstacle
@@ -560,6 +575,18 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
     // next bot tick and only survives when the engine processes it first.
     if (_hasGateInteractionPending(player)) return;
 
+    // If the bot already has waypoints queued from a previous call, let the
+    // existing path play out rather than recalculating every tick.  Without this
+    // guard, the compass-sweep fallback picks a direction, then the very next
+    // tick recalculates and picks a different direction, producing the
+    // back-and-forth oscillation seen especially around Draynor Village.
+    // Run/speed are still updated so the bot can toggle run while walking.
+    if (player.hasWaypoints()) {
+        player.run = player.runenergy >= 3000 ? 1 : 0;
+        player.moveSpeed = MoveSpeed.WALK;
+        return;
+    }
+
     // Cancel any active engine interaction (setInteraction target) before setting
     // new waypoints.  Without this, processInteraction() re-routes the player back
     // toward the old target every tick, overriding the walkTo waypoints and causing
@@ -617,16 +644,6 @@ export function walkTo(player: Player, destX: number, destZ: number): void {
             return;
         }
     }
-
-    // ── Proactive door/gate check ────────────────────────────────────────────
-    // Scan up to 10 tiles TOWARD the destination for any closed door or gate.
-    // openGateToward filters by direction (positive dot product with the heading)
-    // so only gates between the player and the destination are opened — unrelated
-    // doors behind or beside the bot are ignored.  Radius is capped at dist+2 so
-    // the bot never opens a gate beyond its own destination.
-    // The interaction is preserved across ticks by the _hasGateInteractionPending
-    // guard at the top of this function.
-    if (openGateToward(player, destX, destZ)) return;
 
     // ── Normal pathfinding ──────────────────────────────────────────────────
     _pathTowards(player, destX, destZ);

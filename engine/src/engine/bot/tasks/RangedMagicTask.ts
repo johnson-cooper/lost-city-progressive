@@ -145,6 +145,7 @@ export class RangedMagicTask extends BotTask {
         super('RangedMagic');
         this.step = step;
         this.primaryStat = stat;
+        this.watchdog.destination = step.location;
     }
 
     // ── Logging ───────────────────────────────────────────────────────────────
@@ -174,6 +175,8 @@ export class RangedMagicTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_deposit';
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this._log(player, 'watchdog reset → check_equip', 'watchdog');
             this.state = 'check_equip';
             this._releaseNpc();

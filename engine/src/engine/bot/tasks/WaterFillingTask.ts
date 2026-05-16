@@ -54,6 +54,8 @@ export class WaterFillingTask extends BotTask {
         if (this.interrupted) return;
 
         if (this.watchdog.check(player)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.interrupt();
             return;
         }

@@ -44,6 +44,7 @@ export class FlaxPickingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Pick Flax');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {
@@ -55,7 +56,9 @@ export class FlaxPickingTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
             return;
         }
 

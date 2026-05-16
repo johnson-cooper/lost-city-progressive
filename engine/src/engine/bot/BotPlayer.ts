@@ -195,12 +195,12 @@ export class BotPlayer {
         // (e.g. a combat bot re-engaging its target every 12 ticks while a gate
         // sits between them unopened).  Skip if the player is already mid-script
         // (delayed) or already has a pending interaction (e.g. attacking an NPC).
-        if (++this.gateCheckTimer >= 5) {
-            this.gateCheckTimer = 0;
-            if (!this.player.delayed && !this.player.hasInteraction()) {
-                openNearbyGate(this.player, 5);
-            }
-        }
+        //if (++this.gateCheckTimer >= 5) {
+            //this.gateCheckTimer = 0;
+            //if (!this.player.delayed && !this.player.hasInteraction()) {
+            //    openNearbyGate(this.player, 5);
+          //  }
+        //}
 
         try {
             activeTask.tick(this.player);

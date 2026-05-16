@@ -63,6 +63,7 @@ export class ThievingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Thieve');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     private debug(player: Player, message: string): void {
@@ -116,8 +117,10 @@ export class ThievingTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done' || this.state === 'eat';
         if (this.watchdog.check(player, banking)) {
-            this.debug(player, 'Watchdog triggered; interrupting task');
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
+            this.stuck.reset();
             return;
         }
 

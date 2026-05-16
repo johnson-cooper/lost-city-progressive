@@ -65,6 +65,7 @@ export class SmithingTask extends BotTask {
         super('Smith');
         this.step = step;
         this.viaLocation = step.via;
+        this.watchdog.destination = step.location;
     }
 
     private debug(player: Player, message: string): void {
@@ -106,8 +107,12 @@ export class SmithingTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'withdraw' || this.state === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.debug(player, 'Watchdog triggered; interrupting task');
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
+            this.stuck.reset();
+            this.state = 'work_walk';
+            this.workFailTicks = 0;
             return;
         }
 
@@ -144,7 +149,7 @@ export class SmithingTask extends BotTask {
 
         // ── Bank walk ────────────────────────────────────────────────────────────
         if (this.state === 'bank_walk' || this.state === 'bank_return') {
-            const result = advanceBankWalk(player, this.stuck);
+            const result = advanceBankWalk(player, this.stuck, this.step.location);
 
             if (result === 'walk') {
                 return;
@@ -160,6 +165,10 @@ export class SmithingTask extends BotTask {
         // ── Withdraw materials ────────────────────────────────────────────────
         if (this.state === 'withdraw') {
             this._depositResults(player);
+
+            // Open bank exit door before walking to furnace/anvil — bots
+            // teleported inside the bank find it closed and can't exit.
+            openNearbyGate(player, 5);
 
             const hasMaterial = this.useAnvil ? this._withdrawBars(player) : this._withdrawOres(player);
 
@@ -534,6 +543,7 @@ export class SmithingTask extends BotTask {
         const wx = player.x + randInt(-10, 10);
         const wz = player.z + randInt(-10, 10);
         this.debug(player, `Stuck fallback walk to ${wx}, ${wz}`);
+        player.clearWaypoints();
         walkTo(player, wx, wz);
     }
 }

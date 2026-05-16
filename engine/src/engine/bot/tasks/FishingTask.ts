@@ -42,6 +42,7 @@ export class FishingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Fish');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {
@@ -59,7 +60,18 @@ export class FishingTask extends BotTask {
         if (this.interrupted) return;
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_done';
-        if (this.watchdog.check(player, banking)) { this.interrupt(); return; }
+        if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
+            this.state = 'approach';
+            this.currentSpot = null;
+            this.interactTicks = 0;
+            this.scanFailTicks = 0;
+            this.approachTicks = 0;
+            this.cooldown = 3;
+            return;
+        }
 
         if (this.cooldown > 0) {
             this.cooldown--;
@@ -160,9 +172,9 @@ export class FishingTask extends BotTask {
             if (!spot) {
                 this.scanFailTicks++;
 
-                if (this.scanFailTicks > 10) {
+                if (this.scanFailTicks > 3) {
                     const [lx, lz] = this.step.location;
-                    walkTo(player, lx + randInt(-4, 4), lz + randInt(-4, 4));
+                    walkTo(player, lx + randInt(-5, 5), lz + randInt(-5, 5));
                     this.scanFailTicks = 0;
                 }
                 return;
@@ -177,8 +189,12 @@ export class FishingTask extends BotTask {
                 walkTo(player, spot.x, spot.z);
 
                 if (this.approachTicks > 25) {
+                    // Can't reach this spot — reposition near the activity center
+                    // so the bot gets a better angle instead of retrying the same path.
                     this.currentSpot = null;
                     this.approachTicks = 0;
+                    const [lx, lz] = this.step.location;
+                    walkTo(player, lx + randInt(-5, 5), lz + randInt(-5, 5));
                 }
                 return;
             }
@@ -210,10 +226,19 @@ export class FishingTask extends BotTask {
                 this.lastXp = player.stats[PlayerStat.FISHING];
                 this.interactTicks = 0;
                 this.watchdog.notifyActivity();
+                // Re-validate the spot — if it moved or despawned, go to approach.
+                const nextSpot = this._findFishSpot(player);
+                if (nextSpot && isNear(player, nextSpot.x, nextSpot.z, 2)) {
+                    this.currentSpot = nextSpot;
+                    this._interact(player, nextSpot);
+                } else {
+                    this.currentSpot = null;
+                    this.state = 'approach';
+                }
                 return;
             }
 
-            if (this.interactTicks >= INTERACT_TIMEOUT) {
+            if (this.interactTicks >= 8) {
                 this.state = 'approach';
                 this.currentSpot = null;
                 this.interactTicks = 0;
@@ -347,6 +372,9 @@ export class FishingTask extends BotTask {
                     ? 10
                     : -10);
 
+        // Clear existing (bad) waypoints so the hasWaypoints guard in
+        // walkTo() doesn't block this escape recalculation.
+        player.clearWaypoints();
         walkTo(player, escX, escZ);
     }
 }

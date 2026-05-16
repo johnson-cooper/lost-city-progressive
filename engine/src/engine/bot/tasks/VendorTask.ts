@@ -19,12 +19,16 @@ import {
     walkTo,
     isNear,
     randInt,
+    countItem,
     StuckDetector,
     ProgressWatchdog,
     openNearbyGate,
     teleportNear,
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import World from '#/engine/World.js';
+
+const BUYBACK_RATE = 0.7;
+const STARTING_VENDOR_COINS = 500_000_000;
 
 interface VendorStock {
     notedId: number;
@@ -181,6 +185,7 @@ export class VendorTask extends BotTask {
 
     private requestedCount = 0;
     private requestedTotal = 0;
+    private tradeMode: 'selling' | 'buying' | null = null;
 
     private duration = 3600; // ticks before restocking
     private readonly stuck = new StuckDetector(10, 2, 1);
@@ -198,6 +203,8 @@ export class VendorTask extends BotTask {
         if (this.interrupted) return;
 
         if (this.watchdog.check(player, false)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.interrupt();
             return;
         }
@@ -243,6 +250,7 @@ export class VendorTask extends BotTask {
         this.stockMax = 0;
         this.duration = 3600;
         this.currentOfferSlot = 0;
+        this.tradeMode = null;
         this.assignedSpot = null;
         this.stuck.reset();
         this.watchdog.reset();
@@ -259,6 +267,14 @@ export class VendorTask extends BotTask {
                 if (!item) continue;
                 if (item.id === Items.COINS) continue;
                 inv.remove(item.id, item.count);
+            }
+        }
+
+        // Top up coins to 500M so the vendor always has buying power.
+        if (inv) {
+            const existingCoins = countItem(player, Items.COINS);
+            if (existingCoins < STARTING_VENDOR_COINS) {
+                inv.add(Items.COINS, STARTING_VENDOR_COINS - existingCoins);
             }
         }
 
@@ -316,6 +332,7 @@ export class VendorTask extends BotTask {
 
         // Announce stock, always including the bot's name so players know who is selling.
         const name = player.displayName;
+        const buyPrice = Math.floor(this.stock.priceEach * BUYBACK_RATE);
         const roll = Math.random();
         if (roll < 0.3) {
             player.say(`${name}: Selling ${this.itemCount}x noted ${this.stock.name} @ ${this.stock.priceEach}gp ea`);
@@ -323,6 +340,8 @@ export class VendorTask extends BotTask {
             player.say(`${name}: ${this.stock.name} (noted) ${this.stock.priceEach}gp ea | trade me`);
         } else if (roll < 0.65) {
             player.say(`${name} WTS ${this.itemCount} noted ${this.stock.name} - ${this.stock.priceEach}gp ea`);
+        } else if (roll < 0.80) {
+            player.say(`${name}: Also buying ${this.stock.name} @ ${buyPrice}gp ea! Trade me to sell.`);
         }
 
         this.watchdog.notifyActivity();
@@ -336,7 +355,8 @@ export class VendorTask extends BotTask {
             return;
         }
 
-        player.say(`Hi ${target.displayName}! ${this.stock?.name ?? 'items'} @ ${this.stock?.priceEach ?? 0}gp ea - put up gp and I'll offer what you can afford!`);
+        const buybackPrice = this.stock ? Math.floor(this.stock.priceEach * BUYBACK_RATE) : 0;
+        player.say(`Hi ${target.displayName}! Selling ${this.stock?.name ?? 'items'} @ ${this.stock?.priceEach ?? 0}gp ea. Also buying @ ${buybackPrice}gp ea. Put up coins to buy, or items to sell!`);
         interactPlayerOp(player, target.slot, 4);
         this.watchdog.notifyActivity();
         player.botTradeTargetStage = 0;
@@ -353,53 +373,103 @@ export class VendorTask extends BotTask {
         }
 
         if (player.botTradeTargetStage === 0) {
-            // Wait for player to put up coins before offering items.
-            let gpOffered = 0;
-            for (let i = 0; i < 28; i++) {
-                const item = this._getItemFromSlotInv(target, i, 90);
-                if (item && item.id === Items.COINS) {
-                    gpOffered = item.count;
-                    break;
-                }
+            if (!this.stock) {
+                this._resetTrade(player, 'no stock');
+                return;
             }
 
-            if (!this.stock || gpOffered < this.stock.priceEach) {
-                // Not enough GP yet — remind player occasionally.
+            const notedId = this.stock.notedId;
+
+            let gpOffered    = 0;
+            let itemsOffered = 0;
+
+            for (let i = 0; i < 28; i++) {
+                const item = this._getItemFromSlotInv(target, i, 90);
+                if (!item) continue;
+                if (item.id === Items.COINS) { gpOffered += item.count; }
+                if (item.id === notedId) { itemsOffered += item.count; }
+            }
+
+            const hasCoins = gpOffered > 0;
+            const hasItems = itemsOffered > 0;
+
+            // Neither or both — ask player to put up one or the other
+            if ((!hasCoins && !hasItems) || (hasCoins && hasItems)) {
                 if (Math.random() < 0.3) {
-                    if (gpOffered > 0) {
-                        player.say(`Need at least ${this.stock?.priceEach ?? 0}gp for 1 item. You have ${gpOffered}gp up.`);
-                    } else {
-                        player.say(`Put up your gp and I'll offer what you can afford! (${this.stock?.priceEach ?? 0}gp ea)`);
-                    }
+                    player.say(`Put up coins to buy ${this.stock.name}, or put up ${this.stock.name} to sell. Not both!`);
                 }
                 this.cooldown = randInt(4, 7);
                 return;
             }
 
-            // Calculate how many items the player can afford.
-            const canAfford = Math.min(Math.floor(gpOffered / this.stock.priceEach), this.itemCount);
-            this.requestedCount = canAfford;
-            this.requestedTotal = canAfford * this.stock.priceEach;
+            // --- Selling mode: player offers coins ---
+            if (hasCoins) {
+                if (gpOffered < this.stock.priceEach) {
+                    if (Math.random() < 0.3) {
+                        player.say(`Need at least ${this.stock.priceEach}gp for 1 item. You have ${gpOffered}gp up.`);
+                    }
+                    this.cooldown = randInt(4, 7);
+                    return;
+                }
 
-            // Trim our inventory to exactly canAfford items so "offer all" yields the right amount.
-            const inv = player.getInventory(InvType.INV);
-            if (inv && canAfford < this.itemCount) {
-                const excess = this.itemCount - canAfford;
-                inv.remove(this.stock.notedId, excess);
+                this.tradeMode = 'selling';
+                const canAfford = Math.min(Math.floor(gpOffered / this.stock.priceEach), this.itemCount);
+                this.requestedCount = canAfford;
+                this.requestedTotal = canAfford * this.stock.priceEach;
+
+                const inv = player.getInventory(InvType.INV);
+                if (inv && canAfford < this.itemCount) {
+                    inv.remove(this.stock.notedId, this.itemCount - canAfford);
+                }
+                this.itemCount = canAfford;
+
+                if (inv) {
+                    for (let slot = 0; slot < inv.capacity; slot++) {
+                        const item = inv.get(slot);
+                        if (!item || item.id !== this.stock.notedId) continue;
+                        interactIF_UseOp(player, Interfaces.TRADE_SIDE_INV, item.id, slot, 4, InvType.INV);
+                        break;
+                    }
+                }
+
+                player.say(`Offering ${canAfford}x noted ${this.stock.name} for ${this.requestedTotal}gp. Accept when ready!`);
+                player.botTradeTargetStage = 1;
+                this.cooldown = randInt(3, 5);
+                return;
             }
-            this.itemCount = canAfford;
 
-            // Find the slot and offer all (now exactly canAfford items in inventory).
+            // --- Buying mode: player offers items ---
+            this.tradeMode = 'buying';
+            const buyPrice     = Math.floor(this.stock.priceEach * BUYBACK_RATE);
+            const coinsToOffer = itemsOffered * buyPrice;
+
+            const vendorCoins = countItem(player, Items.COINS);
+            if (vendorCoins < coinsToOffer) {
+                if (Math.random() < 0.3) {
+                    player.say(`I can't afford ${coinsToOffer}gp right now, sorry!`);
+                }
+                this.cooldown = randInt(4, 7);
+                return;
+            }
+
+            this.requestedCount = itemsOffered;
+            this.requestedTotal = coinsToOffer;
+
+            const inv = player.getInventory(InvType.INV);
             if (inv) {
+                const excess = vendorCoins - coinsToOffer;
+                if (excess > 0) {
+                    inv.remove(Items.COINS, excess);
+                }
                 for (let slot = 0; slot < inv.capacity; slot++) {
                     const item = inv.get(slot);
-                    if (!item || item.id !== this.stock.notedId) continue;
+                    if (!item || item.id !== Items.COINS) continue;
                     interactIF_UseOp(player, Interfaces.TRADE_SIDE_INV, item.id, slot, 4, InvType.INV);
                     break;
                 }
             }
 
-            player.say(`Offering ${canAfford}x noted ${this.stock.name} for ${this.requestedTotal}gp. Accept when ready!`);
+            player.say(`Buying ${itemsOffered}x ${this.stock.name} for ${coinsToOffer}gp (${buyPrice}gp ea)`);
             player.botTradeTargetStage = 1;
             this.cooldown = randInt(3, 5);
             return;
@@ -419,26 +489,44 @@ export class VendorTask extends BotTask {
             return;
         }
 
-        // Re-verify coins are still there before accepting.
-        let gpOffered = 0;
-        for (let i = 0; i < 28; i++) {
-            const item = this._getItemFromSlotInv(target, i, 90);
-            if (item && item.id === Items.COINS) {
-                gpOffered = item.count;
-                break;
+        if (this.tradeMode === 'selling') {
+            let gpOffered = 0;
+            for (let i = 0; i < 28; i++) {
+                const item = this._getItemFromSlotInv(target, i, 90);
+                if (item && item.id === Items.COINS) { gpOffered = item.count; break; }
             }
-        }
+            if (gpOffered >= this.requestedTotal && this.requestedTotal > 0) {
+                interactIfButtonByName(player, 'trademain:accept');
+                this.state = 'trade_finalize';
+                this.cooldown = randInt(2, 4);
+            } else {
+                if (Math.random() < 0.3) {
+                    player.say(`Still need ${this.requestedTotal}gp up, you have ${gpOffered}gp.`);
+                }
+                this.cooldown = randInt(5, 8);
+            }
 
-        if (gpOffered >= this.requestedTotal && this.requestedTotal > 0) {
-            interactIfButtonByName(player, 'trademain:accept');
-            this.state = 'trade_finalize';
-            this.cooldown = randInt(2, 4);
-        } else {
-            // Coins were removed — remind player.
-            if (Math.random() < 0.3) {
-                player.say(`Still need ${this.requestedTotal}gp up, you have ${gpOffered}gp.`);
+        } else if (this.tradeMode === 'buying') {
+            if (!this.stock) { this._resetTrade(player, 'no stock in confirm'); return; }
+            const notedId = this.stock.notedId;
+            let itemsOffered = 0;
+            for (let i = 0; i < 28; i++) {
+                const item = this._getItemFromSlotInv(target, i, 90);
+                if (item && item.id === notedId) { itemsOffered += item.count; }
             }
-            this.cooldown = randInt(5, 8);
+            if (itemsOffered >= this.requestedCount && this.requestedCount > 0) {
+                interactIfButtonByName(player, 'trademain:accept');
+                this.state = 'trade_finalize';
+                this.cooldown = randInt(2, 4);
+            } else {
+                if (Math.random() < 0.3) {
+                    player.say(`Still need ${this.requestedCount}x ${this.stock.name} up.`);
+                }
+                this.cooldown = randInt(5, 8);
+            }
+
+        } else {
+            this._resetTrade(player, 'no trade mode in confirm');
         }
     }
 
@@ -446,30 +534,50 @@ export class VendorTask extends BotTask {
         const target = this._getTradeTarget(player);
         let scam = false;
 
-        let gpOffered = 0;
-        if (target) {
-            for (let i = 0; i < 28; i++) {
-                const item = this._getItemFromSlotInv(target, i, 90);
-                if (item && item.id === Items.COINS) {
-                    gpOffered = item.count;
-                    break;
+        if (this.tradeMode === 'selling') {
+            let gpOffered = 0;
+            if (target) {
+                for (let i = 0; i < 28; i++) {
+                    const item = this._getItemFromSlotInv(target, i, 90);
+                    if (item && item.id === Items.COINS) { gpOffered = item.count; break; }
+                }
+                if (gpOffered >= this.requestedTotal) {
+                    interactIfButtonByName(player, 'tradeconfirm:accept');
+                } else {
+                    interactIfButtonByName(player, 'tradeconfirm:decline');
+                    scam = true;
                 }
             }
-
-            if (gpOffered >= this.requestedTotal) {
-                interactIfButtonByName(player, 'tradeconfirm:accept');
+            if (scam) {
+                player.say(`Needed ${this.requestedTotal}gp, you offered ${gpOffered}. Declined!`);
             } else {
-                interactIfButtonByName(player, 'tradeconfirm:decline');
-                scam = true;
+                player.say(Math.random() < 0.5 ? 'Pleasure doing business!' : 'Ty!');
             }
-        }
 
-        if (scam) {
-            player.say(`Needed ${this.requestedTotal}gp, you offered ${gpOffered}. Declined!`);
+        } else if (this.tradeMode === 'buying') {
+            let itemsOffered = 0;
+            if (target && this.stock) {
+                const notedId = this.stock.notedId;
+                for (let i = 0; i < 28; i++) {
+                    const item = this._getItemFromSlotInv(target, i, 90);
+                    if (item && item.id === notedId) { itemsOffered += item.count; }
+                }
+                if (itemsOffered >= this.requestedCount) {
+                    interactIfButtonByName(player, 'tradeconfirm:accept');
+                } else {
+                    interactIfButtonByName(player, 'tradeconfirm:decline');
+                    scam = true;
+                }
+            }
+            if (scam) {
+                player.say(`Needed ${this.requestedCount}x item, you pulled them. Declined!`);
+            } else {
+                player.say(Math.random() < 0.5 ? 'Good deal, thanks!' : 'Cheers!');
+            }
+
         } else {
-            player.say(Math.random() < 0.5 ? 'Pleasure doing business!' : 'Ty!');
-            // itemCount was already updated when we trimmed inventory.
-            // If trade completed: items went to player, coins came to us. Count is correct.
+            if (target) interactIfButtonByName(player, 'tradeconfirm:decline');
+            player.say('Something went wrong. Declining.');
         }
 
         this._resetTrade(player);
@@ -504,22 +612,32 @@ export class VendorTask extends BotTask {
         this.requestedCount = 0;
         this.requestedTotal = 0;
         this.currentOfferSlot = 0;
+        this.tradeMode = null;
 
         // Replenish inventory back to the original stock amount so the bot
         // never "runs out" — vendors have effectively infinite supply.
         if (this.stock && this.stockMax > 0) {
             const inv = player.getInventory(InvType.INV);
             if (inv) {
-                // Clear any leftover partial stack then restore the full original amount.
+                // Clear all non-coin items so bought items and partial stacks never accumulate.
                 for (let slot = 0; slot < inv.capacity; slot++) {
                     const existing = inv.get(slot);
-                    if (existing && existing.id === this.stock.notedId) {
-                        inv.remove(this.stock.notedId, existing.count);
+                    if (existing && existing.id !== Items.COINS) {
+                        inv.remove(existing.id, existing.count);
                     }
                 }
                 inv.add(this.stock.notedId, this.stockMax);
             }
             this.itemCount = this.stockMax;
+        }
+
+        // Restore coins to STARTING_VENDOR_COINS so trimmed coins are always recovered.
+        const invForCoins = player.getInventory(InvType.INV);
+        if (invForCoins) {
+            const currentCoins = countItem(player, Items.COINS);
+            if (currentCoins < STARTING_VENDOR_COINS) {
+                invForCoins.add(Items.COINS, STARTING_VENDOR_COINS - currentCoins);
+            }
         }
 
         this.state = this.itemCount > 0 ? 'idle' : 'init';

@@ -172,6 +172,8 @@ export class RunecraftingTask extends BotTask {
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_deposit';
         if (this.watchdog.check(player, banking)) {
+            player.clearWaypoints();
+            player.clearPendingAction();
             this._log(player, 'watchdog reset → check_altar', 'watchdog');
             this.state = 'check_altar';
             return;

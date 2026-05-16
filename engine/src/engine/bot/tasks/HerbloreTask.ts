@@ -110,6 +110,7 @@ export class HerbloreTask extends BotTask {
     constructor(step: SkillStep) {
         super('Herblore');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
@@ -163,7 +164,9 @@ export class HerbloreTask extends BotTask {
 
         const banking = this.state === 'bank_walk';
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
             return;
         }
 

@@ -83,6 +83,32 @@ const TRAIN_CYCLE: Array<{ stat: PlayerStat; style: 0 | 1 | 3 }> = [
     { stat: PlayerStat.DEFENCE, style: 3 }
 ];
 
+// Worn slots that are considered armor (helm, torso, shield, legs). Does not include weapon (3) or ammo (13).
+const ARMOR_WORN_SLOTS = new Set([0, 4, 5, 7]);
+
+// Scimitar tiers ordered best-first; the first entry whose minAtk ≤ player's Attack level is used.
+const SCIMITAR_TIERS: Array<{ minAtk: number; itemId: number }> = [
+    { minAtk: 40, itemId: Items.RUNE_SCIMITAR    },
+    { minAtk: 30, itemId: Items.ADAMANT_SCIMITAR },
+    { minAtk: 20, itemId: Items.MITHRIL_SCIMITAR },
+    { minAtk: 10, itemId: Items.BLACK_SCIMITAR   },
+    { minAtk: 5,  itemId: Items.STEEL_SCIMITAR   },
+    { minAtk: 1,  itemId: Items.IRON_SCIMITAR    },
+];
+
+// Sharks to maintain in inventory during combat.
+const COMBAT_SHARKS = 15;
+
+// Armor sets ordered best-first; the first entry whose minDef ≤ player's Defence level is used.
+const ARMOR_SETS: Array<{ minDef: number; pieces: number[] }> = [
+    { minDef: 40, pieces: [Items.RUNE_FULL_HELM,    Items.RUNE_PLATEBODY,    Items.RUNE_PLATELEGS,    Items.RUNE_KITESHIELD    ] },
+    { minDef: 30, pieces: [Items.ADAMANT_FULL_HELM,  Items.ADAMANT_PLATEBODY,  Items.ADAMANT_PLATELEGS,  Items.ADAMANT_KITESHIELD  ] },
+    { minDef: 20, pieces: [Items.MITHRIL_FULL_HELM,  Items.MITHRIL_PLATEBODY,  Items.MITHRIL_PLATELEGS,  Items.MITHRIL_KITESHIELD  ] },
+    { minDef: 10, pieces: [Items.BLACK_FULL_HELM,    Items.BLACK_PLATEBODY,    Items.BLACK_PLATELEGS,    Items.BLACK_KITESHIELD    ] },
+    { minDef: 5,  pieces: [Items.STEEL_FULL_HELM,    Items.STEEL_PLATEBODY,    Items.STEEL_PLATELEGS,    Items.STEEL_KITESHIELD    ] },
+    { minDef: 1,  pieces: [Items.IRON_FULL_HELM,     Items.IRON_PLATEBODY,     Items.IRON_PLATELEGS,     Items.IRON_KITESHIELD     ] },
+];
+
 export class CombatTask extends BotTask {
     private step: SkillStep;
     private readonly primaryStat: PlayerStat; // governs location/progression
@@ -121,11 +147,15 @@ export class CombatTask extends BotTask {
     /** True once we've done the initial weapon equip-from-inventory on first walk. */
     private _startEquipDone = false;
 
+    /** Cached from the last tick so reset() can unequip armor without a player parameter. */
+    private _lastPlayer: Player | null = null;
+
     constructor(step: SkillStep, stat: PlayerStat) {
         super('Combat');
         this.step = step;
         this.primaryStat = stat;
         this.stat = TRAIN_CYCLE[0].stat; // always start on attack
+        this.watchdog.destination = step.location;
     }
 
     // ─────────────────────────────────────────────
@@ -153,14 +183,23 @@ export class CombatTask extends BotTask {
 
     tick(player: Player): void {
         const now = Date.now();
+        this._lastPlayer = player;
 
         if (this.interrupted) return;
 
         const banking = this.state === 'bank_walk' || this.state === 'bank_deposit';
 
         if (this.watchdog.check(player, banking)) {
-            this._log(player, 'WATCHDOG TRIGGERED → interrupt', 'watchdog');
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this._log(player, 'WATCHDOG TRIGGERED → teleported to destination, restarting scan', 'watchdog');
+            this.stuck.reset();
+            this._releaseNpc();
+            this.currentNpc = null;
+            this.scanFail = 0;
+            this.fleeTicks = 0;
+            this.cooldown = 0;
+            this.state = 'walk';
             return;
         }
 
@@ -284,6 +323,7 @@ export class CombatTask extends BotTask {
         if (newStep && newStep.minLevel > this.step.minLevel) {
             this._log(player, `LEVEL UP → ${this.step.minLevel} → ${newStep.minLevel}`, 'level_up');
             this.step = newStep;
+            this.watchdog.destination = newStep.location;
             this.state = 'walk';
             this.currentNpc = null;
             this.scanFail = 0;
@@ -366,11 +406,15 @@ export class CombatTask extends BotTask {
         }
 
         if (this.state === 'bank_deposit') {
+            this._unequipArmor(player);    // WORN armor → INV so it can be banked
             _equipLoot(player);
             cleanGrimyHerbs(player);
             this._depositGold(player);
-            this._depositLoot(player);
-            this._withdrawFood(player);
+            this._depositLoot(player);     // deposits unequipped armor too
+            this._withdrawSharks(player);        // top up to COMBAT_SHARKS sharks
+            this._withdrawFood(player);          // fallback food if no sharks in bank
+            this._withdrawAndEquipArmor(player); // withdraw + equip best armor for defence level
+            this._withdrawAndEquipWeapon(player); // withdraw + equip best scimitar for attack level
             this._rerollStep(player); // re-randomise location for the next run
 
             this.state = 'walk';
@@ -746,6 +790,12 @@ export class CombatTask extends BotTask {
     override reset(): void {
         super.reset();
 
+        if (this._lastPlayer) {
+            this._unequipArmor(this._lastPlayer);
+            this._unequipWeapon(this._lastPlayer);
+            this._lastPlayer = null;
+        }
+
         this._releaseNpc(); // ensure any held claim is freed on task reassignment
 
         this.state = 'walk';
@@ -909,6 +959,7 @@ export class CombatTask extends BotTask {
         const newStep = getProgressionStep(skillName, level, ids => ids.every(id => hasItem(player, id)));
         if (newStep) {
             this.step = newStep;
+            this.watchdog.destination = newStep.location;
             this.patrolTarget = null;
         }
     }
@@ -1029,6 +1080,134 @@ export class CombatTask extends BotTask {
 
         // Out of food
         this.state = 'walk';
+    }
+
+    /** Move equipped armor (helm, torso, shield, legs) from WORN back to INV. */
+    private _unequipArmor(player: Player): void {
+        const equip = player.getInventory(InvType.WORN);
+        const inv   = player.getInventory(InvType.INV);
+        if (!equip || !inv) return;
+
+        for (let slot = 0; slot < equip.capacity; slot++) {
+            if (!ARMOR_WORN_SLOTS.has(slot)) continue;
+            const item = equip.get(slot);
+            if (!item) continue;
+            const moved = equip.remove(item.id, 1);
+            if (moved.completed > 0) inv.add(item.id, 1);
+        }
+    }
+
+    /** Move the equipped scimitar from WORN slot 3 back to INV (used on task end). */
+    private _unequipWeapon(player: Player): void {
+        const equip = player.getInventory(InvType.WORN);
+        const inv   = player.getInventory(InvType.INV);
+        if (!equip || !inv) return;
+
+        const wornWeapon = equip.get(3);
+        if (!wornWeapon) return;
+        // Only unequip if it's a scimitar from our managed set.
+        if (!SCIMITAR_TIERS.some(s => s.itemId === wornWeapon.id)) return;
+
+        const moved = equip.remove(wornWeapon.id, 1);
+        if (moved.completed > 0) inv.add(wornWeapon.id, 1);
+    }
+
+    /** Withdraw the best armor set the bot qualifies for (based on Defence) and equip it. */
+    private _withdrawAndEquipArmor(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        const defLevel = getBaseLevel(player, PlayerStat.DEFENCE);
+        const set = ARMOR_SETS.find(s => defLevel >= s.minDef);
+        if (!set) return;
+
+        for (const pieceId of set.pieces) {
+            if (hasItem(player, pieceId)) continue; // already in inv (shouldn't happen after deposit)
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (!it || it.id !== pieceId) continue;
+                const moved = bank.remove(pieceId, 1);
+                if (moved.completed > 0) inv.add(pieceId, 1);
+                break;
+            }
+        }
+
+        _equipLoot(player); // equip whatever we just withdrew
+    }
+
+    /**
+     * Equip the best scimitar the bot qualifies for based on Attack level.
+     * Unequips and banks the current weapon first if it needs upgrading.
+     */
+    private _withdrawAndEquipWeapon(player: Player): void {
+        const inv   = player.getInventory(InvType.INV);
+        const equip = player.getInventory(InvType.WORN);
+        const bid   = bankInvId();
+        if (!inv || !equip || bid === -1) return;
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        const atkLevel  = getBaseLevel(player, PlayerStat.ATTACK);
+        const targetIdx = SCIMITAR_TIERS.findIndex(s => atkLevel >= s.minAtk);
+        if (targetIdx === -1) return;
+        const targetId = SCIMITAR_TIERS[targetIdx].itemId;
+
+        // Check weapon slot (3) — skip if already wearing equal or better scimitar.
+        const wornWeapon = equip.get(3);
+        if (wornWeapon) {
+            const wornIdx = SCIMITAR_TIERS.findIndex(s => s.itemId === wornWeapon.id);
+            if (wornIdx !== -1 && wornIdx <= targetIdx) return; // already at correct tier or better
+            // Unequip old weapon → INV, then bank it.
+            const unequipped = equip.remove(wornWeapon.id, 1);
+            if (unequipped.completed > 0) {
+                inv.add(wornWeapon.id, 1);
+                for (let i = 0; i < inv.capacity; i++) {
+                    const it = inv.get(i);
+                    if (!it || it.id !== wornWeapon.id) continue;
+                    const dm = inv.remove(wornWeapon.id, 1);
+                    if (dm.completed > 0) bank.add(wornWeapon.id, 1);
+                    break;
+                }
+            }
+        }
+
+        // Withdraw target scimitar from bank if not already in inventory.
+        if (!hasItem(player, targetId)) {
+            for (let i = 0; i < bank.capacity; i++) {
+                const it = bank.get(i);
+                if (!it || it.id !== targetId) continue;
+                const moved = bank.remove(targetId, 1);
+                if (moved.completed > 0) inv.add(targetId, 1);
+                break;
+            }
+        }
+
+        _equipLoot(player);
+    }
+
+    /** Top up inventory with cooked sharks from the bank (up to COMBAT_SHARKS). */
+    private _withdrawSharks(player: Player): void {
+        const inv = player.getInventory(InvType.INV);
+        const bid = bankInvId();
+        if (!inv || bid === -1) return;
+        const bank = player.getInventory(bid);
+        if (!bank) return;
+
+        const current = countItem(player, Items.SHARK);
+        const needed  = COMBAT_SHARKS - current;
+        if (needed <= 0) return;
+
+        for (let i = 0; i < bank.capacity; i++) {
+            const it = bank.get(i);
+            if (!it || it.id !== Items.SHARK) continue;
+            const amount = Math.min(needed, it.count);
+            const moved  = bank.remove(Items.SHARK, amount);
+            if (moved.completed > 0) inv.add(Items.SHARK, moved.completed);
+            break;
+        }
     }
 
     private _depositLoot(player: Player): void {

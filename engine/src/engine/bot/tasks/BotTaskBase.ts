@@ -83,12 +83,12 @@ export function teleportToSafety(player: Player): void {
 }
 
 /**
- * Teleport bot directly to (x, z) on the same floor.
- * Used when pathfinding consistently fails and the bot must skip to its destination.
- * Plays the magic teleport animation so other players see the cast effect.
+ * Teleport bot to (x, z, level). Defaults to level 0 (ground floor) because
+ * all bot skill destinations and banks are on the ground floor — using
+ * player.level caused bots on floor 2 to land inside roofs.
  */
-export function teleportNear(player: Player, x: number, z: number): void {
-    botTeleport(player, x, z, player.level);
+export function teleportNear(player: Player, x: number, z: number, level = 0): void {
+    botTeleport(player, x, z, level);
 }
 
 /**
@@ -129,10 +129,19 @@ const BOT_BANKS: ReadonlyArray<[number, number, number]> = [
  * per banking state entry rather than hard-coding a single bank.
  */
 export function nearestBank(player: Player): [number, number, number] {
+    return nearestBankTo(player.x, player.z);
+}
+
+/**
+ * Returns the bank closest to an arbitrary coordinate — use this when the
+ * relevant reference point is the skill activity location rather than where
+ * the player currently stands (e.g. cooking range, furnace).
+ */
+export function nearestBankTo(x: number, z: number): [number, number, number] {
     let best = BOT_BANKS[0];
     let bestDist = Number.MAX_SAFE_INTEGER;
     for (const bank of BOT_BANKS) {
-        const dist = Math.max(Math.abs(player.x - bank[0]), Math.abs(player.z - bank[1]));
+        const dist = Math.max(Math.abs(x - bank[0]), Math.abs(z - bank[1]));
         if (dist < bestDist) {
             bestDist = dist;
             best = bank;
@@ -266,18 +275,30 @@ export {
  *   'ready'  — interaction queued (or fallback triggered), set cooldown + state
  *   'direct' — fallback: skip interaction, deposit immediately
  */
-export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): 'walk' | 'ready' | 'direct' {
-    const [bx, bz] = nearestBank(player);
+export function advanceBankWalk(
+    player: Player,
+    stuckDetector: StuckDetector,
+    activityCoord?: [number, number, number],
+): 'walk' | 'ready' | 'direct' {
+    const [bx, bz, bl] = activityCoord
+        ? nearestBankTo(activityCoord[0], activityCoord[1])
+        : nearestBank(player);
 
     if (!isNear(player, bx, bz, 3)) {
         // Still walking — drive bot all the way to the bank coord (which should be
         // inside the building) before the booth search activates.
+
+
+
         if (!stuckDetector.check(player, bx, bz)) {
             walkTo(player, bx, bz);
         } else if (stuckDetector.desperatelyStuck) {
-            teleportNear(player, bx, bz);
+            teleportNear(player, bx, bz, bl);
             stuckDetector.reset();
         } else {
+            // Clear existing (bad) waypoints so the hasWaypoints guard in
+            // walkTo() doesn't block the detour recalculation.
+            player.clearWaypoints();
             walkTo(player, bx + randInt(-4, 4), bz + randInt(-4, 4));
         }
         return 'walk';
@@ -328,9 +349,12 @@ export function advanceBankWalk(player: Player, stuckDetector: StuckDetector): '
 export class StuckDetector {
     private readonly window: number;
     private readonly minProgress: number;
+    private readonly freezeRadius: number;
 
     private ticks = 0;
     private snapshotDist = -1;
+    private snapshotX = -1;
+    private snapshotZ = -1;
     private escapeCount = 0;
 
     private readonly escapeLimit: number;
@@ -339,29 +363,46 @@ export class StuckDetector {
      * @param windowTicks       How many ticks between progress checks
      * @param minProgressTiles  Minimum tiles of progress required per window
      * @param escapeLimit       Consecutive failed escape attempts before desperatelyStuck (default 3)
+     * @param freezeRadius      If the bot hasn't moved more than this many tiles from its
+     *                          snapshot position, skip straight to desperatelyStuck (default 3)
      */
-    constructor(windowTicks = 40, minProgressTiles = 5, escapeLimit = 3) {
+    constructor(windowTicks = 40, minProgressTiles = 5, escapeLimit = 3, freezeRadius = 3) {
         this.window = windowTicks;
         this.minProgress = minProgressTiles;
         this.escapeLimit = escapeLimit;
+        this.freezeRadius = freezeRadius;
     }
 
     /**
      * Call once per walk tick. Returns true when the bot is stuck.
+     * If the bot hasn't moved more than freezeRadius tiles from its snapshot
+     * position (oscillating or stationary), desperatelyStuck is set immediately
+     * so the caller teleports without wasting ticks on detour attempts.
      */
     check(player: { x: number; z: number }, destX: number, destZ: number): boolean {
-        const dist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
+        if (this.snapshotDist < 0) {
+            // Seed snapshot on very first call so the window starts immediately.
+            this.snapshotDist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
+            this.snapshotX = player.x;
+            this.snapshotZ = player.z;
+        }
 
         if (++this.ticks < this.window) return false;
         this.ticks = 0;
 
-        if (this.snapshotDist < 0) {
-            this.snapshotDist = dist;
-            return false;
-        }
-
+        const dist = Math.abs(player.x - destX) + Math.abs(player.z - destZ);
         const progress = this.snapshotDist - dist;
+        const moved = Math.max(Math.abs(player.x - this.snapshotX), Math.abs(player.z - this.snapshotZ));
+
         this.snapshotDist = dist;
+        this.snapshotX = player.x;
+        this.snapshotZ = player.z;
+
+        // Bot hasn't left a 3-tile area — oscillating or frozen. Skip detours.
+        if (moved <= this.freezeRadius) {
+            this.escapeCount = this.escapeLimit;
+            return true;
+        }
 
         if (progress < this.minProgress) {
             this.escapeCount++;
@@ -379,6 +420,8 @@ export class StuckDetector {
     reset(): void {
         this.ticks = 0;
         this.snapshotDist = -1;
+        this.snapshotX = -1;
+        this.snapshotZ = -1;
         this.escapeCount = 0;
     }
 }
@@ -394,7 +437,7 @@ export class StuckDetector {
  *
  * Usage in a task's tick():
  *   const banking = this.state === 'bank_walk' || this.state === 'bank_done';
- *   if (this.watchdog.check(player, banking)) { this.reset(); return; }
+ *   if (this.watchdog.check(player, banking)) { this.stuck.reset(); return; }
  *
  * When XP is gained:
  *   this.watchdog.notifyActivity();
@@ -408,11 +451,17 @@ export class ProgressWatchdog {
     private stallTicks = 0;
 
     /**
-     * @param stallTickLimit  Ticks without XP before teleport (default 400 ≈ 4 min).
-     *                        Generous enough to cover long walks (Barbarian Village,
-     *                        Karamja ship travel), but catches indefinite oscillation.
+     * When set, the watchdog teleports here instead of Lumbridge on stall.
+     * Set to the task's activity location so a rescued bot lands near its target.
      */
-    constructor(stallTickLimit = 200) {
+    destination?: [number, number, number];
+
+    /**
+     * @param stallTickLimit  Ticks without XP before teleport (default 100 ≈ 1 min).
+     *                        Short enough to rescue stuck bots quickly, but long enough
+     *                        to cover legitimate bank trips and mid-walk delays.
+     */
+    constructor(stallTickLimit = 100) {
         this.limit = stallTickLimit;
     }
 
@@ -430,7 +479,12 @@ export class ProgressWatchdog {
     check(player: Player, paused = false): boolean {
         if (paused) return false;
         if (++this.stallTicks < this.limit) return false;
-        teleportToSafety(player);
+        if (this.destination) {
+            const [x, z, level] = this.destination;
+            botTeleport(player, x, z, level);
+        } else {
+            teleportToSafety(player);
+        }
         this.reset();
         return true;
     }

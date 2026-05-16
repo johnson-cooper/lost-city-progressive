@@ -276,8 +276,8 @@ export class BankstandTask extends BotTask {
             case (Items.RAW_SEA_TURTLE + 1):
                 price = 1200;
                 break;
-            case Items.RAW_MANTARAY:
-            case (Items.RAW_MANTARAY + 1):
+            case Items.RAW_MANTA_RAY:
+            case (Items.RAW_MANTA_RAY + 1):
                 price = 1500;
                 break;
             //Misc->
@@ -402,7 +402,8 @@ export class BankstandTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'bank';
 
         if (this.watchdog.check(player, banking)) {
-            
+            player.clearWaypoints();
+            player.clearPendingAction();
             this.interrupt();
             return;
         }

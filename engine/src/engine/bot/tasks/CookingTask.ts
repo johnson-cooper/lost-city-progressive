@@ -49,6 +49,7 @@ export class CookingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Cook');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     private debug(player: Player, message: string): void {
@@ -92,8 +93,12 @@ export class CookingTask extends BotTask {
             this.state === 'bank_return';
 
         if (this.watchdog.check(player, banking)) {
-            this.debug(player, 'Watchdog triggered; interrupting task');
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.debug(player, 'Watchdog triggered; teleported to destination, resuming');
+            this.stuck.reset();
+            this.state = 'cook_walk';
+            this.cookFailTicks = 0;
             return;
         }
 
@@ -119,7 +124,7 @@ export class CookingTask extends BotTask {
         // ── Bank walk (initial deposit run + after each inventory) ─────────────
         if (this.state === 'bank_walk' || this.state === 'bank_return') {
             
-            const result = advanceBankWalk(player, this.stuck);
+            const result = advanceBankWalk(player, this.stuck, this.step.location);
 
             if (result === 'walk') {
                
@@ -143,8 +148,13 @@ export class CookingTask extends BotTask {
             }
 
             // Deposit cooked / burnt fish (raw fish are kept by _depositCooked)
-           
+
             this._depositCooked(player);
+
+            // Open the bank exit door before transitioning to cook_walk.
+            // Bots teleported inside the bank find the door closed and can't
+            // exit — this ensures the door is open when we start walking out.
+            openNearbyGate(player, 5);
 
             // If raw fish are already in inventory (bot just arrived from fishing without
             // banking first), skip the bank-withdrawal step entirely — go cook what we have.
@@ -437,6 +447,7 @@ export class CookingTask extends BotTask {
         const wx = player.x + randInt(-10, 10);
         const wz = player.z + randInt(-10, 10);
         this.debug(player, `Stuck fallback walk to ${wx}, ${wz}`);
+        player.clearWaypoints();
         walkTo(player, wx, wz);
     }
 }

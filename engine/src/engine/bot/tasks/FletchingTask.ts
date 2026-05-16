@@ -56,6 +56,7 @@ export class FletchingTask extends BotTask {
     constructor(step: SkillStep) {
         super('Fletching');
         this.step = step;
+        this.watchdog.destination = step.location;
     }
 
     shouldRun(player: Player): boolean {
@@ -87,7 +88,9 @@ export class FletchingTask extends BotTask {
         const banking = this.state === 'bank_walk' || this.state === 'withdraw_logs' || this.state === 'bank_deposit';
 
         if (this.watchdog.check(player, banking)) {
-            this.interrupt();
+            player.clearWaypoints();
+            player.clearPendingAction();
+            this.stuck.reset();
             return;
         }
 
