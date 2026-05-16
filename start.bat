@@ -1,9 +1,9 @@
 @echo off
 cd /d %~dp0
 
-echo Starting Bun Launcher...
+echo Starting Node Launcher...
 cd engine
 
-bun run launcher
+npx tsx launcher.ts
 
 pause

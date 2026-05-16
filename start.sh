@@ -3,9 +3,9 @@
 # Go into engine directory
 cd "$(dirname "$0")/engine"
 
-echo "Starting Bun Launcher..."
+echo "Starting Node Launcher..."
 
-bun run launcher
+npx tsx launcher.ts
 
 echo ""
 echo "Launcher exited."
