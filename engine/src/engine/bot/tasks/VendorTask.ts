@@ -61,6 +61,12 @@ const VENDOR_ITEMS: VendorStock[] = [
 { notedId: Items.LAW_RUNE + 1, name: 'Law rune', priceEach: 300 },
 { notedId: Items.COSMIC_RUNE + 1, name: 'Cosmic rune', priceEach: 150 },
 
+// QUEST ITEMS
+{ notedId: Items.ARRAV_SHIELD_LEFT + 1, name: 'Arrav Shield Left', priceEach: 1500 },
+{ notedId: Items.ARRAV_SHIELD_RIGHT+ 1, name: 'Arrav Shield Right', priceEach: 1500 },
+{ notedId: Items.PETE_CANDLESTICK + 1, name: 'Petes Candlestick', priceEach: 25000 },
+{ notedId: Items.MISC_KEY_HERO + 1, name: 'Miscellaneous Key', priceEach: 25000 },
+
 // 🧪 Potions (huge utility)
 { notedId: Items.PRAYER_POTION_3 + 1, name: 'Prayer potion (3)', priceEach: 8000 },
 { notedId: Items.STRENGTH_POTION_3 + 1, name: 'Strength potion (3)', priceEach: 3000 },
