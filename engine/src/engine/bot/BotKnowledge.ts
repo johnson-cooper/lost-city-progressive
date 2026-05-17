@@ -74,7 +74,11 @@ export const Items = {
     RAW_LOBSTER: 377,
     RAW_SWORDFISH: 371,
     
-
+    // quest items
+    ARRAV_SHIELD_LEFT: 763,
+    ARRAV_SHIELD_RIGHT: 765,
+    PETE_CANDLESTICK: 1577,
+    MISC_KEY_HERO: 1586,
     // Cooked fish  (all verified)
     SHRIMP: 315,
     SARDINE: 325,
