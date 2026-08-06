@@ -142,6 +142,8 @@ export class CombatTask extends BotTask {
     private patrolTarget: [number, number] | null = null;
     private patrolTicks = 0;
 
+    private shopOpenRetries = 0;
+
     private hasFoughtInArea = false;
 
     /** True once we've done the initial weapon equip-from-inventory on first walk. */
@@ -375,8 +377,25 @@ export class CombatTask extends BotTask {
         }
 
         if (this.state === 'shop_open') {
-            this.cooldown = 2;
-            this.state = 'shop_sell';
+            // Check that the shop inventory listener is actually active before
+            // going to shop_sell. interactIF_UseOp returns false immediately if
+            // the listener isn't there, so selling would silently fail every slot
+            // and the bot would loop back to bank_walk with a full inventory.
+            const shopReady = player.invListeners.find((l: { com: number }) => l.com === Interfaces.SHOP_SIDE_INV);
+            if (shopReady) {
+                this.shopOpenRetries = 0;
+                this.state = 'shop_sell';
+                return;
+            }
+            this.shopOpenRetries++;
+            if (this.shopOpenRetries >= 8) {
+                this._log(player, 'Shop did not open after 8 ticks — falling back to bank_walk', 'shop_timeout');
+                this.shopOpenRetries = 0;
+                this.currentNpc = null;
+                this.state = 'bank_walk';
+                return;
+            }
+            this.cooldown = 1;
             return;
         }
 
@@ -812,6 +831,7 @@ export class CombatTask extends BotTask {
         this.patrolTarget = null;
         this.patrolTicks = 0;
         this.fleeTicks = 0;
+        this.shopOpenRetries = 0;
 
         this.hasFoughtInArea = false;
 

@@ -34,6 +34,7 @@ import {
     advanceBankWalk
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
+import { reachedLoc } from '#/engine/GameMap.js';
 
 const MIN_MATERIALS = 1;
 
@@ -340,16 +341,22 @@ export class SmithingTask extends BotTask {
     private _findWorkLocation(player: Player): Loc | null {
         if (this.useAnvil) {
             const anvil = findLocByName(player.x, player.z, player.level, 'anvil', 2);
-            if (anvil) {
-                this.debug(player, `Found anvil at ${anvil.x}, ${anvil.z}`);
+            // Verify adjacency with the engine's own reachedLoc() — accounts for the
+            // loc's angle, shape, and block-access flags. Interacting with an anvil
+            // the bot isn't yet adjacent to queues a redundant engine path that can
+            // step the bot off the correct tile. Return null so the caller walks
+            // the bot toward step.location instead.
+            if (anvil && reachedLoc(player.level, player.x, player.z, anvil.x, anvil.z, anvil.width, anvil.length, 1, anvil.angle, anvil.shape, 0)) {
+                this.debug(player, `Found reachable anvil at ${anvil.x}, ${anvil.z}`);
                 return anvil;
             }
             return null;
         }
 
         const furnace = findLocByPrefix(player.x, player.z, player.level, 'furnace', 15);
-        if (furnace) {
-            this.debug(player, `Found furnace at ${furnace.x}, ${furnace.z}`);
+        // Same reachedLoc guard as the anvil path above.
+        if (furnace && reachedLoc(player.level, player.x, player.z, furnace.x, furnace.z, furnace.width, furnace.length, 1, furnace.angle, furnace.shape, 0)) {
+            this.debug(player, `Found reachable furnace at ${furnace.x}, ${furnace.z}`);
             return furnace;
         }
 

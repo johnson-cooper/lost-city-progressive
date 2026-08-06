@@ -881,6 +881,13 @@ export function interactUseLocOp(player: Player, loc: Loc, item: number, slot: n
     player.lastUseItem = item;
     player.lastUseSlot = slot;
     player.setInteraction(Interaction.ENGINE, loc, ServerTriggerType.APLOCU);
+    // Clear stale bot approach waypoints. pathToPathingTarget() returns immediately
+    // for non-PathingEntity targets (Loc is not a PathingEntity), so the engine
+    // never queues waypoints toward a Loc. Any waypoints present at this point are
+    // the bot's own stale approach ones; leaving them causes updateMovement() to
+    // step the bot off the adjacent tile between two tryInteract calls in the same
+    // tick, breaking interactions that require the bot to stay put.
+    player.clearWaypoints();
     //player.opcalled = true; //<- This is in NetworkPlayer not sure if its needed
     return true;
 }
