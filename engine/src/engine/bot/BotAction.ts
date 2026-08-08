@@ -1189,6 +1189,15 @@ export function findLocByName(cx: number, cz: number, level: number, locName: st
 }
 
 /**
+ * Like findLocByName but returns ALL matching Locs within radius, not just the nearest.
+ */
+export function findLocsByName(cx: number, cz: number, level: number, locName: string, radius = 10): Loc[] {
+    const typeId = LocType.getId(locName);
+    if (typeId === -1) return [];
+    return _findLocs(cx, cz, level, radius, loc => loc.type === typeId);
+}
+
+/**
  * Search for any Loc whose type name starts with a prefix.
  * Optional exclude: substring that must NOT appear in the debugname.
  */
@@ -1279,6 +1288,25 @@ function _findLoc(cx: number, cz: number, level: number, radius: number, predica
         }
     }
     return best;
+}
+
+function _findLocs(cx: number, cz: number, level: number, radius: number, predicate: (loc: Loc) => boolean): Loc[] {
+    const results: Loc[] = [];
+    const zoneRadius = Math.ceil(radius / 8) + 1;
+    for (let dz = -zoneRadius; dz <= zoneRadius; dz++) {
+        for (let dx = -zoneRadius; dx <= zoneRadius; dx++) {
+            const zx = cx + dx * 8;
+            const zz = cz + dz * 8;
+            const zone = getWorld().gameMap.getZone(zx, zz, level);
+            if (!zone) continue;
+            for (const loc of zone.getAllLocsSafe()) {
+                if (!predicate(loc)) continue;
+                const dist = Math.abs(loc.x - cx) + Math.abs(loc.z - cz);
+                if (dist <= radius * 2) results.push(loc);
+            }
+        }
+    }
+    return results;
 }
 
 // ── Skills ────────────────────────────────────────────────────────────────────

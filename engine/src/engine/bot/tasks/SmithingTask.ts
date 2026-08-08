@@ -15,7 +15,6 @@ import {
     InvType,
     walkTo,
     interactUseLocOp,
-    findLocByName,
     findLocByPrefix,
     hasItem,
     countItem,
@@ -35,6 +34,8 @@ import {
 } from '#/engine/bot/tasks/BotTaskBase.js';
 import type { SkillStep } from '#/engine/bot/tasks/BotTaskBase.js';
 import { reachedLoc } from '#/engine/GameMap.js';
+import { findLocsByName } from '#/engine/bot/BotAction.js';
+import LocType from '#/cache/config/LocType.js';
 
 const MIN_MATERIALS = 1;
 
@@ -340,23 +341,29 @@ export class SmithingTask extends BotTask {
 
     private _findWorkLocation(player: Player): Loc | null {
         if (this.useAnvil) {
-            const anvil = findLocByName(player.x, player.z, player.level, 'anvil', 2);
-            // Verify adjacency with the engine's own reachedLoc() — accounts for the
-            // loc's angle, shape, and block-access flags. Interacting with an anvil
-            // the bot isn't yet adjacent to queues a redundant engine path that can
-            // step the bot off the correct tile. Return null so the caller walks
-            // the bot toward step.location instead.
-            if (anvil && reachedLoc(player.level, player.x, player.z, anvil.x, anvil.z, anvil.width, anvil.length, 1, anvil.angle, anvil.shape, 0)) {
-                this.debug(player, `Found reachable anvil at ${anvil.x}, ${anvil.z}`);
-                return anvil;
+            const candidates = findLocsByName(player.x, player.z, player.level, 'anvil', 2);
+            candidates.sort((a, b) => {
+                const da = Math.max(Math.abs(a.x - player.x), Math.abs(a.z - player.z));
+                const db = Math.max(Math.abs(b.x - player.x), Math.abs(b.z - player.z));
+                return da - db;
+            });
+            // The engine's own reachability — chebyshev proximity alone is not sufficient. The nearest
+            // anvil is frequently NOT the reachable one, which is why every candidate is tested rather
+            // than just the closest. Returning null makes the caller walk toward step.location and retry.
+            for (const loc of candidates) {
+                const locTypeData = LocType.get(loc.type);
+                if (reachedLoc(player.level, player.x, player.z, loc.x, loc.z, loc.width, loc.length,
+                               player.width, loc.angle, loc.shape, locTypeData.forceapproach)) {
+                    this.debug(player, `Found reachable anvil at ${loc.x}, ${loc.z}`);
+                    return loc;
+                }
             }
             return null;
         }
 
         const furnace = findLocByPrefix(player.x, player.z, player.level, 'furnace', 15);
-        // Same reachedLoc guard as the anvil path above.
-        if (furnace && reachedLoc(player.level, player.x, player.z, furnace.x, furnace.z, furnace.width, furnace.length, 1, furnace.angle, furnace.shape, 0)) {
-            this.debug(player, `Found reachable furnace at ${furnace.x}, ${furnace.z}`);
+        if (furnace) {
+            this.debug(player, `Found furnace at ${furnace.x}, ${furnace.z}`);
             return furnace;
         }
 
