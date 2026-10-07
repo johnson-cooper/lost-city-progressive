@@ -62,7 +62,7 @@ Experience the nostalgia of early RuneScape while enjoying modern quality-of-lif
 #### Step 2: Install Progressive Mod
 ```bash
 # Download the Progressive repository
-git clone https://github.com/yourusername/lost-city-progressive.git
+git clone https://github.com/johnson-cooper/lost-city-progressive
 
 # Extract contents into your server directory
 # Copy all files from the repository into your fresh server folder
